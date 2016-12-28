@@ -11,6 +11,100 @@ import CoreFoundation
 
 
 
+/* Outputs & Behaviours:
+
+Note: FYI, the singular of criteria is criterion.
+
+print-build-number
+------------------
+STDOUT: Using pbxproj file <pbxproj path>
+STDOUT: Found <n> targets matching the given criteria
+STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all their build configurations:
+STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
+STDERR: 	- (ALT-2:<build_configuration>/)<target_name> build number differs in project conf and Info.plist (when bumping build number, the Info.plist version will be used, unless only --force-apple-versioning is set)
+STDERR: 	- (ALT-2:<build_configuration>/)<target_name> Info.plist file not found (path <path_to_plist)
+STDERR: 	IF --error-on-no-apple-versioning: - (ALT-2:<build_configuration>/)<target_name> is not configured to use apple-versioning (fix with bump-build-number or set-build-number --force-apple-versioning)
+STDERR: 	IF --error-on-no-info-plist-version: - (ALT-2:<build_configuration>/)<target_name> have an Info.plist, but no build number in the plist (fix with bump-build-number or set-build-number --force-plist-versioning)
+STDERR: 	IF --error-on-no-info-plist-version: - (ALT-2:<build_configuration>/)<target_name> does not have an Info.plist (you'll have to manually add an Info.plist file to fix this problem)
+STDOUT: ALT-a: All targets and configurations are setup with build number <targets_build_number>
+STDOUT: ALT-b: Build numbers by targets:
+STDOUT: ALT-c: Build numbers by targets and configurations:
+STDOUT:	ALT-bc: - (ALT-c: <build_configuration>/)<target_name>: <build_number>
+
+print-build-number --porcelain
+------------------------------
+STDOUT: <pbxproj path>
+STDOUT: safe_target1,safe_target2,safe_target3,...
+STDERR: cfg_err:diff_build_number <safe_build_configuration>/<safe_target_name>
+STDERR: err:plist_not_found <safe_build_configuration>/<safe_target_name>/<safe_plist_path>
+STDERR: IF --error-on-no-apple-versioning: cfg_err:no_apple_vers <safe_build_configuration>/<safe_target_name>
+STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist_build_number <safe_build_configuration>/<safe_target_name>
+STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist <safe_build_configuration>/<safe_target_name>
+STDOUT: ((|<safe_build_configuration>)/<safe_target_name>):build_number
+STDOUT: ...
+
+bump-build-number [--porcelain]
+-------------------------------
+Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does before bumping
+Bumps
+Outputs new build number, the same way print-build-number does (last lines of print-build-number)
+
+set-build-number [--porcelain]
+------------------------------
+Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does before setting build number
+Sets build number
+Outputs new build number, the same way print-build-number does (last lines of print-build-number)
+
+print-marketing-version
+-----------------------
+STDOUT: Using pbxproj file <pbxproj path>
+STDOUT: Found <n> targets matching the given criteria
+STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all their build configurations:
+STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
+STDERR: 	- (ALT-2:<build_configuration>/)<target_name> does not have an Info.plist
+STDERR: 	- (ALT-2:<build_configuration>/)<target_name> Info.plist file not found (path <path_to_plist)
+STDERR: 	- (ALT-2:<build_configuration>/)<target_name> have an Info.plist, no marketing version in the plist (fix with set-marketing-version)
+STDOUT: ALT-a: All targets and configurations are setup with marketing version <targets_marketing_version>
+STDOUT: ALT-b: Marketing versions by targets
+STDOUT: ALT-c: Marketing versions by targets and configurations:
+STDOUT:	ALT-bc: - (ALT-c: <build_configuration>/)<target_name>: <marketing_version>
+
+print-marketing-version --porcelain
+-----------------------------------
+STDOUT: <pbxproj path>
+STDOUT: safe_target1,safe_target2,safe_target3,...
+STDERR: cfg_err:no_plist <safe_build_configuration>/<safe_target_name>
+STDERR: err:plist_not_found <safe_build_configuration>/<safe_target_name>/<safe_plist_path>
+STDERR: cfg_err:no_plist_marketing_version <safe_build_configuration>/<safe_target_name>
+STDOUT: ((|<safe_build_configuration>)/<safe_target_name>):marketing_version
+STDOUT: ...
+
+set-marketing-version
+---------------------
+Outputs pbxproj, matching targets and relevant misconfigurations the same way print-marketing-version does before setting marketing version
+Sets marketing version
+Outputs new marketing version, the same way print-marketing-version does (last lines of print-marketing-version)
+
+print-swift-code
+----------------
+Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does
+STDOUT: ALT-a: Marketing versions by targets
+STDOUT: ALT-b: Marketing versions by targets and configurations:
+STDOUT:	- (ALT-b: <build_configuration>/)<target_name>:
+STDOUT:		<swift_code (follows indentation)>
+
+print-swift-code --porcelain
+----------------------------
+STDOUT: <pbxproj path>
+STDOUT: safe_target1,safe_target2,safe_target3,...
+Same errors as print-build-number --porcelain
+STDOUT: (|<safe_build_configuration>)/<safe_target_name>
+STDOUT: --- START SWIFT IMPLEMENTATION ---
+STDOUT: Swift implementation
+STDOUT: --- END SWIFT IMPLEMENTATION ---
+STDOUT: ...
+*/
+
 func usage<TargetStream: TextOutputStream>(program_name: String, stream: inout TargetStream) {
 	print("hagvtool - happn agvtool", to: &stream)
 	print("The goal of the project is to provide agvtool with support for targets in a project. The CVS part of agvtool has been completly dropped.", to: &stream)
@@ -22,19 +116,19 @@ func usage<TargetStream: TextOutputStream>(program_name: String, stream: inout T
 	print("   help", to: &stream)
 	print("      Outputs this help", to: &stream)
 	print("", to: &stream)
-	print("   print-build-number | what-version | vers [--target=target_name_1,target_name_2,...] [--porcelain]", to: &stream)
+	print("   print-build-number | what-version | vers [--target=target_name_1,target_name_2,...] [--error-on-no-apple-versioning] [--error-on-no-plist-version] [--porcelain]", to: &stream)
 	print("      Outputs the build numbers of the given targets, or all the targets if none are specified", to: &stream)
 	print("", to: &stream)
-	print("   bump-build-number | next-version | bump [--target=target_name ...] [--porcelain]", to: &stream)
+	print("   bump-build-number | next-version | bump [--target=target_name ...] [--force-apple-versioning] [--force-plist-versioning] [--porcelain|--quiet]", to: &stream)
 	print("      Bump the build numbers of the given targets, or all the targets if none are specified and outputs the new build numbers", to: &stream)
 	print("", to: &stream)
-	print("   set-build-number | new-version [--target=target_name ...] [--porcelain] new_build_number", to: &stream)
+	print("   set-build-number | new-version [--target=target_name ...] [--force-apple-versioning] [--force-plist-versioning] [--porcelain|--quiet] new_build_number", to: &stream)
 	print("      Set the build numbers of the given targets, or all the targets if none are specified and outputs the new build numbers", to: &stream)
 	print("", to: &stream)
 	print("   print-marketing-version | what-marketing-version | mvers [--target=target_name ...] [--porcelain]", to: &stream)
 	print("      Outputs the marketing versions of the given targets, or all the targets if none are specified", to: &stream)
 	print("", to: &stream)
-	print("   set-marketing-version | new-marketing-version [--target=target_name ...] [--porcelain] new_marketing_version", to: &stream)
+	print("   set-marketing-version | new-marketing-version [--target=target_name ...] [--porcelain|--quiet] new_marketing_version", to: &stream)
 	print("      Set the marketing versions of the given targets, or all the targets if none are specified and outputs the new marketing numbers", to: &stream)
 	print("", to: &stream)
 	print("   print-swift-code [--target=target_name_1,target_name_2,...] [--porcelain]", to: &stream)
