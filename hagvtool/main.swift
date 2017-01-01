@@ -98,7 +98,7 @@ Outputs new marketing version, the same way print-marketing-version does (last l
 print-swift-code
 ----------------
 Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does
-STDOUT: ALT-a: Marketing versions by targets
+STDOUT: ALT-a: Marketing versions by targets:
 STDOUT: ALT-b: Marketing versions by targets and configurations:
 STDOUT:	- "<target_name>(ALT-b: /<build_configuration>)":
 STDOUT:		<swift_code (follows indentation)>
@@ -339,7 +339,28 @@ case "set-marketing-version", "new-marketing-version":
 	()
 	
 case "print-swift-code":
-	()
+	let misconfigsMask = BuildConfig.Misconfigs(
+		noInfoPlist: false, unreadablePlistPath:  nil,
+		noBuildNumberInPlist: false, noMarketingNumberInPlist: false,
+		noAppleVersioning: true, diffBuildNumbers: nil
+	)
+	
+	/* Showing errors if any, but not exiting in case of errors... */
+	_ = print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type)
+	
+	/*
+	for target in targets {
+		/* Uniquing on: productName, versioningSystem, versioningSourceFilename, versioningPrefix, versioningSuffix */
+		for buildConfig in target.buildConfigs {
+			print("/* Versioning filename is \"\(buildConfig.versioningSourceFilename)\" */")
+			print("let hdl = dlopen(nil, 0)")
+			print("defer {if let hdl = hdl {dlclose(hdl)}}")
+			print("let versionNumberPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionNumber" + buildConfig.versioningSuffix + "\") }")
+			print("let versionStringPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionString" + buildConfig.versioningSuffix + "\") }")
+			print("let versionNumber = versionNumberPtr?.assumingMemoryBound(to: Double.self).pointee")
+			print("let versionString = versionStringPtr.map { String(cString: $0.assumingMemoryBound(to: CChar.self)) }")
+		}
+	}*/
 	
 default:
 	print("Unknown command \(CommandLine.arguments[1])", to: &mx_stderr)

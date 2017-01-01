@@ -141,6 +141,7 @@ struct BuildConfig {
 	}
 	
 	let name: String
+	let productName: String
 	
 	let infoPlistPath: String?
 	let infoPlistFormat: PropertyListSerialization.PropertyListFormat? /* nil if plist is unreadable */
@@ -363,6 +364,7 @@ struct Target {
 				}
 				let versioningSystem = BuildConfig.VersioningSystem(fromBuildSetting: buildSettings["VERSIONING_SYSTEM"] as? String)
 				let buildNumber = buildSettings["CURRENT_PROJECT_VERSION"] as? String
+				let productName = (buildSettings["PRODUCT_NAME"] as? String ?? "$(TARGET_NAME)").replacingOccurrences(of: "$(TARGET_NAME)", with: targetName).replacingOccurrences(of: "${TARGET_NAME}", with: targetName)
 				let versioningSourceFilename = buildSettings["VERSION_INFO_FILE"] as? String
 				let versioningPrefix = buildSettings["VERSION_INFO_PREFIX"] as? String
 				let versioningSuffix = buildSettings["VERSION_INFO_SUFFIX"] as? String
@@ -394,13 +396,14 @@ struct Target {
 				}
 				let buildConfig = BuildConfig(
 					name: buildConfigurationName,
+					productName: productName,
 					infoPlistPath: infoPlistPath,
 					infoPlistFormat: infoPlistFormat,
 					infoPlistBuildNumber: infoPlistBuildNumber,
 					infoPlistMarketingVersion: infoPlistMarketingVersion,
 					versioningSystem: versioningSystem,
 					buildNumber: buildNumber,
-					versioningSourceFilename: versioningSourceFilename ?? targetName + "_vers.c",
+					versioningSourceFilename: versioningSourceFilename ?? productName + "_vers.c",
 					versioningPrefix: versioningPrefix ?? "",
 					versioningSuffix: versioningSuffix ?? "",
 					versioningUsername: versioningUsername,
