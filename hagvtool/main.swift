@@ -100,7 +100,7 @@ print-swift-code
 Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does
 STDOUT: ALT-a: Marketing versions by targets:
 STDOUT: ALT-b: Marketing versions by targets and configurations:
-STDOUT:	- "<target_name>(ALT-b: /<build_configuration>)":
+STDOUT:	- <target_name>(ALT-b: /<build_configuration>):
 STDOUT:		<swift_code (follows indentation)>
 
 print-swift-code --porcelain
@@ -499,7 +499,7 @@ case "set-marketing-version", "new-marketing-version":
 	
 case "print-swift-code":
 	let misconfigsMask = BuildConfig.Misconfigs(
-		noInfoPlist: false, unreadablePlistPath:  nil,
+		noInfoPlist: false, unreadablePlistPath: nil,
 		noBuildNumberInPlist: false, noMarketingNumberInPlist: false,
 		noAppleVersioning: true, diffBuildNumbers: nil
 	)
@@ -507,19 +507,84 @@ case "print-swift-code":
 	/* Showing errors if any, but not exiting in case of errors... */
 	_ = print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type)
 	
-	/*
-	for target in targets {
-		/* Uniquing on: productName, versioningSystem, versioningSourceFilename, versioningPrefix, versioningSuffix */
-		for buildConfig in target.buildConfigs {
-			print("/* Versioning filename is \"\(buildConfig.versioningSourceFilename)\" */")
-			print("let hdl = dlopen(nil, 0)")
-			print("defer {if let hdl = hdl {dlclose(hdl)}}")
-			print("let versionNumberPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionNumber" + buildConfig.versioningSuffix + "\") }")
-			print("let versionStringPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionString" + buildConfig.versioningSuffix + "\") }")
-			print("let versionNumber = versionNumberPtr?.assumingMemoryBound(to: Double.self).pointee")
-			print("let versionString = versionStringPtr.map { String(cString: $0.assumingMemoryBound(to: CChar.self)) }")
+	if .humanReadable ~= log_type {
+		var diffVersionInOneTarget = false
+		targetLoop: for target in targets {
+			guard let refBuildConfig = target.buildConfigs.first else {continue}
+			for buildConfig in target.buildConfigs {
+				if buildConfig.productName != refBuildConfig.productName ||
+					buildConfig.versioningSystem != refBuildConfig.versioningSystem ||
+					buildConfig.versioningSourceFilename != refBuildConfig.versioningSourceFilename ||
+					buildConfig.versioningPrefix != refBuildConfig.versioningPrefix ||
+					buildConfig.versioningSuffix != refBuildConfig.versioningSuffix
+				{
+					diffVersionInOneTarget = true
+					break targetLoop
+				}
+			}
 		}
-	}*/
+		print("Marketing versions by targets\(diffVersionInOneTarget ? " and configurations" : ""):")
+	}
+	
+	func printCode(forBuildConfig buildConfig: BuildConfig, logType: LogType) {
+		switch log_type {
+		case .quiet, .humanReadable: (/*nop*/)
+		case .porcelain: print("--- START SWIFT IMPLEMENTATION ---")
+		case .json: fatalError("Not implemented")
+		}
+		let indent = (.humanReadable ~= logType ? "      " : "")
+		print("\(indent)/* Versioning filename is \"\(buildConfig.versioningSourceFilename)\" */")
+		print("\(indent)let hdl = dlopen(nil, 0)")
+		print("\(indent)defer {if let hdl = hdl {dlclose(hdl)}}")
+		print("\(indent)let versionNumberPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionNumber" + buildConfig.versioningSuffix + "\") }")
+		print("\(indent)let versionStringPtr = hdl.flatMap { dlsym($0, \"" + buildConfig.versioningPrefix + buildConfig.productName.replacingOccurrences(of: " ", with: "_") /* Probably more replacements to do */ + "VersionString" + buildConfig.versioningSuffix + "\") }")
+		print("\(indent)let versionNumber = versionNumberPtr?.assumingMemoryBound(to: Double.self).pointee")
+		print("\(indent)let versionString = versionStringPtr.map { String(cString: $0.assumingMemoryBound(to: CChar.self)) }")
+		switch log_type {
+		case .quiet: (/*nop*/)
+		case .porcelain: print("--- END SWIFT IMPLEMENTATION ---")
+		case .humanReadable: print(indent)
+		case .json: fatalError("Not implemented")
+		}
+	}
+	
+	for target in targets {
+		var hasDiffBuildConfig = false
+		guard let refBuildConfig = target.buildConfigs.first else {continue}
+		for buildConfig in target.buildConfigs {
+			if buildConfig.productName != refBuildConfig.productName ||
+				buildConfig.versioningSystem != refBuildConfig.versioningSystem ||
+				buildConfig.versioningSourceFilename != refBuildConfig.versioningSourceFilename ||
+				buildConfig.versioningPrefix != refBuildConfig.versioningPrefix ||
+				buildConfig.versioningSuffix != refBuildConfig.versioningSuffix
+			{
+				/* We must show the code for all build configs */
+				hasDiffBuildConfig = true
+				break
+			}
+		}
+		if !hasDiffBuildConfig {
+			/* We use refBuildConfig */
+			switch log_type {
+			case .quiet: (/*nop*/)
+			case .porcelain:     print("/\(target.name)")
+			case .humanReadable: print("   - \(target.name)")
+			case .json: fatalError("Not implemented")
+			}
+			printCode(forBuildConfig: refBuildConfig, logType: log_type)
+		} else {
+			/* We loop on all build configs */
+			for buildConfig in target.buildConfigs {
+				switch log_type {
+				case .quiet: (/*nop*/)
+				case .porcelain:     print("|\(buildConfig.name.safeString(forChars: "/"))/\(target.name)")
+				case .humanReadable: print("   - \(target.name)/\(buildConfig.name)")
+				case .json: fatalError("Not implemented")
+				}
+				printCode(forBuildConfig: buildConfig, logType: log_type)
+			}
+		}
+	}
 	
 default:
 	print("Unknown command \(CommandLine.arguments[1])", to: &mx_stderr)
