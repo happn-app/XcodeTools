@@ -315,10 +315,95 @@ case "print-build-number", "what-version", "vers":
 	print_build_versions(forTargets: targets, logType: log_type)
 	
 case "bump-build-number", "next-version", "bump":
+	/* We will bump iif the build number is the same for all targets/build
+	 * configs involved */
 	()
 	
 case "set-build-number", "new-version":
-	()
+	var forceAppleVersioning = false
+	var forcePlistVersioning = false
+	getLongArgs(argIdx: &curArgIdx, longArgs: [
+			"force-apple-versioning": { forceAppleVersioning = true; return $0.0 },
+			"force-plist-versioning": { forcePlistVersioning = true; return $0.0 }
+		]
+	)
+	let newVersion = argAtIndexOrExit(&curArgIdx, error_message: "New version is required")
+	
+	let misconfigsMask = BuildConfig.Misconfigs(
+		noInfoPlist: forcePlistVersioning, unreadablePlistPath: (forcePlistVersioning ? "" : nil),
+		noBuildNumberInPlist: false, noMarketingNumberInPlist: false,
+		noAppleVersioning: false, diffBuildNumbers: nil
+	)
+	
+	/* Showing errors if any */
+	guard !print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type) else {
+		exit(3)
+	}
+	
+	var modifiedPBXProj = false
+	var pbxprojContentAsString = try? String(contentsOf: pbxproj_url)
+	
+	var newTargets = [Target]()
+	var processedURL = Set<URL>()
+	for target in targets {
+		var newConfigs = [BuildConfig]()
+		for buildConfig in target.buildConfigs {
+			var newConfig = buildConfig
+			if buildConfig.infoPlistBuildNumber != nil || forcePlistVersioning {
+				do {
+					guard let infoPlistURL = buildConfig.infoPlistURL, let format = buildConfig.infoPlistFormat, var plistContent = buildConfig.infoPlistContent, !processedURL.contains(infoPlistURL) else {
+						throw NSError()
+					}
+					
+					plistContent["CFBundleVersion"] = newVersion
+					
+					guard let outputStream = OutputStream(url: infoPlistURL, append: false) else {
+						print("Cannot open plist for writing at path \(infoPlistURL.path)", to: &mx_stderr)
+						throw NSError()
+					}
+					outputStream.open(); defer {outputStream.close()}
+					if PropertyListSerialization.writePropertyList(plistContent, to: outputStream, format: format, options: 0, error: nil) == 0 {
+						print("Error writing to plist at path \(infoPlistURL.path)", to: &mx_stderr)
+						throw NSError()
+					}
+					
+					newConfig.infoPlistBuildNumber = newVersion
+				} catch {/*nop*/}
+			}
+			if (.appleGeneric ~= buildConfig.versioningSystem && buildConfig.buildNumber != nil) || forceAppleVersioning {
+				do {
+					guard var pbxprojAsString = pbxprojContentAsString as NSString? else {
+						print("Cannot read pbxproj at path \(pbxproj_url.path)", to: &mx_stderr)
+						throw NSError()
+					}
+					/* We assume the ref of buildConfig won't screw the regex */
+					let expr = try! NSRegularExpression(pattern: "\(buildConfig.ref)[^{]*=[^{]*\\{[^}]*buildSettings[\\s/*]*=[\\s/*]\\{[^}]*\\}[^}]*\\}", options: .dotMatchesLineSeparators)
+					let regexResults = expr.matches(in: pbxprojAsString as String, options: [], range: NSRange(location: 0, length: pbxprojAsString.length))
+					guard regexResults.count == 1, let range = regexResults.first?.range else {
+						print("Cannot find (or found too many) build config section for build config with ref \(buildConfig.ref)", to: &mx_stderr)
+						throw NSError()
+					}
+					
+					var buildConfigStr = pbxprojAsString.substring(with: range)
+					buildConfigStr = try insertOrUpdate(buildSetting: "VERSIONING_SYSTEM",       withValue: "\"apple-generic\"", parsedBuildSettings: buildConfig.fullBuildSettings, inBuildConfigString: buildConfigStr)
+					buildConfigStr = try insertOrUpdate(buildSetting: "CURRENT_PROJECT_VERSION", withValue: newVersion,          parsedBuildSettings: buildConfig.fullBuildSettings, inBuildConfigString: buildConfigStr)
+					
+					pbxprojContentAsString = pbxprojAsString.replacingCharacters(in: range, with: buildConfigStr)
+					modifiedPBXProj = true
+				} catch {/*nop*/}
+			}
+			newConfigs.append(newConfig)
+		}
+		var newTarget = target
+		newTarget.buildConfigs = newConfigs
+		newTargets.append(newTarget)
+	}
+	if modifiedPBXProj {
+		if (try? pbxprojContentAsString!.write(to: pbxproj_url, atomically: true, encoding: .utf8)) == nil {
+			print("Cannot write to pbxproj at path \(pbxproj_url.path)", to: &mx_stderr)
+		}
+	}
+	print_build_versions(forTargets: newTargets, logType: log_type)
 	
 case "print-marketing-version", "what-marketing-version", "mvers":
 	let misconfigsMask = BuildConfig.Misconfigs(
@@ -354,22 +439,18 @@ case "set-marketing-version", "new-marketing-version":
 	for target in targets {
 		var newConfigs = [BuildConfig]()
 		for buildConfig in target.buildConfigs {
-			guard let infoPlistURL = buildConfig.infoPlistURL, !processedURL.contains(infoPlistURL) else {continue}
-			
-			var format = PropertyListSerialization.PropertyListFormat.xml
-			guard let plistData = try? Data(contentsOf: infoPlistURL), var plistUnarchived = (try? PropertyListSerialization.propertyList(from: plistData, options: [], format: &format)) as? [String: Any] else {
-				print("Cannot unarchive plist at path \(infoPlistURL.path)", to: &mx_stderr)
+			guard let infoPlistURL = buildConfig.infoPlistURL, let format = buildConfig.infoPlistFormat, var plistContent = buildConfig.infoPlistContent, !processedURL.contains(infoPlistURL) else {
 				continue
 			}
 			
-			plistUnarchived["CFBundleShortVersionString"] = newVersion
+			plistContent["CFBundleShortVersionString"] = newVersion
 			
 			guard let outputStream = OutputStream(url: infoPlistURL, append: false) else {
 				print("Cannot open plist for writing at path \(infoPlistURL.path)", to: &mx_stderr)
 				continue
 			}
 			outputStream.open(); defer {outputStream.close()}
-			if PropertyListSerialization.writePropertyList(plistUnarchived, to: outputStream, format: format, options: 0, error: nil) == 0 {
+			if PropertyListSerialization.writePropertyList(plistContent, to: outputStream, format: format, options: 0, error: nil) == 0 {
 				print("Error writing to plist at path \(infoPlistURL.path)", to: &mx_stderr)
 				continue
 			}

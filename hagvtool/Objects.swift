@@ -140,14 +140,15 @@ struct BuildConfig {
 		
 	}
 	
+	let ref: String
+	
 	let name: String
 	let productName: String
 	
 	let infoPlistPath: String? /* For informative purpose */
-	let infoPlistURL: URL? /* When needing to read the plist */
 	let infoPlistFormat: PropertyListSerialization.PropertyListFormat? /* nil if plist is unreadable */
 	
-	let infoPlistBuildNumber: String?
+	var infoPlistBuildNumber: String?
 	var infoPlistMarketingVersion: String?
 	
 	let versioningSystem: VersioningSystem
@@ -159,6 +160,13 @@ struct BuildConfig {
 	
 	let versioningUsername: String? /* What's the use? */
 	let versioningExportDeclaration: String? /* Unused in our case. */
+	
+	/* When needing to rewrite build settings */
+	var fullBuildSettings: [String: Any]
+	
+	/* When needing to rewrite the plist */
+	let infoPlistURL: URL?
+	var infoPlistContent: [String: Any]?
 	
 	/* Would prefer lazy var, but invalidates default initializer and too lazy to
 	 * re-create the initializer... */
@@ -375,6 +383,7 @@ struct Target {
 				let infoPlistMarketingVersion: String?
 				let infoPlistBuildNumber: String?
 				let infoPlistFormat: PropertyListSerialization.PropertyListFormat?
+				let infoPlistContent: [String: Any]?
 				let infoPlistURL: URL?
 				
 				do {
@@ -390,19 +399,21 @@ struct Target {
 					
 					infoPlistURL = plistURL
 					infoPlistFormat = format
+					infoPlistContent = plistUnarchived
 					infoPlistBuildNumber = plistUnarchived["CFBundleVersion"] as? String
 					infoPlistMarketingVersion = plistUnarchived["CFBundleShortVersionString"] as? String
 				} catch {
 					infoPlistMarketingVersion = nil
 					infoPlistBuildNumber = nil
+					infoPlistContent = nil
 					infoPlistFormat = nil
 					infoPlistURL = nil
 				}
 				let buildConfig = BuildConfig(
+					ref: buildConfigurationRef,
 					name: buildConfigurationName,
 					productName: productName,
 					infoPlistPath: infoPlistPath,
-					infoPlistURL: infoPlistURL,
 					infoPlistFormat: infoPlistFormat,
 					infoPlistBuildNumber: infoPlistBuildNumber,
 					infoPlistMarketingVersion: infoPlistMarketingVersion,
@@ -412,7 +423,10 @@ struct Target {
 					versioningPrefix: versioningPrefix ?? "",
 					versioningSuffix: versioningSuffix ?? "",
 					versioningUsername: versioningUsername,
-					versioningExportDeclaration: versioningExportDeclaration
+					versioningExportDeclaration: versioningExportDeclaration,
+					fullBuildSettings: buildSettings,
+					infoPlistURL: infoPlistURL,
+					infoPlistContent: infoPlistContent
 				)
 				buildConfigurations.append(buildConfig)
 			}
