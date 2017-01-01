@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B20A7661E1949F100AE0214 /* Objects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B20A7651E1949F100AE0214 /* Objects.swift */; };
+		7B20A7681E19521400AE0214 /* Printers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B20A7671E19521400AE0214 /* Printers.swift */; };
 		7B4E7B771E02AAD6001E64D5 /* utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4E7B761E02AAD6001E64D5 /* utils.swift */; };
 		7BEFC0961E00008000BB1B6D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEFC0951E00008000BB1B6D /* main.swift */; };
 /* End PBXBuildFile section */
@@ -26,6 +27,7 @@
 
 /* Begin PBXFileReference section */
 		7B20A7651E1949F100AE0214 /* Objects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Objects.swift; sourceTree = "<group>"; };
+		7B20A7671E19521400AE0214 /* Printers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Printers.swift; sourceTree = "<group>"; };
 		7B4E7B761E02AAD6001E64D5 /* utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = utils.swift; sourceTree = "<group>"; };
 		7BEFC0921E00008000BB1B6D /* hagvtool */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = hagvtool; sourceTree = BUILT_PRODUCTS_DIR; };
 		7BEFC0951E00008000BB1B6D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 				7B4E7B761E02AAD6001E64D5 /* utils.swift */,
 				7BEFC0951E00008000BB1B6D /* main.swift */,
 				7B20A7651E1949F100AE0214 /* Objects.swift */,
+				7B20A7671E19521400AE0214 /* Printers.swift */,
 			);
 			path = hagvtool;
 			sourceTree = "<group>";
@@ -129,6 +132,7 @@
 				7BEFC0961E00008000BB1B6D /* main.swift in Sources */,
 				7B20A7661E1949F100AE0214 /* Objects.swift in Sources */,
 				7B4E7B771E02AAD6001E64D5 /* utils.swift in Sources */,
+				7B20A7681E19521400AE0214 /* Printers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

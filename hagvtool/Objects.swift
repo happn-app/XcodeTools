@@ -243,6 +243,13 @@ struct Target {
 		return Array(Set(nonNilBuildNumbers)) + (hasNil ? [nil] : [])
 	}
 	
+	var distinctMarketingVersions: [String?] {
+		let marketingVersions = buildConfigs.map { $0.infoPlistMarketingVersion }
+		let hasNil = marketingVersions.contains(where: { $0 == nil })
+		let nonNilMarketingVersions = marketingVersions.flatMap { $0 }
+		return Array(Set(nonNilMarketingVersions)) + (hasNil ? [nil] : [])
+	}
+	
 	static func pbxprojURLFromProject(url: URL) -> URL {
 		return URL(fileURLWithPath: "project.pbxproj", isDirectory: false, relativeTo: url)
 	}

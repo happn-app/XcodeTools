@@ -73,7 +73,7 @@ STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all of their build 
 STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
 STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" does not have an Info.plist
 STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" Info.plist file not found or unreadable (path <path_to_plist>)
-STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" have an Info.plist, no marketing version in the plist (fix with set-marketing-version)
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" have an Info.plist, but no marketing version in the plist (fix with set-marketing-version)
 STDOUT: ALT-a: All targets and configurations are setup with marketing version <targets_marketing_version>
 STDOUT: ALT-b: Marketing versions by targets
 STDOUT: ALT-c: Marketing versions by targets and configurations:
@@ -207,12 +207,12 @@ var curArgIdx = 1
 
 var project_path_arg: String?
 var targets_criteria_arg: String?
-var logType = LogType.humanReadable
+var log_type = LogType.humanReadable
 getLongArgs(argIdx: &curArgIdx, longArgs: [
 		"project-path": { var i = $0; project_path_arg     = getLongArgValue(fromGetLongArgsValue: $1, argIdx: &i); return i },
 		"targets":      { var i = $0; targets_criteria_arg = getLongArgValue(fromGetLongArgsValue: $1, argIdx: &i); return i },
-		"porcelain": { logType = .porcelain; return $0.0 },
-		"quiet":     { logType = .quiet;     return $0.0 }
+		"porcelain": { log_type = .porcelain; return $0.0 },
+		"quiet":     { log_type = .quiet;     return $0.0 }
 	]
 )
 
@@ -263,7 +263,7 @@ guard let targets = Target.targetsFromProject(url: project_url, targetsCriteria:
    MARK: - Showing Common Info
    *************************** */
 
-switch logType {
+switch log_type {
 case .quiet:
 	()
 	
@@ -295,7 +295,7 @@ case "print-build-number", "what-version", "vers":
 	var errOnNoPlistVersion = false
 	var errOnNoAppleVersioning = false
 	getLongArgs(argIdx: &curArgIdx, longArgs: [
-			"error-on-no-plist-version": { errOnNoPlistVersion = true; return $0.0 },
+			"error-on-no-plist-version":    { errOnNoPlistVersion    = true; return $0.0 },
 			"error-on-no-apple-versioning": { errOnNoAppleVersioning = true; return $0.0 }
 		]
 	)
@@ -307,145 +307,12 @@ case "print-build-number", "what-version", "vers":
 	)
 	
 	/* Showing errors if any */
-	let n = targets.reduce(0) { $0 + ($1.distinctActualMisconfigurations(matchingMisconfigsMask: misconfigsMask).isEmpty ? 0 : 1) }
-	let a = targets.reduce(true) { $0 && $1.doAllOrNoneOfBuildConfigsHaveMisconfigsMask(misconfigsMask) }
-	if n > 0 {
-		if .humanReadable ~= logType {
-			print("\(n) target\(n != 1 ? "s are" : " is") misconfigured in \(a ? "all" : "some") of \(n != 1 ? "their" : "its") build configurations:", to: &mx_stderr)
-		}
-		let buildNumbersDifferMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: (projectConf: "", infoPlist: ""))
-		let unreadablePlistMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: "", noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
-		let noAppleVersioningMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: true, diffBuildNumbers: nil)
-		let noPlistVersionMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: true, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
-		let noPlistMask = BuildConfig.Misconfigs(noInfoPlist: true, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
-		for target in targets {
-			do {
-				/* Showing build numbers differ error */
-				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: buildNumbersDifferMask)
-				let showAll = (.porcelain ~= logType || .json ~= logType) || buildConfigs.count != target.buildConfigs.count
-				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("cfg_err:diff_build_number \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
-					case .humanReadable: print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" build numbers differ in project conf and Info.plist (when bumping build number, the Info.plist version will be used, unless only --force-apple-versioning is set)", to: &mx_stderr)
-					case .json: fatalError("Not implemented")
-					}
-				}
-			}
-			do {
-				/* Showing unreadable Info.plist error */
-				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: unreadablePlistMask)
-				let showAll = (.porcelain ~= logType || .json ~= logType) || buildConfigs.count != target.buildConfigs.count
-				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("err:unreadable_plist \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))/\(buildConfig.misconfigs.unreadablePlistPath!.safeString(forChars: "/"))", to: &mx_stderr)
-					case .humanReadable: print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" Info.plist file not found or unreadable (path \(buildConfig.misconfigs.unreadablePlistPath!))", to: &mx_stderr)
-					case .json: fatalError("Not implemented")
-					}
-				}
-			}
-			if errOnNoAppleVersioning {
-				/* Showing target not configured for Apple Versioning error */
-				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noAppleVersioningMask)
-				let showAll = (.porcelain ~= logType || .json ~= logType) || buildConfigs.count != target.buildConfigs.count
-				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("cfg_err:no_apple_version \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
-					case .humanReadable: print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" is not configured to use apple-versioning, or version in project conf is empty (fix with bump-build-number or set-build-number --force-apple-versioning)", to: &mx_stderr)
-					case .json: fatalError("Not implemented")
-					}
-				}
-			}
-			if errOnNoPlistVersion {
-				/* Showing no build number in plist error */
-				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noPlistVersionMask)
-				let showAll = (.porcelain ~= logType || .json ~= logType) || buildConfigs.count != target.buildConfigs.count
-				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("cfg_err:no_plist_build_number \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
-					case .humanReadable: print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" have an Info.plist, but no build number in the plist (fix with bump-build-number or set-build-number --force-plist-versioning)", to: &mx_stderr)
-					case .json: fatalError("Not implemented")
-					}
-				}
-			}
-			if errOnNoPlistVersion {
-				/* Showing no plist error */
-				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noPlistMask)
-				let showAll = (.porcelain ~= logType || .json ~= logType) || buildConfigs.count != target.buildConfigs.count
-				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("cfg_err:no_plist \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
-					case .humanReadable: print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" does not have an Info.plist (you'll have to manually add an Info.plist file to fix this problem)", to: &mx_stderr)
-					case .json: fatalError("Not implemented")
-					}
-				}
-			}
-		}
+	guard !print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type) else {
 		exit(3)
 	}
 	
 	/* Showing found build versions */
-	var version: String?
-	var diffVersions = false
-	var diffVersionsInOneTarget = false
-	for target in targets {
-		let distinctVersions = target.distinctBuildNumbers
-		
-		if distinctVersions.count > 1 {
-			diffVersionsInOneTarget = true
-			diffVersions = true
-			break
-		}
-		if let targetVersion = distinctVersions.first {
-			if let version = version, version != targetVersion {
-				diffVersions = true
-			}
-			version = targetVersion
-		}
-	}
-	if !diffVersions {
-		assert(!diffVersionsInOneTarget)
-		if let version = version {
-			switch logType {
-			case .quiet: (/*nop*/)
-			case .porcelain:     print(":\(version)")
-			case .humanReadable: print("All targets and configurations are setup with build number \(version)")
-			case .json: fatalError("Not implemented")
-			}
-		}
-	} else {
-		if .humanReadable ~= logType {
-			print("Build numbers by targets\(diffVersionsInOneTarget ? " and configurations" : ""):")
-		}
-		for target in targets {
-			let distinctVersions = target.distinctBuildNumbers
-			if distinctVersions.count == 1 {
-				if let v = distinctVersions[0] {
-					switch logType {
-					case .quiet: (/*nop*/)
-					case .porcelain:     print("/\(target.name.safeString(forChars: ":")):\(v)")
-					case .humanReadable: print("   - \(target.name): \(v)")
-					case .json: fatalError("Not implemented")
-					}
-				}
-			} else {
-				for buildConfig in target.buildConfigs {
-					if let v = buildConfig.fullBuildNumber.reduced() {
-						switch logType {
-						case .quiet: (/*nop*/)
-						case .porcelain:     print("|\(buildConfig.name.safeString(forChars: "/"))/\(target.name.safeString(forChars: ":")):\(v)")
-						case .humanReadable: print("   - \(target.name)/\(buildConfig.name): \(v)")
-						case .json: fatalError("Not implemented")
-						}
-					}
-				}
-			}
-		}
-	}
+	print_build_versions(forTargets: targets, logType: log_type)
 	
 case "bump-build-number", "next-version", "bump":
 	()
@@ -454,31 +321,19 @@ case "set-build-number", "new-version":
 	()
 	
 case "print-marketing-version", "what-marketing-version", "mvers":
-	/*
-	print-marketing-version
-	-----------------------
-	STDOUT: Using pbxproj file at <pbxproj path>
-	STDOUT: Found <n> target(s) matching the given criteria
-	STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all of their build configurations:
-	STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
-	STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" does not have an Info.plist
-	STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" Info.plist file not found or unreadable (path <path_to_plist>)
-	STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" have an Info.plist, no marketing version in the plist (fix with set-marketing-version)
-	STDOUT: ALT-a: All targets and configurations are setup with marketing version <targets_marketing_version>
-	STDOUT: ALT-b: Marketing versions by targets
-	STDOUT: ALT-c: Marketing versions by targets and configurations:
-	STDOUT:	ALT-bc: - <target_name>(ALT-c: /<build_configuration>): <marketing_version>
+	let misconfigsMask = BuildConfig.Misconfigs(
+		noInfoPlist: true, unreadablePlistPath: "",
+		noBuildNumberInPlist: false, noMarketingNumberInPlist: true,
+		noAppleVersioning: false, diffBuildNumbers: nil
+	)
 	
-	print-marketing-version --porcelain
-	-----------------------------------
-	STDOUT: <pbxproj path>
-	STDOUT: safe_target1,safe_target2,safe_target3,...
-	STDERR: cfg_err:no_plist <safe_target_name>/<safe_build_configuration>
-	STDERR: err:unreadable_plist <safe_target_name>/<safe_build_configuration>/<safe_plist_path>
-	STDERR: cfg_err:no_plist_marketing_version <safe_target_name>/<safe_build_configuration>
-	STDOUT: ((|<safe_build_configuration>)/<safe_target_name>):marketing_version
-	STDOUT: ...*/
-	()
+	/* Showing errors if any */
+	guard !print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type) else {
+		exit(3)
+	}
+	
+	/* Showing found build versions */
+	print_marketing_versions(forTargets: targets, logType: log_type)
 	
 case "set-marketing-version", "new-marketing-version":
 	()
