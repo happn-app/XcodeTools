@@ -290,7 +290,8 @@ case .json:
    MARK: - Applying Command
    ************************ */
 
-switch argAtIndexOrExit(&curArgIdx, error_message: "Command is required") {
+let action = argAtIndexOrExit(&curArgIdx, error_message: "Command is required")
+switch action {
 case "print-build-number", "what-version", "vers":
 	var errOnNoPlistVersion = false
 	var errOnNoAppleVersioning = false
@@ -314,20 +315,14 @@ case "print-build-number", "what-version", "vers":
 	/* Showing found build versions */
 	print_build_versions(forTargets: targets, logType: log_type)
 	
-case "bump-build-number", "next-version", "bump":
-	/* We will bump iif the build number is the same for all targets/build
-	 * configs involved */
-	()
-	
-case "set-build-number", "new-version":
+case "bump-build-number", "next-version", "bump", "set-build-number", "new-version":
 	var forceAppleVersioning = false
 	var forcePlistVersioning = false
 	getLongArgs(argIdx: &curArgIdx, longArgs: [
-			"force-apple-versioning": { forceAppleVersioning = true; return $0.0 },
-			"force-plist-versioning": { forcePlistVersioning = true; return $0.0 }
+		"force-apple-versioning": { forceAppleVersioning = true; return $0.0 },
+		"force-plist-versioning": { forcePlistVersioning = true; return $0.0 }
 		]
 	)
-	let newVersion = argAtIndexOrExit(&curArgIdx, error_message: "New version is required")
 	
 	let misconfigsMask = BuildConfig.Misconfigs(
 		noInfoPlist: forcePlistVersioning, unreadablePlistPath: (forcePlistVersioning ? "" : nil),
@@ -338,6 +333,43 @@ case "set-build-number", "new-version":
 	/* Showing errors if any */
 	guard !print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type) else {
 		exit(3)
+	}
+	
+	let newVersion: String
+	if ["set-build-number", "new-version"].contains(action) {
+		/* We're setting the version from arg */
+		newVersion = argAtIndexOrExit(&curArgIdx, error_message: "New version is required")
+	} else {
+		/* We're bumping the version. Let's retrieve the current version... */
+		var foundVersion: String?
+		func setFoundVersion(newlyFoundVersion: String) {
+			guard let cFoundVersion = foundVersion else {foundVersion = newlyFoundVersion; return}
+			guard cFoundVersion == newlyFoundVersion else {
+				print("Found mismatching build number (\(cFoundVersion) and \(newlyFoundVersion)) when bumping. Shyingly backing away and doing nothing...")
+				exit(3)
+			}
+		}
+		for target in targets {
+			for buildConfig in target.buildConfigs {
+				switch buildConfig.fullBuildNumber {
+				case .none: (/* nop; we ignore targets with no build number for version checking */)
+				case .bothEqual(let v), .config(let v), .plist(let v): setFoundVersion(newlyFoundVersion: v)
+				case .both(config: let vc, plist: let vp):
+					if forceAppleVersioning && !forcePlistVersioning {setFoundVersion(newlyFoundVersion: vc)}
+					else                                             {setFoundVersion(newlyFoundVersion: vp)}
+				}
+			}
+		}
+		if let foundVersion = foundVersion {
+			guard let intVersion = Int(foundVersion) else {
+				print("Cannot convert found version (\(foundVersion)) to int. Shyingly doing nothing.")
+				exit(3)
+			}
+			newVersion = String(intVersion + 1)
+		} else {
+			/* If we did not find any version, we start at 1 for convenience purpose */
+			newVersion = "1"
+		}
 	}
 	
 	var modifiedPBXProj = false
