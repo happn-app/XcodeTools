@@ -336,7 +336,53 @@ case "print-marketing-version", "what-marketing-version", "mvers":
 	print_marketing_versions(forTargets: targets, logType: log_type)
 	
 case "set-marketing-version", "new-marketing-version":
-	()
+	let newVersion = argAtIndexOrExit(&curArgIdx, error_message: "New version is required")
+	
+	let misconfigsMask = BuildConfig.Misconfigs(
+		noInfoPlist: true, unreadablePlistPath: "",
+		noBuildNumberInPlist: false, noMarketingNumberInPlist: false,
+		noAppleVersioning: false, diffBuildNumbers: nil
+	)
+	
+	/* Showing errors if any */
+	guard !print_error(forTargets: targets, withMisconfigsMask: misconfigsMask, logType: log_type) else {
+		exit(3)
+	}
+	
+	var newTargets = [Target]()
+	var processedURL = Set<URL>()
+	for target in targets {
+		var newConfigs = [BuildConfig]()
+		for buildConfig in target.buildConfigs {
+			guard let infoPlistURL = buildConfig.infoPlistURL, !processedURL.contains(infoPlistURL) else {continue}
+			
+			var format = PropertyListSerialization.PropertyListFormat.xml
+			guard let plistData = try? Data(contentsOf: infoPlistURL), var plistUnarchived = (try? PropertyListSerialization.propertyList(from: plistData, options: [], format: &format)) as? [String: Any] else {
+				print("Cannot unarchive plist at path \(infoPlistURL.path)", to: &mx_stderr)
+				continue
+			}
+			
+			plistUnarchived["CFBundleShortVersionString"] = newVersion
+			
+			guard let outputStream = OutputStream(url: infoPlistURL, append: false) else {
+				print("Cannot open plist for writing at path \(infoPlistURL.path)", to: &mx_stderr)
+				continue
+			}
+			outputStream.open(); defer {outputStream.close()}
+			if PropertyListSerialization.writePropertyList(plistUnarchived, to: outputStream, format: format, options: 0, error: nil) == 0 {
+				print("Error writing to plist at path \(infoPlistURL.path)", to: &mx_stderr)
+				continue
+			}
+			
+			var newConfig = buildConfig
+			newConfig.infoPlistMarketingVersion = newVersion
+			newConfigs.append(newConfig)
+		}
+		var newTarget = target
+		newTarget.buildConfigs = newConfigs
+		newTargets.append(newTarget)
+	}
+	print_marketing_versions(forTargets: newTargets, logType: log_type)
 	
 case "print-swift-code":
 	let misconfigsMask = BuildConfig.Misconfigs(

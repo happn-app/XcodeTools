@@ -143,11 +143,12 @@ struct BuildConfig {
 	let name: String
 	let productName: String
 	
-	let infoPlistPath: String?
+	let infoPlistPath: String? /* For informative purpose */
+	let infoPlistURL: URL? /* When needing to read the plist */
 	let infoPlistFormat: PropertyListSerialization.PropertyListFormat? /* nil if plist is unreadable */
 	
 	let infoPlistBuildNumber: String?
-	let infoPlistMarketingVersion: String?
+	var infoPlistMarketingVersion: String?
 	
 	let versioningSystem: VersioningSystem
 	let buildNumber: String?
@@ -203,7 +204,7 @@ struct BuildConfig {
 struct Target {
 	
 	let name: String
-	let buildConfigs: [BuildConfig]
+	var buildConfigs: [BuildConfig]
 	
 	var misconfiguredBuildConfigs: [BuildConfig] {
 		return buildConfigs.filter { $0.misconfigs != BuildConfig.Misconfigs() }
@@ -374,6 +375,7 @@ struct Target {
 				let infoPlistMarketingVersion: String?
 				let infoPlistBuildNumber: String?
 				let infoPlistFormat: PropertyListSerialization.PropertyListFormat?
+				let infoPlistURL: URL?
 				
 				do {
 					/* Now to parse the Info.plist file! */
@@ -386,6 +388,7 @@ struct Target {
 					var format = PropertyListSerialization.PropertyListFormat.xml
 					guard let plistUnarchived = try PropertyListSerialization.propertyList(with: stream, options: [], format: &format) as? [String: Any] else {throw NSError()}
 					
+					infoPlistURL = plistURL
 					infoPlistFormat = format
 					infoPlistBuildNumber = plistUnarchived["CFBundleVersion"] as? String
 					infoPlistMarketingVersion = plistUnarchived["CFBundleShortVersionString"] as? String
@@ -393,11 +396,13 @@ struct Target {
 					infoPlistMarketingVersion = nil
 					infoPlistBuildNumber = nil
 					infoPlistFormat = nil
+					infoPlistURL = nil
 				}
 				let buildConfig = BuildConfig(
 					name: buildConfigurationName,
 					productName: productName,
 					infoPlistPath: infoPlistPath,
+					infoPlistURL: infoPlistURL,
 					infoPlistFormat: infoPlistFormat,
 					infoPlistBuildNumber: infoPlistBuildNumber,
 					infoPlistMarketingVersion: infoPlistMarketingVersion,
