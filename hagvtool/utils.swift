@@ -1,5 +1,5 @@
 /*
- * stdio.swift
+ * utils.swift
  * hagvtool
  *
  * Created by François Lamboley on 12/15/16.
@@ -7,6 +7,21 @@
  */
 
 import Foundation
+
+
+
+extension String {
+	
+	func safeString(forChars safeChars: Character...) -> String {
+		assert(!safeChars.contains("\\"))
+		var res = replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\n", with: "\\n").replacingOccurrences(of: "\r", with: "\\r")
+		for char in safeChars {
+			res = res.replacingOccurrences(of: String(char), with: "\\\(char)")
+		}
+		return res
+	}
+	
+}
 
 
 

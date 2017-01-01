@@ -27,29 +27,29 @@ Note: FYI, the singular of criteria is criterion.
 
 print-build-number
 ------------------
-STDOUT: Using pbxproj file <pbxproj path>
-STDOUT: Found <n> targets matching the given criteria
-STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all their build configurations:
+STDOUT: Using pbxproj file at <pbxproj path>
+STDOUT: Found <n> target(s) matching the given criteria
+STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all of their build configurations:
 STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
-STDERR: 	- (ALT-2:<build_configuration>/)<target_name> build number differs in project conf and Info.plist (when bumping build number, the Info.plist version will be used, unless only --force-apple-versioning is set)
-STDERR: 	- (ALT-2:<build_configuration>/)<target_name> Info.plist file not found or unreadable (path <path_to_plist>)
-STDERR: 	IF --error-on-no-apple-versioning: - (ALT-2:<build_configuration>/)<target_name> is not configured to use apple-versioning (fix with bump-build-number or set-build-number --force-apple-versioning)
-STDERR: 	IF --error-on-no-info-plist-version: - (ALT-2:<build_configuration>/)<target_name> have an Info.plist, but no build number in the plist (fix with bump-build-number or set-build-number --force-plist-versioning)
-STDERR: 	IF --error-on-no-info-plist-version: - (ALT-2:<build_configuration>/)<target_name> does not have an Info.plist (you'll have to manually add an Info.plist file to fix this problem)
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" build numbers differ in project conf and Info.plist (when bumping build number, the Info.plist version will be used, unless only --force-apple-versioning is set)
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" Info.plist file not found or unreadable (path <path_to_plist>)
+STDERR: 	IF --error-on-no-apple-versioning: - "<target_name>(ON AMBIGUITY:/<build_configuration>)" is not configured to use apple-versioning, or version in project conf is empty (fix with bump-build-number or set-build-number --force-apple-versioning)
+STDERR: 	IF --error-on-no-plist-version: - "<target_name>(ON AMBIGUITY:/<build_configuration>)" have an Info.plist, but no build number in the plist (fix with bump-build-number or set-build-number --force-plist-versioning)
+STDERR: 	IF --error-on-no-plist-version: - "<target_name>(ON AMBIGUITY:/<build_configuration>)" does not have an Info.plist (you'll have to manually add an Info.plist file to fix this problem)
 STDOUT: ALT-a: All targets and configurations are setup with build number <targets_build_number>
 STDOUT: ALT-b: Build numbers by targets:
 STDOUT: ALT-c: Build numbers by targets and configurations:
-STDOUT:	ALT-bc: - (ALT-c: <build_configuration>/)<target_name>: <build_number>
+STDOUT:	ALT-bc: - <target_name>(ALT-c: /<build_configuration>): <build_number>
 
 print-build-number --porcelain
 ------------------------------
 STDOUT: <pbxproj path>
 STDOUT: safe_target1,safe_target2,safe_target3,...
-STDERR: cfg_err:diff_build_number <safe_build_configuration>/<safe_target_name>
-STDERR: err:unreadable_plist <safe_build_configuration>/<safe_target_name>/<safe_plist_path>
-STDERR: IF --error-on-no-apple-versioning: cfg_err:no_apple_vers <safe_build_configuration>/<safe_target_name>
-STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist_build_number <safe_build_configuration>/<safe_target_name>
-STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist <safe_build_configuration>/<safe_target_name>
+STDERR: cfg_err:diff_build_number <safe_target_name>/<safe_build_configuration>
+STDERR: err:unreadable_plist <safe_target_name>/<safe_build_configuration>/<safe_plist_path>
+STDERR: IF --error-on-no-apple-versioning: cfg_err:no_apple_version <safe_target_name>/<safe_build_configuration>
+STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist_build_number <safe_target_name>/<safe_build_configuration>
+STDERR: IF --error-on-no-info-plist-version: cfg_err:no_plist <safe_target_name>/<safe_build_configuration>
 STDOUT: ((|<safe_build_configuration>)/<safe_target_name>):build_number
 STDOUT: ...
 
@@ -67,25 +67,25 @@ Outputs new build number, the same way print-build-number does (last lines of pr
 
 print-marketing-version
 -----------------------
-STDOUT: Using pbxproj file <pbxproj path>
-STDOUT: Found <n> targets matching the given criteria
-STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all their build configurations:
+STDOUT: Using pbxproj file at <pbxproj path>
+STDOUT: Found <n> target(s) matching the given criteria
+STDERR: IF n > 0: ALT-1: <n> targets is/are misconfigured in all of their build configurations:
 STDERR: IF n > 0: ALT-2: <n> targets is/are misconfigured in some of their build configurations:
-STDERR: 	- (ALT-2:<build_configuration>/)<target_name> does not have an Info.plist
-STDERR: 	- (ALT-2:<build_configuration>/)<target_name> Info.plist file not found or unreadable (path <path_to_plist>)
-STDERR: 	- (ALT-2:<build_configuration>/)<target_name> have an Info.plist, no marketing version in the plist (fix with set-marketing-version)
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" does not have an Info.plist
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" Info.plist file not found or unreadable (path <path_to_plist>)
+STDERR: 	- "<target_name>(ON AMBIGUITY:/<build_configuration>)" have an Info.plist, no marketing version in the plist (fix with set-marketing-version)
 STDOUT: ALT-a: All targets and configurations are setup with marketing version <targets_marketing_version>
 STDOUT: ALT-b: Marketing versions by targets
 STDOUT: ALT-c: Marketing versions by targets and configurations:
-STDOUT:	ALT-bc: - (ALT-c: <build_configuration>/)<target_name>: <marketing_version>
+STDOUT:	ALT-bc: - <target_name>(ALT-c: /<build_configuration>): <marketing_version>
 
 print-marketing-version --porcelain
 -----------------------------------
 STDOUT: <pbxproj path>
 STDOUT: safe_target1,safe_target2,safe_target3,...
-STDERR: cfg_err:no_plist <safe_build_configuration>/<safe_target_name>
-STDERR: err:unreadable_plist <safe_build_configuration>/<safe_target_name>/<safe_plist_path>
-STDERR: cfg_err:no_plist_marketing_version <safe_build_configuration>/<safe_target_name>
+STDERR: cfg_err:no_plist <safe_target_name>/<safe_build_configuration>
+STDERR: err:unreadable_plist <safe_target_name>/<safe_build_configuration>/<safe_plist_path>
+STDERR: cfg_err:no_plist_marketing_version <safe_target_name>/<safe_build_configuration>
 STDOUT: ((|<safe_build_configuration>)/<safe_target_name>):marketing_version
 STDOUT: ...
 
@@ -100,7 +100,7 @@ print-swift-code
 Outputs pbxproj, matching targets and relevant misconfigurations the same way print-build-number does
 STDOUT: ALT-a: Marketing versions by targets
 STDOUT: ALT-b: Marketing versions by targets and configurations:
-STDOUT:	- (ALT-b: <build_configuration>/)<target_name>:
+STDOUT:	- "<target_name>(ALT-b: /<build_configuration>)":
 STDOUT:		<swift_code (follows indentation)>
 
 print-swift-code --porcelain
@@ -158,10 +158,15 @@ func argAtIndexOrExit(_ i: Int, error_message: String) -> String {
 	return CommandLine.arguments[i]
 }
 
+func argAtIndex(_ i: Int) -> String? {
+	guard CommandLine.arguments.count > i else {return nil}
+	return CommandLine.arguments[i]
+}
+
 /* Takes the current arg position in input and a dictionary of long args names
  * with the corresponding action to execute when the long arg is found.
  * Returns the new arg position when all long args have been found. */
-func getLongArgs(argIdx: Int, longArgs: [String: (String) -> Void]) -> Int {
+func getLongArgs(argIdx: Int, expectsMore: Bool = true, longArgs: [String: (String) -> Void]) -> Int {
 	var i = argIdx
 	
 	func stringByDeletingPrefixIfPresent(_ prefix: String, from string: String) -> String? {
@@ -174,11 +179,20 @@ func getLongArgs(argIdx: Int, longArgs: [String: (String) -> Void]) -> Int {
 	
 	
 	longArgLoop: while true {
-		let arg = argAtIndexOrExit(i, error_message: "Syntax error"); i += 1
+		let arg: String
+		if expectsMore {arg = argAtIndexOrExit(i, error_message: "expected more argument")}
+		else {
+			guard let a = argAtIndex(i) else {return i}
+			arg = a
+		}
+		i += 1
 		
 		for (longArg, action) in longArgs {
 			if let no_prefix = stringByDeletingPrefixIfPresent("--\(longArg)=", from: arg) {
 				action(no_prefix)
+				continue longArgLoop
+			} else if "--" + longArg == arg {
+				action("") /* Yes. I know. */
 				continue longArgLoop
 			}
 		}
@@ -211,6 +225,109 @@ struct BuildConfig {
 		}
 	}
 	
+	struct Misconfigs : Equatable, Hashable {
+		
+		var noInfoPlist: Bool = false
+		var unreadablePlistPath: String? = nil
+		var cannotReadInfoPlist: Bool {return unreadablePlistPath == nil}
+		
+		var noBuildNumberInPlist: Bool = false
+		var noMarketingNumberInPlist: Bool = false
+		
+		var noAppleVersioning: Bool = false
+		
+		var diffBuildNumbers: (projectConf: String, infoPlist: String)? = nil
+		
+		func filtered(mask: Misconfigs) -> Misconfigs {
+			return Misconfigs(
+				noInfoPlist: noInfoPlist && mask.noInfoPlist,
+				unreadablePlistPath: mask.unreadablePlistPath != nil ? unreadablePlistPath : nil,
+				noBuildNumberInPlist: noBuildNumberInPlist && mask.noBuildNumberInPlist,
+				noMarketingNumberInPlist: noMarketingNumberInPlist && mask.noMarketingNumberInPlist,
+				noAppleVersioning: noAppleVersioning && mask.noAppleVersioning,
+				diffBuildNumbers: mask.diffBuildNumbers != nil ? diffBuildNumbers : nil
+			)
+		}
+		
+		var hashValue: Int {
+			return (
+				(noInfoPlist              ? 0 : 1) * 0x1  +
+				(cannotReadInfoPlist      ? 0 : 1) * 0x10 +
+				(noBuildNumberInPlist     ? 0 : 1) * 0x100 +
+				(noMarketingNumberInPlist ? 0 : 1) * 0x1000 +
+				(noAppleVersioning        ? 0 : 1) * 0x10000 +
+				(diffBuildNumbers != nil  ? 0 : 1) * 0x100000
+			)
+		}
+		
+		static func ==(_ lhs: Misconfigs, _ rhs: Misconfigs) -> Bool {
+			return (
+				lhs.noInfoPlist == rhs.noInfoPlist &&
+				lhs.cannotReadInfoPlist == rhs.cannotReadInfoPlist &&
+				lhs.noBuildNumberInPlist == rhs.noBuildNumberInPlist &&
+				lhs.noMarketingNumberInPlist == rhs.noMarketingNumberInPlist &&
+				lhs.noAppleVersioning == rhs.noAppleVersioning &&
+				(lhs.diffBuildNumbers != nil) == (rhs.diffBuildNumbers != nil)
+			)
+		}
+		
+	}
+	
+	enum BuildNumber : Equatable, Hashable {
+		
+		case none
+		case bothEqual(String)
+		case config(String)
+		case plist(String)
+		case both(config: String, plist: String)
+		
+		func reduced() -> String? {
+			switch self {
+			case .none, .both: return nil
+			case .bothEqual(let v), .config(let v), .plist(let v): return v
+			}
+		}
+		
+		func filtered(keepConfig: Bool, keepPlist: Bool) -> BuildNumber {
+			switch (self, keepConfig, keepPlist) {
+			case (.none,                          _,     _):     return .none
+			case (.bothEqual(let v),              true,  false): return .config(v)
+			case (.bothEqual(let v),              false, true):  return .plist(v)
+			case (.both(config: let v, plist: _), true,  false): return .config(v)
+			case (.both(config: _, plist: let v), false, true):  return .plist(v)
+			case (.config,                        true,  _):     return self
+			case (.config,                        false, _):     return .none
+			case (.plist,                         _,     true):  return self
+			case (.plist,                         _,     false): return .none
+			case (_,                              false, false): return .none
+			case (_,                              true,  true):  return self
+			default: fatalError("Internal Logic Error") /* Swift considers the switch is not exhaustive. I do not agree! */
+			}
+		}
+		
+		var hashValue: Int {
+			switch self {
+			case .none: return 0
+			case .bothEqual(let v):                    return v.hashValue                    &* 0x1
+			case .config(let v):                       return v.hashValue                    &* 0x10
+			case .plist(let v):                        return v.hashValue                    &* 0x100
+			case .both(config: let vc, plist: let vp): return (vc.hashValue &+ vp.hashValue) &* 0x1000
+			}
+		}
+		
+		static func ==(_ lhs: BuildNumber, _ rhs: BuildNumber) -> Bool {
+			switch (lhs, rhs) {
+			case (.none, .none):                                     return true
+			case (.bothEqual(let vl),      .bothEqual(let vr)):      return vl == vr
+			case (.config(let vl),         .config(let vr)):         return vl == vr
+			case (.plist(let vl),          .plist(let vr)):          return vl == vr
+			case (.both(let cvl, let pvl), .both(let cvr, let pvr)): return cvl == cvr && pvl == pvr
+			default: return false
+			}
+		}
+		
+	}
+	
 	let name: String
 	
 	let infoPlistPath: String?
@@ -229,12 +346,88 @@ struct BuildConfig {
 	let versioningUsername: String? /* What's the use? */
 	let versioningExportDeclaration: String? /* Unused in our case. */
 	
+	/* Would prefer lazy var, but invalidates default initializer and too lazy to
+	 * re-create the initializer... */
+	var misconfigs: Misconfigs {
+		var res = Misconfigs()
+		
+		switch (infoPlistPath, infoPlistFormat) {
+		case (nil, _):
+			res.noInfoPlist = true
+			
+		case (.some(let path), nil):
+			res.unreadablePlistPath = path
+			
+		case (.some, .some):
+			res.noBuildNumberInPlist = (infoPlistBuildNumber == nil)
+			res.noMarketingNumberInPlist = (infoPlistMarketingVersion == nil)
+		}
+		
+		if versioningSystem != .appleGeneric {res.noAppleVersioning = true}
+		else if buildNumber?.isEmpty ?? true {res.noAppleVersioning = true}
+		
+		if let infoPlistBuildNumber = infoPlistBuildNumber, let buildNumber = buildNumber, infoPlistBuildNumber != buildNumber {
+			res.diffBuildNumbers = (projectConf: buildNumber, infoPlist: infoPlistBuildNumber)
+		}
+		
+		return res
+	}
+	
+	var fullBuildNumber: BuildNumber {
+		switch (buildNumber, infoPlistBuildNumber) {
+		case (.some(let bn), .some(let ibn)) where bn == ibn: return .bothEqual(bn)
+		case (.some(let bn), .some(let ibn)):                 return .both(config: bn, plist: ibn)
+		case (.some(let bn), nil):                            return .config(bn)
+		case (nil,           .some(let ibn)):                 return .plist(ibn)
+		case (nil,           nil):                            return .none
+		}
+	}
+	
 }
 
 struct Target {
 	
 	let name: String
 	let buildConfigs: [BuildConfig]
+	
+	var misconfiguredBuildConfigs: [BuildConfig] {
+		return buildConfigs.filter { $0.misconfigs != BuildConfig.Misconfigs() }
+	}
+	
+	func misconfiguredBuildConfigs(matchingMisconfigsMask mask: BuildConfig.Misconfigs) -> [BuildConfig] {
+		return buildConfigs.filter { return $0.misconfigs.filtered(mask: mask) != BuildConfig.Misconfigs() }
+	}
+	
+	var distinctMisconfigurations: [BuildConfig.Misconfigs] {
+		return Array(Set(buildConfigs.map { $0.misconfigs }))
+	}
+	
+	func distinctMisconfigurations(matchingMisconfigsMask mask: BuildConfig.Misconfigs) -> [BuildConfig.Misconfigs] {
+		return Array(Set(buildConfigs.map { $0.misconfigs.filtered(mask: mask) }))
+	}
+	
+	var distinctActualMisconfigurations: [BuildConfig.Misconfigs] {
+		return Array(Set(misconfiguredBuildConfigs.map {$0.misconfigs}))
+	}
+	
+	func distinctActualMisconfigurations(matchingMisconfigsMask mask: BuildConfig.Misconfigs) -> [BuildConfig.Misconfigs] {
+		return Array(Set(misconfiguredBuildConfigs(matchingMisconfigsMask: mask).map {$0.misconfigs}))
+	}
+	
+	func doAllOrNoneOfBuildConfigsHaveMisconfigsMask(_ mask: BuildConfig.Misconfigs) -> Bool {
+		let matchingMisconfiguredCount = misconfiguredBuildConfigs(matchingMisconfigsMask: mask).count
+		return matchingMisconfiguredCount == 0 || matchingMisconfiguredCount == buildConfigs.count
+		/* or */
+//		let dcfgs = distinctMisconfigurations(matchingMisconfigsMask: mask)
+//		return (!dcfgs.contains(BuildConfig.Misconfigs()) || dcfgs.count == 1)
+	}
+	
+	var distinctBuildNumbers: [String?] {
+		let buildNumbers = buildConfigs.map { $0.fullBuildNumber.reduced() }
+		let hasNil = buildNumbers.contains(where: { $0 == nil })
+		let nonNilBuildNumbers = buildNumbers.flatMap { $0 }
+		return Array(Set(nonNilBuildNumbers)) + (hasNil ? [nil] : [])
+	}
 	
 }
 
@@ -457,7 +650,169 @@ case "help":
 	usage(program_name: CommandLine.arguments[0], stream: &mx_stdout)
 	
 case "print-build-number", "what-version", "vers":
-	()
+	var porcelain = false
+	var errOnNoPlistVersion = false
+	var errOnNoAppleVersioning = false
+	curArgIdx = getLongArgs(argIdx: curArgIdx, expectsMore: false, longArgs: [
+			"porcelain": { _ in porcelain = true },
+			"error-on-no-plist-version": { _ in errOnNoPlistVersion = true },
+			"error-on-no-apple-versioning": { _ in errOnNoAppleVersioning = true }
+		]
+	)
+	let misconfigsMask = BuildConfig.Misconfigs(
+		noInfoPlist: errOnNoPlistVersion, unreadablePlistPath: "", noBuildNumberInPlist: errOnNoPlistVersion,
+		noMarketingNumberInPlist: false,
+		noAppleVersioning: errOnNoAppleVersioning,
+		diffBuildNumbers: (projectConf: "", infoPlist: "")
+	)
+	
+	if porcelain {
+		print("\(pbxproj_url.path)")
+		
+		var first = true
+		for target in targets {
+			if !first {print(",", terminator: "")}
+			print(target.name.safeString(forChars: ","), terminator: "")
+			first = false
+		}
+		print()
+	} else {
+		print("Using pbxproj file at \(pbxproj_url.path)")
+		print("Found \(targets.count) target\(targets.count != 1 ? "s" : "") matching the given criteria")
+	}
+	
+	/* Showing errors if any */
+	let n = targets.reduce(0) { $0 + ($1.distinctActualMisconfigurations(matchingMisconfigsMask: misconfigsMask).isEmpty ? 0 : 1) }
+	let a = targets.reduce(true) { $0 && $1.doAllOrNoneOfBuildConfigsHaveMisconfigsMask(misconfigsMask) }
+	if n > 0 {
+		if !porcelain {
+			print("\(n) target\(n != 1 ? "s are" : " is") misconfigured in \(a ? "all" : "some") of \(n != 1 ? "their" : "its") build configurations:", to: &mx_stderr)
+		}
+		let buildNumbersDifferMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: (projectConf: "", infoPlist: ""))
+		let unreadablePlistMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: "", noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
+		let noAppleVersioningMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: true, diffBuildNumbers: nil)
+		let noPlistVersionMask = BuildConfig.Misconfigs(noInfoPlist: false, unreadablePlistPath: nil, noBuildNumberInPlist: true, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
+		let noPlistMask = BuildConfig.Misconfigs(noInfoPlist: true, unreadablePlistPath: nil, noBuildNumberInPlist: false, noMarketingNumberInPlist: false, noAppleVersioning: false, diffBuildNumbers: nil)
+		for target in targets {
+			do {
+				/* Showing build numbers differ error */
+				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: buildNumbersDifferMask)
+				let showAll = porcelain || buildConfigs.count != target.buildConfigs.count
+				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
+					if porcelain {
+						print("cfg_err:diff_build_number \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
+					} else {
+						print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" build numbers differ in project conf and Info.plist (when bumping build number, the Info.plist version will be used, unless only --force-apple-versioning is set)", to: &mx_stderr)
+					}
+				}
+			}
+			do {
+				/* Showing unreadable Info.plist error */
+				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: unreadablePlistMask)
+				let showAll = porcelain || buildConfigs.count != target.buildConfigs.count
+				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
+					if porcelain {
+						print("err:unreadable_plist \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))/\(buildConfig.misconfigs.unreadablePlistPath!.safeString(forChars: "/"))", to: &mx_stderr)
+					} else {
+						print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" Info.plist file not found or unreadable (path \(buildConfig.misconfigs.unreadablePlistPath!))", to: &mx_stderr)
+					}
+				}
+			}
+			if errOnNoAppleVersioning {
+				/* Showing target not configured for Apple Versioning error */
+				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noAppleVersioningMask)
+				let showAll = porcelain || buildConfigs.count != target.buildConfigs.count
+				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
+					if porcelain {
+						print("cfg_err:no_apple_version \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
+					} else {
+						print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" is not configured to use apple-versioning, or version in project conf is empty (fix with bump-build-number or set-build-number --force-apple-versioning)", to: &mx_stderr)
+					}
+				}
+			}
+			if errOnNoPlistVersion {
+				/* Showing no build number in plist error */
+				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noPlistVersionMask)
+				let showAll = porcelain || buildConfigs.count != target.buildConfigs.count
+				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
+					if porcelain {
+						print("cfg_err:no_plist_build_number \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
+					} else {
+						print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" have an Info.plist, but no build number in the plist (fix with bump-build-number or set-build-number --force-plist-versioning)", to: &mx_stderr)
+					}
+				}
+			}
+			if errOnNoPlistVersion {
+				/* Showing no plist error */
+				let buildConfigs = target.misconfiguredBuildConfigs(matchingMisconfigsMask: noPlistMask)
+				let showAll = porcelain || buildConfigs.count != target.buildConfigs.count
+				for buildConfig in (showAll ? buildConfigs : [buildConfigs[0]]) {
+					if porcelain {
+						print("cfg_err:no_plist \(target.name.safeString(forChars: "/"))/\(buildConfig.name.safeString(forChars: "/"))", to: &mx_stderr)
+					} else {
+						print("   - \"\(target.name)\(showAll ? "/" + buildConfig.name : "")\" does not have an Info.plist (you'll have to manually add an Info.plist file to fix this problem)", to: &mx_stderr)
+					}
+				}
+			}
+		}
+		exit(3)
+	}
+	
+	/* Showing found build versions */
+	var version: String?
+	var diffVersions = false
+	var diffVersionsInOneTarget = false
+	for target in targets {
+		let distinctVersions = target.distinctBuildNumbers
+		
+		if distinctVersions.count > 1 {
+			diffVersionsInOneTarget = true
+			diffVersions = true
+			break
+		}
+		if let targetVersion = distinctVersions.first {
+			if let version = version, version != targetVersion {
+				diffVersions = true
+			}
+			version = targetVersion
+		}
+	}
+	if !diffVersions {
+		assert(!diffVersionsInOneTarget)
+		if let version = version {
+			if porcelain {
+				print(":\(version)")
+			} else {
+				print("All targets and configurations are setup with build number \(version)")
+			}
+		}
+	} else {
+		if !porcelain {
+			print("Build numbers by targets\(diffVersionsInOneTarget ? " and configurations" : ""):")
+		}
+		for target in targets {
+			let distinctVersions = target.distinctBuildNumbers
+			if distinctVersions.count == 1 {
+				if let v = distinctVersions[0] {
+					if porcelain {
+						print("/\(target.name.safeString(forChars: ":")):\(v)")
+					} else {
+						print("   - \(target.name): \(v)")
+					}
+				}
+			} else {
+				for buildConfig in target.buildConfigs {
+					if let v = buildConfig.fullBuildNumber.reduced() {
+						if porcelain {
+							print("|\(buildConfig.name.safeString(forChars: "/"))/\(target.name.safeString(forChars: ":")):\(v)")
+						} else {
+							print("   - \(target.name)/\(buildConfig.name): \(v)")
+						}
+					}
+				}
+			}
+		}
+	}
 	
 case "bump-build-number", "next-version", "bump":
 	()
