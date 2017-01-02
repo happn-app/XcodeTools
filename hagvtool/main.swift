@@ -422,6 +422,12 @@ case "bump-build-number", "next-version", "bump", "set-build-number", "new-versi
 					
 					pbxprojContentAsString = pbxprojAsString.replacingCharacters(in: range, with: buildConfigStr)
 					modifiedPBXProj = true
+					
+					newConfig.fullBuildSettings["VERSIONING_SYSTEM"] = "\"apple-generic\""
+					newConfig.fullBuildSettings["CURRENT_PROJECT_VERSION"] = newVersion
+					
+					newConfig.buildNumber = newVersion
+					newConfig.versioningSystem = .appleGeneric
 				} catch {/*nop*/}
 			}
 			newConfigs.append(newConfig)

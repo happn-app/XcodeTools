@@ -151,8 +151,8 @@ struct BuildConfig {
 	var infoPlistBuildNumber: String?
 	var infoPlistMarketingVersion: String?
 	
-	let versioningSystem: VersioningSystem
-	let buildNumber: String?
+	var versioningSystem: VersioningSystem
+	var buildNumber: String?
 	
 	let versioningSourceFilename: String
 	let versioningPrefix: String
