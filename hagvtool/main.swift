@@ -529,7 +529,7 @@ case "print-swift-code":
 				}
 			}
 		}
-		print("Marketing versions by targets\(diffVersionInOneTarget ? " and configurations" : ""):")
+		print("Swift code by targets\(diffVersionInOneTarget ? " and configurations" : ""):")
 	}
 	
 	func printCode(forBuildConfig buildConfig: BuildConfig, logType: LogType) {
