@@ -379,7 +379,7 @@ struct Target {
 				let versioningSuffix = buildSettings["VERSION_INFO_SUFFIX"] as? String
 				let versioningUsername = buildSettings["VERSION_INFO_BUILDER"] as? String
 				let versioningExportDeclaration = buildSettings["VERSION_INFO_EXPORT_DECL"] as? String
-				let infoPlistPath = buildSettings["INFOPLIST_FILE"] as? String
+				let infoPlistPath = (buildSettings["INFOPLIST_FILE"] as? String)?.replacingOccurrences(of: "$(SRCROOT)", with: projectDirPath.path).replacingOccurrences(of: "${SRCROOT}", with: projectDirPath.path)
 				let infoPlistMarketingVersion: String?
 				let infoPlistBuildNumber: String?
 				let infoPlistFormat: PropertyListSerialization.PropertyListFormat?
