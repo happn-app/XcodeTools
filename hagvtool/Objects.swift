@@ -64,22 +64,22 @@ struct BuildConfig {
 		var hashValue: Int {
 			return (
 				(noInfoPlist              ? 0 : 1) * 0x1  +
-					(cannotReadInfoPlist      ? 0 : 1) * 0x10 +
-					(noBuildNumberInPlist     ? 0 : 1) * 0x100 +
-					(noMarketingNumberInPlist ? 0 : 1) * 0x1000 +
-					(noAppleVersioning        ? 0 : 1) * 0x10000 +
-					(diffBuildNumbers != nil  ? 0 : 1) * 0x100000
+				(cannotReadInfoPlist      ? 0 : 1) * 0x10 +
+				(noBuildNumberInPlist     ? 0 : 1) * 0x100 +
+				(noMarketingNumberInPlist ? 0 : 1) * 0x1000 +
+				(noAppleVersioning        ? 0 : 1) * 0x10000 +
+				(diffBuildNumbers != nil  ? 0 : 1) * 0x100000
 			)
 		}
 		
 		static func ==(_ lhs: Misconfigs, _ rhs: Misconfigs) -> Bool {
 			return (
 				lhs.noInfoPlist == rhs.noInfoPlist &&
-					lhs.cannotReadInfoPlist == rhs.cannotReadInfoPlist &&
-					lhs.noBuildNumberInPlist == rhs.noBuildNumberInPlist &&
-					lhs.noMarketingNumberInPlist == rhs.noMarketingNumberInPlist &&
-					lhs.noAppleVersioning == rhs.noAppleVersioning &&
-					(lhs.diffBuildNumbers != nil) == (rhs.diffBuildNumbers != nil)
+				lhs.cannotReadInfoPlist == rhs.cannotReadInfoPlist &&
+				lhs.noBuildNumberInPlist == rhs.noBuildNumberInPlist &&
+				lhs.noMarketingNumberInPlist == rhs.noMarketingNumberInPlist &&
+				lhs.noAppleVersioning == rhs.noAppleVersioning &&
+				(lhs.diffBuildNumbers != nil) == (rhs.diffBuildNumbers != nil)
 			)
 		}
 		
