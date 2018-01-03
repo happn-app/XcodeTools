@@ -39,7 +39,7 @@ func insertOrUpdate(buildSetting: String, withValue value: String, parsedBuildSe
 	if nMatches == 1 {
 		buildConfigStr = expr.stringByReplacingMatches(in: buildConfigStr as String, options: [], range: buildConfigStrRange, withTemplate: "$1\(value)$2") as NSString
 	} else {
-		let sortedExistingKeys = parsedBuildSettings.keys.filter{$0 <= buildSetting}.sorted()
+		let sortedExistingKeys = parsedBuildSettings.keys.filter{ $0 <= buildSetting }.sorted()
 		
 		let indentPlusOne: Bool
 		let expr: NSRegularExpression

@@ -174,7 +174,7 @@ func getLongArgValue(fromGetLongArgsValue: String?, argIdx: inout Int) -> String
 func getLongArgs(argIdx: inout Int, longArgs: [String: (_ curArgPos: /* :( inout does not work here (Swift 3.0.1) */Int, _ argValue: String?) -> Int]) {
 	func stringByDeletingPrefixIfPresent(_ prefix: String, from string: String) -> String? {
 		if string.hasPrefix(prefix) {
-			return string[string.index(string.startIndex, offsetBy: prefix.characters.count)..<string.endIndex]
+			return String(string.dropFirst(prefix.count))
 		}
 		
 		return nil
@@ -211,8 +211,8 @@ var log_type = LogType.humanReadable
 getLongArgs(argIdx: &curArgIdx, longArgs: [
 		"project-path": { var i = $0; project_path_arg     = getLongArgValue(fromGetLongArgsValue: $1, argIdx: &i); return i },
 		"targets":      { var i = $0; targets_criteria_arg = getLongArgValue(fromGetLongArgsValue: $1, argIdx: &i); return i },
-		"porcelain": { log_type = .porcelain; return $0.0 },
-		"quiet":     { log_type = .quiet;     return $0.0 }
+		"porcelain": { i, _ in log_type = .porcelain; return i },
+		"quiet":     { i, _ in log_type = .quiet;     return i }
 	]
 )
 
@@ -296,8 +296,8 @@ case "print-build-number", "what-version", "vers":
 	var errOnNoPlistVersion = false
 	var errOnNoAppleVersioning = false
 	getLongArgs(argIdx: &curArgIdx, longArgs: [
-			"error-on-no-plist-version":    { errOnNoPlistVersion    = true; return $0.0 },
-			"error-on-no-apple-versioning": { errOnNoAppleVersioning = true; return $0.0 }
+			"error-on-no-plist-version":    { i, _ in errOnNoPlistVersion    = true; return i },
+			"error-on-no-apple-versioning": { i, _ in errOnNoAppleVersioning = true; return i }
 		]
 	)
 	let misconfigsMask = BuildConfig.Misconfigs(
@@ -319,8 +319,8 @@ case "bump-build-number", "next-version", "bump", "set-build-number", "new-versi
 	var forceAppleVersioning = false
 	var forcePlistVersioning = false
 	getLongArgs(argIdx: &curArgIdx, longArgs: [
-		"force-apple-versioning": { forceAppleVersioning = true; return $0.0 },
-		"force-plist-versioning": { forcePlistVersioning = true; return $0.0 }
+		"force-apple-versioning": { i, _ in forceAppleVersioning = true; return i },
+		"force-plist-versioning": { i, _ in forcePlistVersioning = true; return i }
 		]
 	)
 	
