@@ -249,14 +249,14 @@ struct Target {
 	var distinctBuildNumbers: [String?] {
 		let buildNumbers = buildConfigs.map { $0.fullBuildNumber.reduced() }
 		let hasNil = buildNumbers.contains(where: { $0 == nil })
-		let nonNilBuildNumbers = buildNumbers.flatMap { $0 }
+		let nonNilBuildNumbers = buildNumbers.compactMap{ $0 }
 		return Array(Set(nonNilBuildNumbers)) + (hasNil ? [nil] : [])
 	}
 	
 	var distinctMarketingVersions: [String?] {
 		let marketingVersions = buildConfigs.map { $0.infoPlistMarketingVersion }
 		let hasNil = marketingVersions.contains(where: { $0 == nil })
-		let nonNilMarketingVersions = marketingVersions.flatMap { $0 }
+		let nonNilMarketingVersions = marketingVersions.compactMap{ $0 }
 		return Array(Set(nonNilMarketingVersions)) + (hasNil ? [nil] : [])
 	}
 	
