@@ -13,7 +13,7 @@ struct ValidateVersionSetup : ParsableCommand {
 	
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
-		print(xcodeproj.pbxproj.rootObject.targets)
+		print(xcodeproj.pbxproj.rootObject.targets.map{ $0.rawObject })
 	}
 	
 }

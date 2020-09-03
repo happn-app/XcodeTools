@@ -21,7 +21,7 @@ public struct PbxProj {
 	All the objects in the project, keyed by their IDs. */
 	public let rawObjects: [String: [String: Any]]
 	
-	public let rootObject: PbxProject
+	public let rootObject: PBXProject
 	
 	public init(url: URL) throws {
 		let data = try Data(contentsOf: url)
@@ -34,35 +34,31 @@ public struct PbxProj {
 		
 		rawDecoded = decoded
 		
-		guard let av = rawDecoded["archiveVersion"] as? String, av == "1" else {
-			throw HagvtoolError(message: "Got unexpected type or value for the “archiveVersion” property in pbxproj.")
+		archiveVersion = try rawDecoded.get("archiveVersion")
+		guard archiveVersion == "1" else {
+			throw HagvtoolError(message: "Got unexpected value for the “archiveVersion” property in pbxproj.")
 		}
-		archiveVersion = av
 		
-		guard let ov = rawDecoded["objectVersion"] as? String, (ov == "52" || ov == "53") else {
-			throw HagvtoolError(message: "Got unexpected type or value for the “objectVersion” property in pbxproj.")
+		let ov: String = try rawDecoded.get("objectVersion")
+		guard ov == "52" || ov == "53" else {
+			throw HagvtoolError(message: "Got unexpected value for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
 		
-		guard let classes = rawDecoded["classes"] as? [String: Any], classes.isEmpty else {
-			throw HagvtoolError(message: "The “classes” property is not empty or not an array in pbxproj; bailing out because we don’t know what this means.")
+		let classes: [String: Any] = try rawDecoded.get("classes")
+		guard classes.isEmpty else {
+			throw HagvtoolError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
 		
-		guard let r = rawDecoded["rootObject"] as? String else {
-			throw HagvtoolError(message: "Got unexpected type for the “rootObject” property in pbxproj.")
-		}
-		rootObjectID = r
-		
-		guard let o = rawDecoded["objects"] as? [String: [String: Any]] else {
-			throw HagvtoolError(message: "Got unexpected type for the “objects” property in pbxproj.")
-		}
-		rawObjects = o
+		rootObjectID = try rawDecoded.get("rootObject")
+		rawObjects = try rawDecoded.get("objects")
 		
 		guard rawDecoded.count == 5 else {
 			throw HagvtoolError(message: "Got unexpected properties in pbxproj.")
 		}
 		
-		rootObject = try PbxProject(rawObjects: rawObjects, id: rootObjectID)
+		let factory = PBXObjectFactory(objectNames: pbxObjectClasses, targetNames: pbxTargetClasses)
+		rootObject = try PBXProject(rawObjects: rawObjects, id: rootObjectID, factory: factory)
 	}
 	
 }
