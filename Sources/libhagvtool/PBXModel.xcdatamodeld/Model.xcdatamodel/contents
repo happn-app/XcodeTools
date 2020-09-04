@@ -13,11 +13,11 @@
         <attribute name="projectDirPath" attributeType="String"/>
         <attribute name="projectRoot" attributeType="String"/>
         <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
-        <relationship name="targets" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
+        <relationship name="targets_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
     </entity>
     <entity name="PBXTarget" representedClassName="PBXTarget" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="name" attributeType="String"/>
-        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets" inverseEntity="PBXProject"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets_cd" inverseEntity="PBXProject"/>
     </entity>
     <entity name="XCBuildConfiguration" representedClassName="XCBuildConfiguration" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="buildSetting_CURRENT_PROJECT_VERSION" optional="YES" attributeType="String"/>
@@ -33,12 +33,12 @@
         <attribute name="buildSetting_VERSIONING_SYSTEM" optional="YES" attributeType="String"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="rawBuildSettings" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
-        <relationship name="list" optional="YES" maxCount="1" deletionRule="Nullify" ordered="YES" destinationEntity="XCConfigurationList" inverseName="buildConfigurations" inverseEntity="XCConfigurationList"/>
+        <relationship name="list" optional="YES" maxCount="1" deletionRule="Nullify" ordered="YES" destinationEntity="XCConfigurationList" inverseName="buildConfigurations_cd" inverseEntity="XCConfigurationList"/>
     </entity>
     <entity name="XCConfigurationList" representedClassName="XCConfigurationList" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="defaultConfigurationIsVisible" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <attribute name="defaultConfigurationName" attributeType="String"/>
-        <relationship name="buildConfigurations" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCBuildConfiguration" inverseName="list" inverseEntity="XCBuildConfiguration"/>
+        <relationship name="buildConfigurations_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCBuildConfiguration" inverseName="list" inverseEntity="XCBuildConfiguration"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="buildConfigurationList" inverseEntity="PBXProject"/>
         <relationship name="targetNative" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXNativeTarget" inverseName="buildConfigurationList" inverseEntity="PBXNativeTarget"/>
     </entity>

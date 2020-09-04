@@ -18,10 +18,15 @@ public class PBXProject : PBXObject {
 		}
 		
 		let targetIDs: [String] = try rawObject.get("targets")
-		targets = try NSOrderedSet(array: targetIDs.map{ try PBXTarget.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) })
+		targets = try targetIDs.map{ try PBXTarget.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
+	}
+	
+	public var targets: [PBXTarget]? {
+		get {targets_cd?.array as! [PBXTarget]?}
+		set {targets_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
 }

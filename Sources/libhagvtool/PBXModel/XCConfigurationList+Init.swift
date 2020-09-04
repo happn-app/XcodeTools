@@ -22,7 +22,12 @@ public class XCConfigurationList : PBXObject {
 		}
 		
 		let buildConfigurationIDs: [String] = try rawObject.get("buildConfigurations")
-		buildConfigurations = try NSOrderedSet(array: buildConfigurationIDs.map{ try XCBuildConfiguration.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) })
+		buildConfigurations = try buildConfigurationIDs.map{ try XCBuildConfiguration.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+	}
+	
+	public var buildConfigurations: [XCBuildConfiguration]? {
+		get {buildConfigurations_cd?.array as! [XCBuildConfiguration]?}
+		set {buildConfigurations_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
 }
