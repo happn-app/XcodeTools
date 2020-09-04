@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17189" systemVersion="19G2021" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1">
+    <entity name="PBXAggregateTarget" representedClassName="PBXAggregateTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
+    <entity name="PBXNativeTarget" representedClassName="PBXNativeTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category">
+        <relationship name="buildConfigurationList" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="targetNative" inverseEntity="XCConfigurationList"/>
+    </entity>
+    <entity name="PBXObject" representedClassName="PBXObject" isAbstract="YES" syncable="YES" codeGenerationType="category">
+        <attribute name="id" attributeType="String"/>
+        <attribute name="rawObject" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
+    </entity>
+    <entity name="PBXProject" representedClassName="PBXProject" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="compatibilityVersion" attributeType="String"/>
+        <attribute name="projectDirPath" attributeType="String"/>
+        <attribute name="projectRoot" attributeType="String"/>
+        <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
+        <relationship name="targets" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
+    </entity>
+    <entity name="PBXTarget" representedClassName="PBXTarget" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="name" attributeType="String"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets" inverseEntity="PBXProject"/>
+    </entity>
+    <entity name="XCConfigurationList" representedClassName="XCConfigurationList" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="buildConfigurationList" inverseEntity="PBXProject"/>
+        <relationship name="targetNative" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXNativeTarget" inverseName="buildConfigurationList" inverseEntity="PBXNativeTarget"/>
+    </entity>
+    <elements>
+        <element name="PBXAggregateTarget" positionX="-120.08203125" positionY="106.46484375" width="128" height="43"/>
+        <element name="PBXNativeTarget" positionX="34.28125" positionY="105.82421875" width="128" height="58"/>
+        <element name="PBXObject" positionX="-127.00390625" positionY="-278.44140625" width="128" height="73"/>
+        <element name="PBXProject" positionX="-313.640625" positionY="-121.1875" width="128" height="118"/>
+        <element name="PBXTarget" positionX="-47.12890625" positionY="-2.0234375" width="128" height="73"/>
+        <element name="XCConfigurationList" positionX="220.55859375" positionY="-143.19140625" width="128" height="73"/>
+    </elements>
+</model>

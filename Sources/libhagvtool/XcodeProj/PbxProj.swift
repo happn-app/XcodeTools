@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 
@@ -23,7 +24,7 @@ public struct PbxProj {
 	
 	public let rootObject: PBXProject
 	
-	public init(url: URL) throws {
+	public init(url: URL, context: NSManagedObjectContext) throws {
 		let data = try Data(contentsOf: url)
 		
 		//var format = PropertyListSerialization.PropertyListFormat.xml
@@ -50,15 +51,26 @@ public struct PbxProj {
 			throw HagvtoolError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
 		
-		rootObjectID = try rawDecoded.get("rootObject")
-		rawObjects = try rawDecoded.get("objects")
+		let roid: String = try rawDecoded.get("rootObject")
+		let ro: [String: [String: Any]] = try rawDecoded.get("objects")
+		rootObjectID = roid
+		rawObjects = ro
 		
 		guard rawDecoded.count == 5 else {
 			throw HagvtoolError(message: "Got unexpected properties in pbxproj.")
 		}
 		
-		let factory = PBXObjectFactory(objectNames: pbxObjectClasses, targetNames: pbxTargetClasses)
-		rootObject = try PBXProject(rawObjects: rawObjects, id: rootObjectID, factory: factory)
+		rootObject = try context.performAndWait{
+			var decodedObjects = [String: PBXObject]()
+			let ret = try PBXProject.unsafeInstantiate(rawObjects: ro, id: roid, context: context, decodedObjects: &decodedObjects)
+			do {
+				try context.save()
+			} catch {
+				context.rollback()
+				throw error
+			}
+			return ret
+		}
 	}
 	
 }

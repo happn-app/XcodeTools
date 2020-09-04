@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 
@@ -24,6 +25,36 @@ extension Dictionary {
 			throw HagvtoolError(message: "Value does not have correct type for key \(key)")
 		}
 		return t
+	}
+	
+}
+
+
+extension NSManagedObjectContext {
+	
+	/* Should be declared as rethrows instead of throws, but did not find a way
+	 * to do it sadly. */
+	func performAndWait<T>(_ block: () throws -> T) throws -> T {
+		var ret: T?
+		var err: Error?
+		performAndWait{
+			do    {ret = try block()}
+			catch {err = error}
+		}
+		if let e = err {throw e}
+		return ret!
+	}
+	
+}
+
+
+extension NSEntityDescription {
+	
+	func topmostSuperentity() -> NSEntityDescription {
+		if let s = superentity {
+			return s.topmostSuperentity()
+		}
+		return self
 	}
 	
 }

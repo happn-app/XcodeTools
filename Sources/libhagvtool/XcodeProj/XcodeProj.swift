@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 
@@ -8,6 +9,11 @@ public struct XcodeProj {
 	public let pbxprojURL: URL
 	
 	public let pbxproj: PbxProj
+	
+	public let persistentCoordinator: NSPersistentStoreCoordinator
+	
+	public let managedObjectModel: NSManagedObjectModel
+	public let managedObjectContext: NSManagedObjectContext
 	
 	public init(path: String? = nil, autodetectFolder: String = ".") throws {
 		let xcodeprojPath: String
@@ -31,7 +37,21 @@ public struct XcodeProj {
 		xcodeprojURL = URL(fileURLWithPath: xcodeprojPath, isDirectory: true)
 		pbxprojURL = xcodeprojURL.appendingPathComponent("project.pbxproj", isDirectory: false)
 		
-		pbxproj = try PbxProj(url: pbxprojURL)
+		
+		/* *** Load CoreData model *** */
+		
+		guard let modelURL = Bundle.module.url(forResource: "PBXModel", withExtension: "momd"), let model = NSManagedObjectModel(contentsOf: modelURL) else {
+			throw HagvtoolError(message: "Cannot load CoreData model")
+		}
+		managedObjectModel = model
+		
+		persistentCoordinator = NSPersistentStoreCoordinator(managedObjectModel: managedObjectModel)
+		try persistentCoordinator.addPersistentStore(ofType: NSInMemoryStoreType, configurationName: nil, at: nil, options: nil)
+		
+		managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+		managedObjectContext.persistentStoreCoordinator = persistentCoordinator
+		
+		pbxproj = try PbxProj(url: pbxprojURL, context: managedObjectContext)
 	}
 	
 }
