@@ -14,7 +14,7 @@ struct ValidateVersionSetup : ParsableCommand {
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
 		xcodeproj.managedObjectContext.performAndWait{
-			print(xcodeproj.pbxproj.rootObject)
+			print(xcodeproj.pbxproj.rootObject.targets!.flatMap{ ($0 as? PBXNativeTarget)?.buildConfigurationList?.buildConfigurations!.map{ ($0 as! XCBuildConfiguration) } })
 		}
 	}
 	

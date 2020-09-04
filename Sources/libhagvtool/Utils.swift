@@ -27,6 +27,16 @@ extension Dictionary {
 		return t
 	}
 	
+	func getIfExists<T>(_ key: Key) throws -> T? {
+		guard let e = self[key] else {
+			return nil
+		}
+		guard let t = e as? T else {
+			throw HagvtoolError(message: "Value does not have correct type for key \(key)")
+		}
+		return t
+	}
+	
 }
 
 
