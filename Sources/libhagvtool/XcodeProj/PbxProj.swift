@@ -62,10 +62,14 @@ public struct PbxProj {
 		
 		rootObject = try context.performAndWait{
 			var decodedObjects = [String: PBXObject]()
+			for key in ro.keys {
+				_ = try PBXObject.unsafeInstantiate(rawObjects: ro, id: key, context: context, decodedObjects: &decodedObjects)
+			}
 			let ret = try PBXProject.unsafeInstantiate(rawObjects: ro, id: roid, context: context, decodedObjects: &decodedObjects)
 			do {
 				try context.save()
 			} catch {
+				print(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"])
 				context.rollback()
 				throw error
 			}

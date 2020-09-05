@@ -8,6 +8,8 @@ import Foundation
 @objc(PBXObject)
 public class PBXObject : NSManagedObject {
 	
+	static let allowPBXObjectAllocation = false
+	
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
@@ -22,12 +24,11 @@ public class PBXObject : NSManagedObject {
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
 			throw HagvtoolError(message: "Given context does not have a model!")
 		}
-		guard let entity = model.entitiesByName[isa] else {
+		guard let entity = model.entitiesByName[isa] ?? (allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
 			throw HagvtoolError(message: "Did not find isa \(isa) in the CoreData model.")
 		}
-		/* Second test here is redundant w/ first one. */
-		guard !entity.isAbstract && entity.name != "PBXObject" else {
-			throw HagvtoolError(message: "Given isa \(isa) is abstract in the CoreData model!")
+		guard !entity.isAbstract || (allowPBXObjectAllocation && entity.name == "PBXObject") else {
+			throw HagvtoolError(message: "Given isa \(isa) is abstract in the CoreData model (entity = \(entity.name ?? "<unknown>")")
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
 			throw HagvtoolError(message: "Given isa \(isa) whose entity is not related to PBXObject! This is an internal logic error.")
@@ -49,11 +50,12 @@ public class PBXObject : NSManagedObject {
 		
 		guard let result = resultObject as? Self else {
 			if created {context.delete(resultObject)}
-			throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else.")
+			throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else for id \(id).")
 		}
 		
 		do {
-			result.setValue(id, forKey: #keyPath(PBXObject.id)) /* Could be done in fillValues, but would require to give the id to fillValues… */
+			result.setValue(id,  forKey: #keyPath(PBXObject.id))     /* Could be done in fillValues, but would require to give the id  to fillValues… */
+			result.setValue(isa, forKey: #keyPath(PBXObject.rawISA)) /* Could be done in fillValues, but would require to give the isa to fillValues… */
 			try result.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 			decodedObjects[id] = result
 			return result
