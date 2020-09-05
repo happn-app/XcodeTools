@@ -8,6 +8,7 @@ import Foundation
 @objc(PBXObject)
 public class PBXObject : NSManagedObject {
 	
+	/* Set to true to allow allocate unknown objects as PBXObjects. */
 	static let allowPBXObjectAllocation = false
 	
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
