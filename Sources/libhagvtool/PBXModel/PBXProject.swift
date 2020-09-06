@@ -20,6 +20,9 @@ public class PBXProject : PBXObject {
 		let targetIDs: [String] = try rawObject.get("targets")
 		targets = try targetIDs.map{ try PBXTarget.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
+		let mainGroupIDs: String = try rawObject.get("mainGroup")
+		mainGroup = try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: mainGroupIDs, context: context, decodedObjects: &decodedObjects)
+		
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
 	}

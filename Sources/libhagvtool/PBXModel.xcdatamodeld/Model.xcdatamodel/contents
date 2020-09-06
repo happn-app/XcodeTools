@@ -33,9 +33,12 @@
     </entity>
     <entity name="PBXCopyFilesBuildPhase" representedClassName="PBXCopyFilesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXFileElement" representedClassName="PBXFileElement" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="indentWidth" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="path" optional="YES" attributeType="String"/>
         <attribute name="sourceTree" attributeType="String"/>
+        <attribute name="tabWidth" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
+        <attribute name="usesTabs" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <relationship name="buildFiles" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXBuildFile" inverseName="fileRef" inverseEntity="PBXBuildFile"/>
         <relationship name="parent" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="children_cd" inverseEntity="PBXGroup">
             <userInfo>
@@ -56,6 +59,7 @@
     <entity name="PBXFrameworksBuildPhase" representedClassName="PBXFrameworksBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXGroup" representedClassName="PBXGroup" parentEntity="PBXFileElement" syncable="YES" codeGenerationType="category">
         <relationship name="children_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXFileElement" inverseName="parent" inverseEntity="PBXFileElement"/>
+        <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="mainGroup" inverseEntity="PBXProject"/>
     </entity>
     <entity name="PBXHeadersBuildPhase" representedClassName="PBXHeadersBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXLegacyTarget" representedClassName="PBXLegacyTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
@@ -72,6 +76,7 @@
         <attribute name="projectDirPath" attributeType="String"/>
         <attribute name="projectRoot" attributeType="String"/>
         <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
+        <relationship name="mainGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="project" inverseEntity="PBXGroup"/>
         <relationship name="targets_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
     </entity>
     <entity name="PBXResourcesBuildPhase" representedClassName="PBXResourcesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
@@ -118,9 +123,12 @@
     <entity name="XCRemoteSwiftPackageReference" representedClassName="XCRemoteSwiftPackageReference" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="repositoryURL" attributeType="URI"/>
         <attribute name="requirement" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
+        <relationship name="swiftPackageProductDependencies" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="XCSwiftPackageProductDependency" inverseName="package" inverseEntity="XCSwiftPackageProductDependency"/>
     </entity>
     <entity name="XCSwiftPackageProductDependency" representedClassName="XCSwiftPackageProductDependency" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="productName" attributeType="String"/>
         <relationship name="buildFiles" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXBuildFile" inverseName="productRef" inverseEntity="PBXBuildFile"/>
+        <relationship name="package" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCRemoteSwiftPackageReference" inverseName="swiftPackageProductDependencies" inverseEntity="XCRemoteSwiftPackageReference"/>
     </entity>
     <entity name="XCVersionGroup" representedClassName="XCVersionGroup" parentEntity="PBXFileElement" syncable="YES" codeGenerationType="category"/>
     <elements>
@@ -128,28 +136,28 @@
         <element name="PBXAppleScriptBuildPhase" positionX="-522.5234375" positionY="134.2265625" width="128" height="43"/>
         <element name="PBXBuildFile" positionX="-352.79296875" positionY="-191.96875" width="128" height="103"/>
         <element name="PBXBuildPhase" positionX="-642.42578125" positionY="10.30078125" width="219.78515625" height="103"/>
-        <element name="PBXBuildRule" positionX="180.1953125" positionY="-75.8046875" width="128" height="163"/>
+        <element name="PBXBuildRule" positionX="191.46484375" positionY="-66.953125" width="128" height="163"/>
         <element name="PBXContainerItemProxy" positionX="-478.11328125" positionY="199.31640625" width="158.87890625" height="118"/>
         <element name="PBXCopyFilesBuildPhase" positionX="-827.86328125" positionY="-21.01953125" width="128" height="43"/>
-        <element name="PBXFileElement" positionX="-562.71875" positionY="-471.3671875" width="128" height="118"/>
+        <element name="PBXFileElement" positionX="-564.8359375" positionY="-438.203125" width="128" height="163"/>
         <element name="PBXFileReference" positionX="-152.6484375" positionY="-534.546875" width="191.140625" height="163"/>
         <element name="PBXFrameworksBuildPhase" positionX="-851.28515625" positionY="39.34375" width="128" height="43"/>
-        <element name="PBXGroup" positionX="-759.33984375" positionY="-440.62890625" width="128" height="58"/>
+        <element name="PBXGroup" positionX="-787.71875" positionY="-276.01171875" width="128" height="73"/>
         <element name="PBXHeadersBuildPhase" positionX="-672.77734375" positionY="136.51953125" width="128" height="43"/>
         <element name="PBXLegacyTarget" positionX="4.9609375" positionY="308.6796875" width="128" height="43"/>
         <element name="PBXNativeTarget" positionX="182.32421875" positionY="376.9375" width="128" height="58"/>
         <element name="PBXObject" positionX="-96.59765625" positionY="-162.03125" width="128" height="88"/>
-        <element name="PBXProject" positionX="162.390625" positionY="104.87109375" width="128" height="118"/>
+        <element name="PBXProject" positionX="160.359375" positionY="108.06640625" width="128" height="133"/>
         <element name="PBXResourcesBuildPhase" positionX="-817.7578125" positionY="108.7265625" width="128" height="43"/>
         <element name="PBXShellScriptBuildPhase" positionX="-773.23828125" positionY="-97.83203125" width="128" height="43"/>
         <element name="PBXSourcesBuildPhase" positionX="-610.98828125" positionY="-70.54296875" width="128" height="43"/>
-        <element name="PBXTarget" positionX="-55.5546875" positionY="117.80078125" width="128" height="118"/>
-        <element name="PBXTargetDependency" positionX="-274.4296875" positionY="203.69921875" width="148.2578125" height="73"/>
-        <element name="PBXVariantGroup" positionX="-357.8359375" positionY="-402.25" width="128" height="58"/>
-        <element name="XCBuildConfiguration" positionX="92.9765625" positionY="-487.46875" width="254.86328125" height="268"/>
+        <element name="PBXTarget" positionX="-57.859375" positionY="77.27734375" width="128" height="118"/>
+        <element name="PBXTargetDependency" positionX="-267.71484375" positionY="228.10546875" width="148.2578125" height="73"/>
+        <element name="PBXVariantGroup" positionX="-363.02734375" positionY="-373.34765625" width="128" height="58"/>
+        <element name="XCBuildConfiguration" positionX="146.71875" positionY="-603.703125" width="254.86328125" height="268"/>
         <element name="XCConfigurationList" positionX="452.4921875" positionY="-119.62890625" width="183.18359375" height="118"/>
-        <element name="XCRemoteSwiftPackageReference" positionX="92.52734375" positionY="-184.07421875" width="195.94140625" height="73"/>
-        <element name="XCSwiftPackageProductDependency" positionX="-166.6015625" positionY="-324.51953125" width="223.52734375" height="58"/>
-        <element name="XCVersionGroup" positionX="-393.7890625" positionY="-513.4921875" width="128" height="43"/>
+        <element name="XCRemoteSwiftPackageReference" positionX="182.58984375" positionY="-310.390625" width="195.94140625" height="88"/>
+        <element name="XCSwiftPackageProductDependency" positionX="-171.39453125" positionY="-338.4375" width="223.52734375" height="88"/>
+        <element name="XCVersionGroup" positionX="-392.70703125" positionY="-468.51171875" width="128" height="43"/>
     </elements>
 </model>
