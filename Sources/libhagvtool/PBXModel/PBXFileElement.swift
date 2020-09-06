@@ -3,8 +3,9 @@ import Foundation
 
 
 
-@objc(XCVersionGroup)
-public class XCVersionGroup : PBXFileElement {
+/* From http://www.monobjc.net/xcode-project-file-format.html */
+@objc(PBXFileElement)
+public class PBXFileElement : PBXObject {
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
