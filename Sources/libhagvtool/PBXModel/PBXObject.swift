@@ -3,13 +3,6 @@ import Foundation
 
 
 
-//In object of type PBXCopyFilesBuildPhase, instantiated w/ class PBXCopyFilesBuildPhase, with ID 7BC5370D25053D0F00799B4B, got the following unknown properties: ["dstPath", "dstSubfolderSpec"]
-//In object of type PBXGroup, instantiated w/ class PBXGroup, with ID 7B8E92A924D540F70083252A, got the following unknown properties: ["indentWidth", "tabWidth", "usesTabs"]
-//In object of type PBXNativeTarget, instantiated w/ class PBXNativeTarget, with ID 7B8E92B124D540F70083252A, got the following unknown properties: ["buildRules", "packageProductDependencies", "productName", "productReference", "productType"]
-//In object of type PBXProject, instantiated w/ class PBXProject, with ID 7B8E92AA24D540F70083252A, got the following unknown properties: ["attributes", "developmentRegion", "hasScannedForEncodings", "knownRegions", "mainGroup", "packageReferences", "productRefGroup", "targets"]
-//In object of type PBXShellScriptBuildPhase, instantiated w/ class PBXShellScriptBuildPhase, with ID 7BC5370E25053D1900799B4B, got the following unknown properties: ["inputFileListPaths", "inputPaths", "outputFileListPaths", "outputPaths", "shellPath", "shellScript"]
-//In object of type XCSwiftPackageProductDependency, instantiated w/ class XCSwiftPackageProductDependency, with ID 7B1B2CD024D78B210098DC07, got the following unknown properties: ["package", "productName"]
-//In object of type XCSwiftPackageProductDependency, instantiated w/ class XCSwiftPackageProductDependency, with ID 7BE0095524D5857100933472, got the following unknown properties: ["package", "productName"]
 /* Sadly we cannot implement fillValues in an extension because overriding
  * method in extensions is not supported. */
 @objc(PBXObject)
