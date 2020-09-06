@@ -11,12 +11,12 @@ public class PBXGroup : PBXFileElement {
 		
 		sourceTree = try rawObject.get("sourceTree")
 		
-		let childrenIDs: [String]? = try rawObject.getIfExists("children")
-		children = try childrenIDs?.map{ try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		let childrenIDs: [String] = try rawObject.get("children")
+		children = try childrenIDs.map{ try PBXFileElement.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}
 	
-	public var children: [PBXGroup]? {
-		get {children_cd?.array as! [PBXGroup]?}
+	public var children: [PBXFileElement]? {
+		get {children_cd?.array as! [PBXFileElement]?}
 		set {children_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
