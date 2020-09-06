@@ -11,6 +11,10 @@ public class PBXObject : NSManagedObject {
 	/* Set to true to allow allocate unknown objects as PBXObjects. */
 	static let allowPBXObjectAllocation = false
 	
+	open class func propertyRenamings() -> [String: String] {
+		return [:]
+	}
+	
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
@@ -74,6 +78,13 @@ public class PBXObject : NSManagedObject {
 		}
 		
 		self.rawObject = rawObject
+		
+		/* Let’s validate we know all the properties in the raw object. */
+		let renamings = Self.propertyRenamings()
+		let unknownProperties = Set(rawObject.keys).subtracting(entity.propertiesByName.keys.map{ renamings[$0] ?? $0 }).subtracting(["isa"])
+		if !unknownProperties.isEmpty {
+			NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(id ?? "<unknown>"), got the following unknown properties: \(unknownProperties)")
+		}
 	}
 	
 }
