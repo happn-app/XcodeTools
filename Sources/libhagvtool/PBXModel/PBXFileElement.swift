@@ -35,6 +35,15 @@ public class PBXFileElement : PBXObject {
 			}
 			usesTabs = NSNumber(value: value != 0)
 		}
+		if let wrapsLinesStr: String = try rawObject.getIfExists("wrapsLines") {
+			guard let value = Int16(wrapsLinesStr) else {
+				throw HagvtoolError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
+			}
+			if value != 0 && value != 1 {
+				NSLog("%@", "Warning: Unknown value for wrapsLines \(wrapsLinesStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+			}
+			wrapsLines = NSNumber(value: value != 0)
+		}
 	}
 	
 }

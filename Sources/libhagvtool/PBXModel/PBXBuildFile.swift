@@ -24,6 +24,9 @@ public class PBXBuildFile : PBXObject {
 		
 		let fileRefID: String? = try rawObject.getIfExists("fileRef")
 		fileRef = try fileRefID.flatMap{ try PBXFileElement.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		
+		let productRefID: String? = try rawObject.getIfExists("productRef")
+		productRef = try productRefID.flatMap{ try XCSwiftPackageProductDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}
 	
 }

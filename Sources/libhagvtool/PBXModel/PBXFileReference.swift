@@ -28,7 +28,7 @@ public class PBXFileReference : PBXFileElement {
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for includeInIndex \(includeInIndexStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
-			lineEnding = NSNumber(value: value != 0)
+			includeInIndex = NSNumber(value: value != 0)
 		}
 		explicitFileType = try rawObject.getIfExists("explicitFileType")
 		lastKnownFileType = try rawObject.getIfExists("lastKnownFileType")

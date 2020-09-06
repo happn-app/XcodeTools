@@ -20,6 +20,8 @@ public class PBXBuildPhase : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
+		name = try rawObjects.getIfExists("name")
+		
 		let filesIDs: [String] = try rawObject.get("files")
 		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
