@@ -24,6 +24,9 @@ public class PBXTarget : PBXObject {
 		
 		let buildPhasesIDs: [String] = try rawObject.get("buildPhases")
 		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		
+		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
+		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
 	}
 	
 	public var buildPhases: [PBXBuildPhase]? {
