@@ -24,6 +24,9 @@ public class XCBuildConfiguration : PBXObject {
 		
 		rawBuildSettings = try rawObject.get("buildSettings")
 		
+		let baseConfigurationReferenceID: String? = try rawObject.getIfExists("baseConfigurationReference")
+		baseConfigurationReference = try baseConfigurationReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		
 		buildSetting_INFOPLIST_FILE = try rawBuildSettings?.getIfExists("INFOPLIST_FILE")
 		buildSetting_MARKETING_VERSION = try rawBuildSettings?.getIfExists("MARKETING_VERSION")
 		buildSetting_VERSIONING_SYSTEM = try rawBuildSettings?.getIfExists("VERSIONING_SYSTEM")
