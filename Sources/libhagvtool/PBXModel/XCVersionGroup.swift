@@ -20,6 +20,11 @@ public class XCVersionGroup : PBXFileElement {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
+		versionGroupType = try rawObject.get("versionGroupType")
+		
+		let currentVersionID: String = try rawObject.get("currentVersion")
+		currentVersion = try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: currentVersionID, context: context, decodedObjects: &decodedObjects)
+		
 		let childrenIDs: [String] = try rawObject.get("children")
 		children = try childrenIDs.map{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}

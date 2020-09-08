@@ -18,7 +18,7 @@ public class PBXObject : NSManagedObject {
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
-				throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary.")
+				throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary for id \(id).")
 			}
 			return result
 		}

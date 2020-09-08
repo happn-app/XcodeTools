@@ -21,6 +21,7 @@ public class PBXTarget : PBXObject {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
 		name = try rawObject.get("name")
+		productName = try rawObject.get("productName")
 		
 		let buildPhasesIDs: [String] = try rawObject.get("buildPhases")
 		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
