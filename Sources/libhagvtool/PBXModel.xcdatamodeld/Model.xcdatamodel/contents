@@ -38,9 +38,9 @@
     </entity>
     <entity name="PBXFileElement" representedClassName="PBXFileElement" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="indentWidth" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="path" optional="YES" attributeType="String"/>
-        <attribute name="sourceTree" attributeType="String"/>
+        <attribute name="rawName" optional="YES" attributeType="String"/>
+        <attribute name="rawPath" optional="YES" attributeType="String"/>
+        <attribute name="rawSourceTree" attributeType="String"/>
         <attribute name="tabWidth" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
         <attribute name="usesTabs" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <attribute name="wrapsLines" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
@@ -67,8 +67,8 @@
     <entity name="PBXFrameworksBuildPhase" representedClassName="PBXFrameworksBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXGroup" representedClassName="PBXGroup" parentEntity="PBXFileElement" syncable="YES" codeGenerationType="category">
         <relationship name="children_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXFileElement" inverseName="parent" inverseEntity="PBXFileElement"/>
-        <relationship name="projectsForMainGroup" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="mainGroup" inverseEntity="PBXProject"/>
-        <relationship name="projectsForProductRef" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="productRefGroup" inverseEntity="PBXProject"/>
+        <relationship name="projectForMainGroup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="mainGroup" inverseEntity="PBXProject"/>
+        <relationship name="projectForProductRef" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="productRefGroup" inverseEntity="PBXProject"/>
     </entity>
     <entity name="PBXHeadersBuildPhase" representedClassName="PBXHeadersBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXLegacyTarget" representedClassName="PBXLegacyTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
@@ -91,9 +91,9 @@
         <attribute name="projectDirPath" attributeType="String"/>
         <attribute name="projectRoot" attributeType="String"/>
         <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
-        <relationship name="mainGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectsForMainGroup" inverseEntity="PBXGroup"/>
+        <relationship name="mainGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForMainGroup" inverseEntity="PBXGroup"/>
         <relationship name="packageReferences_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCRemoteSwiftPackageReference" inverseName="projects" inverseEntity="XCRemoteSwiftPackageReference"/>
-        <relationship name="productRefGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectsForProductRef" inverseEntity="PBXGroup"/>
+        <relationship name="productRefGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForProductRef" inverseEntity="PBXGroup"/>
         <relationship name="targets_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
     </entity>
     <entity name="PBXResourcesBuildPhase" representedClassName="PBXResourcesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
