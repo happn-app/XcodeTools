@@ -26,7 +26,7 @@ public class PBXFileReference : PBXFileElement {
 				throw HagvtoolError(message: "Unexpected include in index value \(includeInIndexStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for includeInIndex \(includeInIndexStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Suspicious value for includeInIndex \(includeInIndexStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			includeInIndex = NSNumber(value: value != 0)
 		}

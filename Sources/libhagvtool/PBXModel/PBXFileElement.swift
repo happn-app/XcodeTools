@@ -54,13 +54,13 @@ public class PBXFileElement : PBXObject {
 		
 		if let indentWidthStr: String = try rawObject.getIfExists("indentWidth") {
 			guard let value = Int16(indentWidthStr) else {
-				throw HagvtoolError(message: "Unexpected indent width value \(indentWidthStr) in object \(id ?? "<unknown>")")
+				throw HagvtoolError(message: "Unexpected indent width value \(indentWidthStr) in object \(xcID ?? "<unknown>")")
 			}
 			indentWidth = NSNumber(value: value)
 		}
 		if let tabWidthStr: String = try rawObject.getIfExists("tabWidth") {
 			guard let value = Int16(tabWidthStr) else {
-				throw HagvtoolError(message: "Unexpected tab width value \(tabWidthStr) in object \(id ?? "<unknown>")")
+				throw HagvtoolError(message: "Unexpected tab width value \(tabWidthStr) in object \(xcID ?? "<unknown>")")
 			}
 			tabWidth = NSNumber(value: value)
 		}
@@ -69,7 +69,7 @@ public class PBXFileElement : PBXObject {
 				throw HagvtoolError(message: "Unexpected uses tabs value \(usesTabsStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for usesTabs \(usesTabsStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Unknown value for usesTabs \(usesTabsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			usesTabs = NSNumber(value: value != 0)
 		}
@@ -78,7 +78,7 @@ public class PBXFileElement : PBXObject {
 				throw HagvtoolError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for wrapsLines \(wrapsLinesStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Unknown value for wrapsLines \(wrapsLinesStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			wrapsLines = NSNumber(value: value != 0)
 		}
@@ -114,7 +114,7 @@ public class PBXFileElement : PBXObject {
 					}
 				} else {
 					guard let project = (self as? PBXGroup)?.projectForMainGroup else {
-						print("Warning: Got asked the resolved path of a file element without a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
+						NSLog("%@", "Warning: Got asked the resolved path of a file element without a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
 					/* I don’t know the role of project.projectRoot. I tried
@@ -139,12 +139,12 @@ public class PBXFileElement : PBXObject {
 					return nil
 				}
 				if !path.starts(with: "/") {
-					print("Warning: Got an absolute source tree in \(id ?? "<unknown object>"), but file element path does not start w/ a slash!")
+					NSLog("%@", "Warning: Got an absolute source tree in \(xcID ?? "<unknown object>"), but file element path does not start w/ a slash!")
 				}
 				return (nil, path)
 				
 			case .unknown:
-				print("Warning: Asked resolved path of a file element whose source tree is unknown! Returning nil.")
+				NSLog("%@", "Warning: Asked resolved path of a file element whose source tree is unknown! Returning nil.")
 				/* I guess? */
 				return nil
 				

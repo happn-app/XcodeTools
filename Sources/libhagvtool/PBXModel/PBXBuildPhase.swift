@@ -38,7 +38,7 @@ public class PBXBuildPhase : PBXObject {
 				throw HagvtoolError(message: "Unexpected include in index value \(runOnlyForDeploymentPostprocessingStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Suspicious value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			runOnlyForDeploymentPostprocessing = (value != 0)
 		}

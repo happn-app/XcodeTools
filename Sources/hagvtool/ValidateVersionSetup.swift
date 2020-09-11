@@ -13,9 +13,20 @@ struct ValidateVersionSetup : ParsableCommand {
 	
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
-		xcodeproj.managedObjectContext.performAndWait{
-			print(xcodeproj.pbxproj.rootObject.mainGroup)
-//			print(xcodeproj.pbxproj.rootObject.targets?.flatMap{ ($0 as? PBXNativeTarget)?.buildConfigurationList?.buildConfigurations?.map{ $0 } })
+		try xcodeproj.managedObjectContext.performAndWait{
+			try print(VersionSettings.allVersionSettings(project: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeproj.xcodeprojURL))
+//			guard let targets = xcodeproj.pbxproj.rootObject.targets else {
+//				throw HagvtoolError(message: "Did not find any target in the project")
+//			}
+//			for target in targets {
+//				guard let buildConfigurations = target.buildConfigurationList?.buildConfigurations else {
+//					throw HagvtoolError(message: "Did not get the build configuration list (or the to-many relationship in it to the build configurations) in target \(target.name ?? "<unknown>")")
+//				}
+//				for buildConfiguration in buildConfigurations {
+//
+//					print(buildConfiguration)
+//				}
+//			}
 		}
 	}
 	

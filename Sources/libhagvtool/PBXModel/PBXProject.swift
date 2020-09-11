@@ -38,7 +38,7 @@ public class PBXProject : PBXObject {
 				throw HagvtoolError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for hasScannedForEncodings \(hasScannedForEncodingsStr) in object \(id ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Suspicious value for hasScannedForEncodings \(hasScannedForEncodingsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			hasScannedForEncodings = (value != 0)
 		}
@@ -46,8 +46,8 @@ public class PBXProject : PBXObject {
 		let targetIDs: [String] = try rawObject.get("targets")
 		targets = try targetIDs.map{ try PBXTarget.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
-		let packageReferenceIDs: [String] = try rawObject.get("packageReferences")
-		packageReferences = try packageReferenceIDs.map{ try XCRemoteSwiftPackageReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		let packageReferenceIDs: [String]? = try rawObject.getIfExists("packageReferences")
+		packageReferences = try packageReferenceIDs.flatMap{ try $0.map{ try XCRemoteSwiftPackageReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) } }
 		
 		let mainGroupIDs: String = try rawObject.get("mainGroup")
 		mainGroup = try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: mainGroupIDs, context: context, decodedObjects: &decodedObjects)

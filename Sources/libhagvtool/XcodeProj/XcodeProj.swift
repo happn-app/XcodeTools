@@ -8,7 +8,7 @@ public struct XcodeProj {
 	public let xcodeprojURL: URL
 	public let pbxprojURL: URL
 	
-	public let pbxproj: PbxProj
+	public let pbxproj: PBXProj
 	
 	public let persistentCoordinator: NSPersistentStoreCoordinator
 	
@@ -51,7 +51,7 @@ public struct XcodeProj {
 		managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
 		managedObjectContext.persistentStoreCoordinator = persistentCoordinator
 		
-		pbxproj = try PbxProj(url: pbxprojURL, context: managedObjectContext)
+		pbxproj = try PBXProj(url: pbxprojURL, context: managedObjectContext)
 	}
 	
 }

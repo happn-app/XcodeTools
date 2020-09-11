@@ -12,7 +12,7 @@ public class PBXObject : NSManagedObject {
 	static let allowPBXObjectAllocation = false
 	
 	open class func propertyRenamings() -> [String: String] {
-		return [:]
+		return ["xcID": "id"]
 	}
 	
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
@@ -42,7 +42,7 @@ public class PBXObject : NSManagedObject {
 		/* First let’s see if the object is not already in the graph */
 		let fetchRequest = NSFetchRequest<PBXObject>()
 		fetchRequest.entity = entity
-		fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(PBXObject.id), id)
+		fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), id)
 		let results = try context.fetch(fetchRequest)
 		guard results.count <= 1 else {
 			throw HagvtoolError(message: "Internal error: got \(results.count) where at most 1 was expected.")
@@ -59,7 +59,7 @@ public class PBXObject : NSManagedObject {
 		}
 		
 		do {
-			result.setValue(id,  forKey: #keyPath(PBXObject.id))     /* Could be done in fillValues, but would require to give the id  to fillValues… */
+			result.setValue(id,  forKey: #keyPath(PBXObject.xcID))   /* Could be done in fillValues, but would require to give the id  to fillValues… */
 			result.setValue(isa, forKey: #keyPath(PBXObject.rawISA)) /* Could be done in fillValues, but would require to give the isa to fillValues… */
 			try result.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 			decodedObjects[id] = result
@@ -83,7 +83,7 @@ public class PBXObject : NSManagedObject {
 		let renamings = Self.propertyRenamings()
 		let unknownProperties = Set(rawObject.keys).subtracting(entity.propertiesByName.keys.map{ renamings[$0] ?? $0 }).subtracting(["isa"])
 		if !unknownProperties.isEmpty {
-			NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(id ?? "<unknown>"), got the following unknown properties: \(unknownProperties.sorted())")
+			NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(xcID ?? "<unknown>"), got the following unknown properties: \(unknownProperties.sorted())")
 		}
 	}
 	

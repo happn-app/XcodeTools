@@ -3,7 +3,7 @@ import Foundation
 
 
 
-public struct PbxProj {
+public struct PBXProj {
 	
 	public let rawDecoded: [String: Any]
 	
@@ -41,7 +41,7 @@ public struct PbxProj {
 		}
 		
 		let ov: String = try rawDecoded.get("objectVersion")
-		guard ov == "48" || ov == "52" || ov == "53" else {
+		guard ov == "48" || ov == "50" || ov == "52" || ov == "53" else {
 			throw HagvtoolError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
@@ -69,7 +69,7 @@ public struct PbxProj {
 			do {
 				try context.save()
 			} catch {
-				print(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"])
+//				NSLog("%@", "\(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"])")
 				context.rollback()
 				throw error
 			}

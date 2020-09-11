@@ -79,9 +79,9 @@
         <relationship name="productReference" maxCount="1" deletionRule="Nullify" destinationEntity="PBXFileReference" inverseName="nativeTargets" inverseEntity="PBXFileReference"/>
     </entity>
     <entity name="PBXObject" representedClassName="PBXObject" isAbstract="YES" syncable="YES" codeGenerationType="category">
-        <attribute name="id" attributeType="String"/>
         <attribute name="rawISA" attributeType="String"/>
         <attribute name="rawObject" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
+        <attribute name="xcID" attributeType="String"/>
     </entity>
     <entity name="PBXProject" representedClassName="PBXProject" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="compatibilityVersion" attributeType="String"/>
@@ -92,7 +92,7 @@
         <attribute name="projectRoot" attributeType="String"/>
         <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
         <relationship name="mainGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForMainGroup" inverseEntity="PBXGroup"/>
-        <relationship name="packageReferences_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCRemoteSwiftPackageReference" inverseName="projects" inverseEntity="XCRemoteSwiftPackageReference"/>
+        <relationship name="packageReferences_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCRemoteSwiftPackageReference" inverseName="projects" inverseEntity="XCRemoteSwiftPackageReference"/>
         <relationship name="productRefGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForProductRef" inverseEntity="PBXGroup"/>
         <relationship name="targets_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
     </entity>

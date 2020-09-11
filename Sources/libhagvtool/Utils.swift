@@ -40,7 +40,7 @@ extension Dictionary {
 }
 
 
-extension NSManagedObjectContext {
+public extension NSManagedObjectContext {
 	
 	/* Should be declared as rethrows instead of throws, but did not find a way
 	 * to do it sadly. */

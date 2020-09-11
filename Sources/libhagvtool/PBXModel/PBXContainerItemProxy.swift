@@ -30,7 +30,7 @@ public class PBXContainerItemProxy : PBXObject {
 				throw HagvtoolError(message: "Unexpected proxy type value \(proxyTypeStr)")
 			}
 			if value != 1 {
-				NSLog("%@", "Warning: Unknown value for proxyType \(proxyTypeStr) in object \(id ?? "<unknown>"); expected 1.")
+				NSLog("%@", "Warning: Unknown value for proxyType \(proxyTypeStr) in object \(xcID ?? "<unknown>"); expected 1.")
 			}
 			proxyType = value
 		}
