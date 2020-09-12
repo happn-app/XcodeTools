@@ -1,0 +1,11 @@
+= hagvtool
+François Lamboley <francois.lamboley@happn.com>
+
+== What Does It Do?
+For now, not much, except parsing the pbxproj, and associated xcconfig files.
+
+== References and Useful Links for Parsing the pbxproj & co
+- http://www.monobjc.net/xcode-project-file-format.html
+- https://pewpewthespells.com/blog/xcconfig_guide.html
+- https://nshipster.com/xcconfig/
+- https://stackoverflow.com/q/1393987
