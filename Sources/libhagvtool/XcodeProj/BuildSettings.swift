@@ -12,17 +12,7 @@ public struct BuildSettings {
 	public var settings: [BuildSetting]
 	
 	public init(rawBuildSettings: [String: Any], allowCommaSeparatorForParameters: Bool = false) {
-		var result = [BuildSetting]()
-		for (keyAndParameters, value) in rawBuildSettings {
-			let scanner = Scanner(string: keyAndParameters)
-			let key = scanner.scanUpToString("[") ?? ""
-			let parameters = BuildSettings.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
-			if !scanner.isAtEnd {
-				NSLog("%@", "Warning: Found build setting which seems invalid (scanner not at end after parsing parameters). Raw key is: “\(keyAndParameters)”.")
-			}
-			result.append(BuildSetting(key: key, value: value, parameters: parameters))
-		}
-		settings = result
+		settings = rawBuildSettings.map{ BuildSetting(laxSerializedKey: $0.key, value: $0.value, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters) }
 	}
 	
 	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, seenFiles: Set<URL> = [], allowCommaSeparatorForParameters: Bool = false) throws {
@@ -111,7 +101,7 @@ public struct BuildSettings {
 						variableName = String(firstChar) + restOfVariableName
 					}
 					
-					let parameters = BuildSettings.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
+					let parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 					
 					_ = scanner.scanCharacters(from: xcconfigWhitespace)
 					guard scanner.scanString("=") != nil else {
@@ -126,7 +116,7 @@ public struct BuildSettings {
 						else                   {value = trimmed}
 					}
 					
-					result.append(BuildSetting(key: variableName, value: value, parameters: parameters))
+					result.append(BuildSetting(key: BuildSettingKey(key: variableName, parameters: parameters), value: value))
 				}
 			} catch let e {
 				stop = true
@@ -136,79 +126,6 @@ public struct BuildSettings {
 		if let e = error {throw e}
 		
 		settings = result
-	}
-	
-	/**
-	Parses the parameter of a setting.
-	
-	Expects a scanner whose location is at the beginning of the parameters
-	(open bracket). Example:
-	```
-	MY_BUILD_SETTING[skd=*]
-	                ^ scanner location
-	```
-	
-	At the end of the function, the scanner’s location will be at the end of the
-	parameters (just after the closing bracket). Example:
-	```
-	MY_BUILD_SETTING[skd=*]
-	                       ^ scanner location
-	```
-	
-	In case of a parsing error, the scanner’s location will be put to the last
-	successful parse location, and all successfully parsed parameters will be
-	returned. Examples:
-	```
-	MY_BUILD_SETTING[skd=*][this_is_junk
-	                       ^ scanner location
-	   -> Returned parameters: [("sdk", "*")]
-	MY_BUILD_SETTING[skd=*][arch=*,this_is_junk
-	                       ^ scanner location
-	   -> Returned parameters: [("sdk", "*")]
-	```
-	
-	- parameter scanner: A scanner whose location is at the beginning of the
-	parameters.
-	- parameter allowCommaSeparator:
-	https://pewpewthespells.com/blog/xcconfig_guide.html says the settings
-	parameters can be separated by a comma, like so: `PARAMETER[sdk=*,arch=*]`,
-	however my tests told me it does not work! (Xcode 12.0 beta 6 (12A8189n))
-	You can reactivate parsing w/ the comma for tests if needed w/ this param. */
-	private static func parseSettingParams(scanner: Scanner, allowCommaSeparator: Bool) -> [(key: String, value: String)] {
-		var first = true
-		var success = true
-		var lastSuccessParseIdx = scanner.currentIndex
-		var parameters = [(key: String, value: String)]()
-		var pendingParameters = [(key: String, value: String)]()
-		while scanner.scanString("[") != nil || (allowCommaSeparator && !first && scanner.scanString(",") != nil) {
-			let variantName = scanner.scanUpToString("=") ?? ""
-			if scanner.scanString("=") == nil {
-				scanner.currentIndex = lastSuccessParseIdx
-				return parameters
-			}
-			
-			let variantValue = scanner.scanUpToCharacters(from: CharacterSet(charactersIn: allowCommaSeparator ? ",]" : "]")) ?? ""
-			if scanner.scanString("]") != nil {
-				parameters.append(contentsOf: pendingParameters)
-				parameters.append((variantName, variantValue))
-				lastSuccessParseIdx = scanner.currentIndex
-				pendingParameters.removeAll()
-				success = true
-			} else {
-				/* We are either on the comma separator (if allowed) or at the end
-				 * of the string. If at the end of the string, this is an error,
-				 * which will be caugth when we exit the loop and success is not
-				 * true. If we’re on the comma separator, we continue the parsing. */
-				pendingParameters.append((variantName, variantValue))
-				success = false
-			}
-			
-			first = false
-		}
-		if !success {
-			scanner.currentIndex = lastSuccessParseIdx
-		}
-		return parameters
 	}
 	
 }

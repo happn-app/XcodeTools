@@ -104,4 +104,11 @@ public struct CombinedBuildSettings {
 		buildSettingsLevels = buildSettingsLevelsBuilding
 	}
 	
+	/**
+	Returns the value that matches the given settings key. For now, a lot of
+	merging and key specification rules are not implemented though! */
+	public subscript(_ key: BuildSettingKey) -> Any? {
+		return nil
+	}
+	
 }

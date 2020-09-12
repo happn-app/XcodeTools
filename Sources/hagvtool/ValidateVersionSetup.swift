@@ -17,6 +17,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			let combinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeproj.xcodeprojURL)
 			print(combinedBuildSettings.keys)
 			print(combinedBuildSettings.mapValues{ $0.keys })
+			try print(combinedBuildSettings["happn"]?["Release"]?[BuildSettingKey(serializedKey: "VERSIONING_SYSTEM")] ?? "<nil>")
 //			versioningSystem = try rawBuildSettings.getIfExists("VERSIONING_SYSTEM")
 //			currentProjectVersion = try rawBuildSettings.getIfExists("CURRENT_PROJECT_VERSION")
 //			currentLibraryVersion = try rawBuildSettings.getIfExists("DYLIB_CURRENT_VERSION")

@@ -2,24 +2,19 @@ import Foundation
 
 
 
-/**
-Represent a build setting, w/ its paramter.
-
-For example, for the following config: “`MY_CONFIG[sdk=*][arch=*] = $(CFG)_2`”,
-the `BuildSetting` would be:
-```
-   key = "MY_CONFIG"
-   value = "$(CFG)_2"
-   parameters = [("sdk", "*"), ("arch", "*")]
-```
-
-- Important:
-No validation is done on the parameters, nor the key, nor anything. */
 public struct BuildSetting {
 	
-	public var key: String
+	public var key: BuildSettingKey
 	public var value: Any
 	
-	public var parameters: [(key: String, value: String)]
+	public init(laxSerializedKey serializedKey: String, value v: Any, allowCommaSeparatorForParameters: Bool = false) {
+		key = BuildSettingKey(laxSerializedKey: serializedKey, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters)
+		value = v
+	}
+	
+	public init(key: BuildSettingKey, value: Any) {
+		self.key = key
+		self.value = value
+	}
 	
 }
