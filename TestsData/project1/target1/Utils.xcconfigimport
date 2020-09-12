@@ -1,0 +1,16 @@
+//
+// Utils.xcconfigimport
+// happn
+//
+// Workaround some stupid stuff in xcconfig files...
+//
+// Created by François Lamboley on 10/9/15.
+// Copyright © 2015 happn. All rights reserved.
+//
+
+// If you want to put two slashes next to one another in the value of a
+// variable, you'll have to use the variable below like this for instance:
+//    MY_VAR = https:$(CFGUTILS_SLASH)/www.apple.com/
+// Note one could also do this (untested, found later):
+//    MY_VAR = https:/$()/www.apple.com/
+CFGUTILS_SLASH = /

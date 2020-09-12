@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSMainStoryboardFile</key>
+	<string>Main</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>TEST_INCLUDES</key>
+	<string>$(TEST_INCLUDES)</string>
+	<key>TEST_INCLUDES_2</key>
+	<string>$(TEST_INCLUDES_2)</string>
+	<key>TEST_QUOTES</key>
+	<string>$(TEST_QUOTES)</string>
+	<key>TEST_QUOTES_2</key>
+	<string>$(TEST_QUOTES_2)</string>
+	<key>TEST_QUOTES_3</key>
+	<string>$(TEST_QUOTES_3)</string>
+	<key>TEST_SPACES</key>
+	<string>$(TEST_SPACES)</string>
+	<key>TEST_VARIANT</key>
+	<string>$(TEST_VARIANT)</string>
+	<key>TEST_VARIANT_2</key>
+	<string>$(TEST_VARIANT_2)</string>
+	<key>TEST_VARIANT_3</key>
+	<string>$(TEST_VARIANT_3)</string>
+</dict>
+</plist>
