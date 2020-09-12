@@ -65,6 +65,13 @@ public struct BuildSettings {
 								throw HagvtoolError(message: "Unexpected characters after include directive in xcconfig file \(url).")
 							}
 							
+							#warning("TODO: The case of <DEVELOPER_DIR>")
+							/* If filename starts with <DEVELOPER_DIR>, the include is
+							 * relative to the developer dir, says https://pewpewthespells.com/blog/xcconfig_guide.html
+							 * (I have tested, it is true).
+							 * Question: Is it possible to user other <VARIABLES>?
+							 * Other question: Can <> be used if not prefix of path? */
+							
 							let urlToImport = URL(fileURLWithPath: filename, isDirectory: false, relativeTo: url)
 							if !seenFiles.contains(urlToImport.absoluteURL) {
 								let importedSettings = try BuildSettings(xcconfigURL: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles)
