@@ -88,12 +88,16 @@ public struct VersionSettings : Equatable {
 			throw HagvtoolError(message: "Trying to init a VersionSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
+		let buildSettings = BuildSettings(rawBuildSettings: rawBuildSettings)
+		print(buildSettings)
+		
 		if let baseConfigurationReference = configuration.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
 				throw HagvtoolError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
 			let config = try BuildSettings(xcconfigURL: url)
+			print(config)
 		}
 		
 		versioningSystem = try rawBuildSettings.getIfExists("VERSIONING_SYSTEM")

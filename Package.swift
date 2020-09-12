@@ -19,6 +19,7 @@ let package = Package(
 		.target(name: "hagvtool", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			"libhagvtool"
-		])
+		]),
+		.testTarget(name: "libhagvtoolTests", dependencies: ["libhagvtool"])
 	]
 )
