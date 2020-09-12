@@ -105,10 +105,26 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns the value that matches the given settings key. For now, a lot of
-	merging and key specification rules are not implemented though! */
-	public subscript(_ key: BuildSettingKey) -> Any? {
-		return nil
+	Returns the value that matches the given settings key. For now, no variable
+	substitution is done.
+	
+	This method cannot fail and returns a non-optional because if a variable does
+	not have a value (does not exist), its value is set to "".
+	
+	A build setting value could either be a String, or an array of Strings. For
+	now, if we encounter an array, we “convert” it to a String.
+	The conversion is simply the concatenation of the String values, separated by
+	a space. That’s all. And yes, you can loose info if a element contains a
+	space, but my testing shows this is how Xcode does it: in an array, for an
+	element to be able to contains a space, it MUST be double or simple quoted.
+	
+	If a build setting have an unknown type (neither a String nor an array of
+	Strings), we return en empty String for this value. */
+	public subscript(_ key: BuildSettingKey) -> String {
+		let searchedSettings = buildSettingsLevels.flatMap{ $0.settings }
+		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.key.key == key.key }
+		#warning("TODO: Implement variable resolution and stuff…")
+		return settingsWhoseKeyMatch.last?.stringValue ?? ""
 	}
 	
 }
