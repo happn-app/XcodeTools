@@ -14,19 +14,20 @@ struct ValidateVersionSetup : ParsableCommand {
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
 		try xcodeproj.managedObjectContext.performAndWait{
-			try print(VersionSettings.allVersionSettings(project: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeproj.xcodeprojURL))
-//			guard let targets = xcodeproj.pbxproj.rootObject.targets else {
-//				throw HagvtoolError(message: "Did not find any target in the project")
-//			}
-//			for target in targets {
-//				guard let buildConfigurations = target.buildConfigurationList?.buildConfigurations else {
-//					throw HagvtoolError(message: "Did not get the build configuration list (or the to-many relationship in it to the build configurations) in target \(target.name ?? "<unknown>")")
-//				}
-//				for buildConfiguration in buildConfigurations {
-//
-//					print(buildConfiguration)
-//				}
-//			}
+			let combinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeproj.xcodeprojURL)
+			print(combinedBuildSettings.keys)
+			print(combinedBuildSettings.mapValues{ $0.keys })
+//			versioningSystem = try rawBuildSettings.getIfExists("VERSIONING_SYSTEM")
+//			currentProjectVersion = try rawBuildSettings.getIfExists("CURRENT_PROJECT_VERSION")
+//			currentLibraryVersion = try rawBuildSettings.getIfExists("DYLIB_CURRENT_VERSION")
+//			compatibilityLibraryVersion = try rawBuildSettings.getIfExists("DYLIB_COMPATIBILITY_VERSION")
+//			marketingVersion = try rawBuildSettings.getIfExists("MARKETING_VERSION")
+//			infoPlistPath = try rawBuildSettings.getIfExists("INFOPLIST_FILE")
+//			versionInfoBuilder = try rawBuildSettings.getIfExists("VERSION_INFO_BUILDER")
+//			versionInfoExportDeclaration = try rawBuildSettings.getIfExists("VERSION_INFO_EXPORT_DECL")
+//			versionInfoFile = try rawBuildSettings.getIfExists("VERSION_INFO_FILE")
+//			versionInfoPrefix = try rawBuildSettings.getIfExists("VERSION_INFO_PREFIX")
+//			versionInfoSuffix = try rawBuildSettings.getIfExists("VERSION_INFO_SUFFIX")
 		}
 	}
 	
