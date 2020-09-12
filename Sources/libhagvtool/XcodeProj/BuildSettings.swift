@@ -2,11 +2,16 @@ import Foundation
 
 
 
-public struct XCConfig {
+/**
+Represents a “level” of build settings.
+
+This can either be an xcconfig file, or the project settings, or the settings of
+a target.*/
+public struct BuildSettings {
 	
-	public var settings: [(key: String, value: String)]
+	public var settings: [BuildSetting]
 	
-	public init(url: URL, failIfFileDoesNotExist: Bool = true, seenFiles: Set<URL> = []) throws {
+	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, seenFiles: Set<URL> = []) throws {
 //		NSLog("%@", "Trying to parse xcconfig file \(url.absoluteString)")
 		
 		var isDir = ObjCBool(false)
@@ -35,7 +40,7 @@ public struct XCConfig {
 		let otherVarChars = firstCharVar.union(CharacterSet(charactersIn: "0123456789"))
 		
 		var error: Error?
-		var result = [(key: String, value: String)]()
+		var result = [BuildSetting]()
 		fileContents.enumerateLines{ line, stop in
 			do {
 				let line = line.components(separatedBy: "//").first!.trimmingCharacters(in: xcconfigWhitespace)
@@ -62,7 +67,7 @@ public struct XCConfig {
 							
 							let urlToImport = URL(fileURLWithPath: filename, isDirectory: false, relativeTo: url)
 							if !seenFiles.contains(urlToImport.absoluteURL) {
-								let importedSettings = try XCConfig(url: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles)
+								let importedSettings = try BuildSettings(xcconfigURL: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles)
 								result.append(contentsOf: importedSettings.settings)
 							} else {
 								NSLog("%@", "Warning: Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.absoluteString).")
@@ -85,6 +90,29 @@ public struct XCConfig {
 						variableName = String(firstChar) + restOfVariableName
 					}
 					
+					/* About the allowCommaSeparator var below:
+					 * https://pewpewthespells.com/blog/xcconfig_guide.html says the
+					 * settings parameters can be separated by a comma, like so:
+					 * PARAMETER[sdk=*,arch=*], however my tests told me it does not
+					 * work! (Xcode 12.0 beta 6 (12A8189n))
+					 * One can reactivate parsing w/ the comma for tests if needed
+					 * using the allowCommaSeparator var. (Uncomment the code that
+					 * uses it and the “first” var; I commented to avoid a warning.) */
+					
+//					var first = true
+//					let allowCommaSeparator = false
+					var parameters = [(key: String, value: String)]()
+					while scanner.scanString("[") != nil/* || (allowCommaSeparator && !first && scanner.scanString(",") != nil)*/ {
+						let variantName = scanner.scanUpToString("=") ?? ""
+						_ = scanner.scanString("=")
+						
+						let variantValue = scanner.scanUpToCharacters(from: CharacterSet(charactersIn: /*allowCommaSeparator ? ",]" :*/ "]")) ?? ""
+						_ = scanner.scanString("]")
+						
+						parameters.append((variantName, variantValue))
+//						first = false
+					}
+					
 					_ = scanner.scanCharacters(from: xcconfigWhitespace)
 					guard scanner.scanString("=") != nil else {
 						throw HagvtoolError(message: "Unexpected character after variable name in xcconfig \(url.absoluteString).")
@@ -98,7 +126,7 @@ public struct XCConfig {
 						else                   {value = trimmed}
 					}
 					
-					result.append((variableName, value))
+					result.append(BuildSetting(key: variableName, value: value, parameters: parameters))
 				}
 			} catch let e {
 				stop = true
