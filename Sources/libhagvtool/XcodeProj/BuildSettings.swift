@@ -9,7 +9,56 @@ This can either be an xcconfig file, or the project settings, or the settings of
 a target.*/
 public struct BuildSettings {
 	
+	/* Let’s get the developer dir! Our algo will be:
+	 *    - If DEVELOPER_DIR env var is defined, use that;
+	 *    - Otherwise try and get the path w/ xcode-select. */
+	public static func getDeveloperDir() throws -> String {
+		if let p = getenv("DEVELOPER_DIR") {
+			return String(cString: p)
+		}
+		
+		let p = Process()
+		/* If the executable does not exist, the app crashes w/ an unhandled
+		 * exception. We assume /usr/bin/env will always exist. */
+		p.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+		p.arguments = ["/usr/bin/xcode-select", "-p"]
+		
+		p.standardInput = nil
+		p.standardError = nil
+		
+		let pipe = Pipe()
+		p.standardOutput = pipe
+		
+		p.launch()
+		p.waitUntilExit()
+		
+		if #available(OSX 10.15.4, *) {
+			guard let output = try pipe.fileHandleForReading.readToEnd().flatMap({ String(data: $0, encoding: .utf8) }), !output.isEmpty else {
+				throw HagvtoolError(message: "Cannot get DEVELOPER_DIR")
+			}
+			return output.trimmingCharacters(in: .whitespacesAndNewlines)
+		} else {
+			throw HagvtoolError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
+		}
+	}
+	
+	public static func standardDefaultSettings(xcodprojURL: URL) -> BuildSettings {
+		let projectDirPath = xcodprojURL.deletingLastPathComponent().path
+		return BuildSettings(rawBuildSettings: [
+			/* https://stackoverflow.com/a/43751741 */
+			"PROJECT_DIR": projectDirPath,
+			"PROJECT_FILE_PATH": xcodprojURL.path,
+			"PROJECT_NAME": xcodprojURL.deletingPathExtension().lastPathComponent,
+			"SRCROOT": projectDirPath,
+			"SOURCE_ROOT": projectDirPath /* Unofficial alias of SRCROOT */
+		])
+	}
+	
 	public var settings: [BuildSetting]
+	
+	public init() {
+		settings = []
+	}
 	
 	public init(rawBuildSettings: [String: Any], allowCommaSeparatorForParameters: Bool = false) {
 		settings = rawBuildSettings.map{ BuildSetting(laxSerializedKey: $0.key, value: $0.value, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters) }
@@ -61,7 +110,7 @@ public struct BuildSettings {
 							guard scanner.scanString("\"") != nil else {
 								throw HagvtoolError(message: "Expected a double-quote after include directive in xcconfig file \(url).")
 							}
-							guard let filename = scanner.scanUpToString("\"") else {
+							guard var filename = scanner.scanUpToString("\"") else {
 								throw HagvtoolError(message: "Cannot parse include directive filename in xcconfig file \(url).")
 							}
 							_ = scanner.scanString("\"")
@@ -69,12 +118,28 @@ public struct BuildSettings {
 								throw HagvtoolError(message: "Unexpected characters after include directive in xcconfig file \(url).")
 							}
 							
-							#warning("TODO: The case of <DEVELOPER_DIR>")
 							/* If filename starts with <DEVELOPER_DIR>, the include is
 							 * relative to the developer dir, says https://pewpewthespells.com/blog/xcconfig_guide.html
 							 * (I have tested, it is true).
-							 * Question: Is it possible to user other <VARIABLES>?
-							 * Other question: Can <> be used if not prefix of path? */
+							 * From my testing, the replacement is done only if the
+							 * token is the prefix of the path, and I did not find any
+							 * other variable that can be used (tried SRCROOT).
+							 *
+							 * Something that’s hard to test and I didn’t is: Is the
+							 * placeholder replaced if the path starts w/
+							 * “<DEVELOPER_DIR>” or w/ “<DEVELOPER_DIR>/”?
+							 * We assume the former (I did a test which seems to show
+							 * the placeholder is replaced when being on its own, but
+							 * I cannot guarantee that’s true though). */
+							if filename.starts(with: "<DEVELOPER_DIR>") {
+								let developerDir = try BuildSettings.getDeveloperDir()
+//								let a = "/<DEVELOPER_DIR>/<DEVELOPER_DIR>"
+//								print(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))
+								/* Tested (commented code above): The line below does
+								 * indeed replace the string only if it is the prefix of
+								 * the var. */
+								filename = filename.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored)
+							}
 							
 							let urlToImport = URL(fileURLWithPath: filename, isDirectory: false, relativeTo: url)
 							if !seenFiles.contains(urlToImport.absoluteURL) {

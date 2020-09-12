@@ -46,5 +46,9 @@
 	<string>$(TEST_VARIANT_2)</string>
 	<key>TEST_VARIANT_3</key>
 	<string>$(TEST_VARIANT_3)</string>
+	<key>TEST_IMPORTED_DEV_DIR</key>
+	<string>$(TEST_IMPORTED_DEV_DIR)</string>
+	<key>TEST_IMPORTED_SRCROOT</key>
+	<string>$(TEST_IMPORTED_SRCROOT)</string>
 </dict>
 </plist>

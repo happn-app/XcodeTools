@@ -13,10 +13,14 @@ struct ValidateVersionSetup : ParsableCommand {
 	
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
+		let xcodeprojURL = xcodeproj.xcodeprojURL
+		
 		try xcodeproj.managedObjectContext.performAndWait{
-			let combinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeproj.xcodeprojURL)
+			let defaultBuildSettings = BuildSettings.standardDefaultSettings(xcodprojURL: xcodeprojURL)
+			let combinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: xcodeproj.pbxproj.rootObject, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
 			print(combinedBuildSettings.keys)
 			print(combinedBuildSettings.mapValues{ $0.keys })
+			try print(combinedBuildSettings.mapValues{ try $0.mapValues{ try $0[BuildSettingKey(serializedKey: "SRCROOT")] } })
 			try print(combinedBuildSettings.mapValues{ try $0.mapValues{ try $0[BuildSettingKey(serializedKey: "VERSIONING_SYSTEM")] } })
 			try print(combinedBuildSettings.mapValues{ try $0.mapValues{ try $0[BuildSettingKey(serializedKey: "CURRENT_PROJECT_VERSION")] } })
 			try print(combinedBuildSettings.mapValues{ try $0.mapValues{ try $0[BuildSettingKey(serializedKey: "DYLIB_CURRENT_VERSION")] } })

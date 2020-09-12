@@ -19,19 +19,19 @@ public struct CombinedBuildSettings {
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
-	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL) throws -> [String: [String: CombinedBuildSettings]] {
+	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: [String: CombinedBuildSettings]] {
 		guard let targets = project.targets else {
 			throw HagvtoolError(message: "targets property is not set in project \(project)")
 		}
 		
-		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL)
+		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
 			.mapValues{ $0.buildSettingsLevels }
 		
 		let targetsSettings: [(String, [String : CombinedBuildSettings])] = try targets.map{ target in
 			guard let name = target.name else {
 				throw HagvtoolError(message: "Got target \(target.xcID ?? "<unknown>") which does not have a name")
 			}
-			return try (name, allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL))
+			return try (name, allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(targetsSettings, uniquingKeysWith: { (current, new) in
 			throw HagvtoolError(message: "Got two targets with the same same; this is not normal.")
@@ -44,7 +44,7 @@ public struct CombinedBuildSettings {
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
-	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettings]])?, xcodeprojURL: URL) throws -> [String: CombinedBuildSettings] {
+	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettings]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: CombinedBuildSettings] {
 		guard let configurations = configurations else {
 			throw HagvtoolError(message: "configurations property not set")
 		}
@@ -60,20 +60,20 @@ public struct CombinedBuildSettings {
 				}
 				return (target, projectSettings)
 			}
-			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL))
+			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
 			throw HagvtoolError(message: "Got two configuration with the same same; this is not normal.")
 		})
 	}
 	
-	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettings])?, xcodeprojURL: URL) throws {
+	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettings])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws {
 		guard let configName = configuration.name else {
 			throw HagvtoolError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 		}
 		configurationName = configName
 		
-		var buildSettingsLevelsBuilding = [BuildSettings]()
+		var buildSettingsLevelsBuilding = [defaultBuildSettings]
 		
 		if let (target, projectSettings) = targetAndProjectSettings {
 			guard let name = target.name else {

@@ -8,6 +8,18 @@
 #include "Utils.xcconfigimport"
 #include? "happn-Debug-Custom.xcconfigimport"
 
+TEST_IMPORTED_SRCROOT = NO
+TEST_IMPORTED_DEV_DIR = NO
+// So it seems only when the path starts with <DEVELOPER_DIR> the variable is
+// replaced, and only this variable too
+#include "<DEVELOPER_DIR>/Library/Xcode/Templates/File Templates/Other/Configuration Settings File.xctemplate/___FILEBASENAME___.xcconfig"
+#include "./<DEVELOPER_DIR>/test_dev_dir.xcconfigimport"
+#include "<SRCROOT>/target1/test_srcroot.xcconfigimport"
+
+// Uncommenting the line below might trigger a very long build planning. You
+// have been warned!
+//#include "<DEVELOPER_DIR>"
+
 #include "test.xcconfig"
 #include "test2.xcconfig"
 #include "test3.xcconfig"

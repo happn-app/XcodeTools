@@ -65,6 +65,11 @@
 		7B591CAE250CE0E800B6CA54 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/ActionViewController.xib; sourceTree = "<group>"; };
 		7B591CB0250CE0E800B6CA54 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7B591CB1250CE0E800B6CA54 /* target2.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = target2.entitlements; sourceTree = "<group>"; };
+		7B591CBC250D2EEC00B6CA54 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
+		7BF7E4A6250D2FEC00A678A5 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
+		7BF7E4A8250D2FFD00A678A5 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
+		7BF7E4AB250D310E00A678A5 /* test_srcroot.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_srcroot.xcconfigimport; sourceTree = "<group>"; };
+		7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_srcroot.xcconfigimport; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,9 +118,13 @@
 				7B591C92250B515400B6CA54 /* Info.plist */,
 				7B591C93250B515400B6CA54 /* target1.entitlements */,
 				7B591C9B250B51D400B6CA54 /* Utils.xcconfigimport */,
+				7BF7E4A9250D30A700A678A5 /* <SRCROOT> */,
+				7B591CBB250D2ECD00B6CA54 /* <DEVELOPER_DIR> */,
+				7B591CBD250D2F4D00B6CA54 /* Applications */,
 				7B591C99250B51B400B6CA54 /* test.xcconfig */,
 				7B591C9D250B59AB00B6CA54 /* test2.xcconfig */,
 				7B591C9F250B5C7100B6CA54 /* test3.xcconfig */,
+				7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */,
 			);
 			name = Target1;
 			path = target1;
@@ -133,6 +142,87 @@
 			);
 			name = Target2;
 			path = target2;
+			sourceTree = "<group>";
+		};
+		7B591CBB250D2ECD00B6CA54 /* <DEVELOPER_DIR> */ = {
+			isa = PBXGroup;
+			children = (
+				7B591CBC250D2EEC00B6CA54 /* test_dev_dir.xcconfigimport */,
+			);
+			path = "<DEVELOPER_DIR>";
+			sourceTree = "<group>";
+		};
+		7B591CBD250D2F4D00B6CA54 /* Applications */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A3250D2FBC00A678A5 /* Xcode.app */,
+				7B591CBE250D2F8400B6CA54 /* Xcode-beta.app */,
+			);
+			path = Applications;
+			sourceTree = "<group>";
+		};
+		7B591CBE250D2F8400B6CA54 /* Xcode-beta.app */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A1250D2FB200A678A5 /* Contents */,
+			);
+			path = "Xcode-beta.app";
+			sourceTree = "<group>";
+		};
+		7BF7E4A1250D2FB200A678A5 /* Contents */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A2250D2FB900A678A5 /* Developer */,
+			);
+			path = Contents;
+			sourceTree = "<group>";
+		};
+		7BF7E4A2250D2FB900A678A5 /* Developer */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A8250D2FFD00A678A5 /* test_dev_dir.xcconfigimport */,
+			);
+			path = Developer;
+			sourceTree = "<group>";
+		};
+		7BF7E4A3250D2FBC00A678A5 /* Xcode.app */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A4250D2FC800A678A5 /* Contents */,
+			);
+			path = Xcode.app;
+			sourceTree = "<group>";
+		};
+		7BF7E4A4250D2FC800A678A5 /* Contents */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A5250D2FCB00A678A5 /* Developer */,
+			);
+			path = Contents;
+			sourceTree = "<group>";
+		};
+		7BF7E4A5250D2FCB00A678A5 /* Developer */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4A6250D2FEC00A678A5 /* test_dev_dir.xcconfigimport */,
+			);
+			path = Developer;
+			sourceTree = "<group>";
+		};
+		7BF7E4A9250D30A700A678A5 /* <SRCROOT> */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4AA250D30F100A678A5 /* target1 */,
+			);
+			path = "<SRCROOT>";
+			sourceTree = "<group>";
+		};
+		7BF7E4AA250D30F100A678A5 /* target1 */ = {
+			isa = PBXGroup;
+			children = (
+				7BF7E4AB250D310E00A678A5 /* test_srcroot.xcconfigimport */,
+			);
+			path = target1;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
