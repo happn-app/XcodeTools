@@ -1,3 +1,4 @@
+import CoreData
 import Foundation
 
 
@@ -9,17 +10,34 @@ public struct CombinedBuildSettings {
 	public var targetName: String?
 	public var configurationName: String
 	
-	/** The first level is the deepest (xcconfig project level if it exists). */
-	public var buildSettingsLevels: [BuildSettings]
+	/**
+	Represents the ID of the PBXTarget for which the build settings are. `nil` if
+	representing the build settings of the project. */
+	public var targetID: NSManagedObjectID?
 	
 	/**
-	Returns a dictionary whose keys are the target names and values are another
-	dictionary, whose keys are the configuration names and values are the build
-	settings.
+	The first level is the deepest (xcconfig project level if it exists).
+	
+	- Note: The array should maybe also contain the source of the build settings.
+	Especially if we want to implement modifying a build setting later. */
+	public var buildSettingsLevels: [BuildSettings]
+	
+	public static func convenienceSort(_ s1: CombinedBuildSettings, _ s2: CombinedBuildSettings) -> Bool {
+		let targetName1 = s1.targetName ?? ""
+		let targetName2 = s2.targetName ?? ""
+		let configName1 = s1.configurationName
+		let configName2 = s2.configurationName
+		if targetName1 < targetName2 {return true}
+		if targetName1 > targetName2 {return false}
+		return configName1 < configName2
+	}
+	
+	/**
+	Returns all the combined build settings for all the targets in the project.
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
-	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: [String: CombinedBuildSettings]] {
+	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [CombinedBuildSettings] {
 		guard let targets = project.targets else {
 			throw XcodeProjKitError(message: "targets property is not set in project \(project)")
 		}
@@ -27,15 +45,12 @@ public struct CombinedBuildSettings {
 		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
 			.mapValues{ $0.buildSettingsLevels }
 		
-		let targetsSettings: [(String, [String : CombinedBuildSettings])] = try targets.map{ target in
+		return try targets.flatMap{ target -> [CombinedBuildSettings] in
 			guard let name = target.name else {
 				throw XcodeProjKitError(message: "Got target \(target.xcID ?? "<unknown>") which does not have a name")
 			}
-			return try (name, allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
+			return try Array(allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings).values)
 		}
-		return try Dictionary(targetsSettings, uniquingKeysWith: { (current, new) in
-			throw XcodeProjKitError(message: "Got two targets with the same same; this is not normal.")
-		})
 	}
 	
 	/**
@@ -79,9 +94,14 @@ public struct CombinedBuildSettings {
 			guard let name = target.name else {
 				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") which does not have a name")
 			}
+			guard !target.objectID.isTemporaryID else {
+				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") whose object ID is temporary")
+			}
+			targetID = target.objectID
 			targetName = name
 			buildSettingsLevelsBuilding.append(contentsOf: projectSettings)
 		} else {
+			targetID = nil
 			targetName = nil
 		}
 		

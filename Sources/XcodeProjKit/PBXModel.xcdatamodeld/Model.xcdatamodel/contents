@@ -123,17 +123,6 @@
         <relationship name="children_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXFileReference" inverseName="variantGroups" inverseEntity="PBXFileReference"/>
     </entity>
     <entity name="XCBuildConfiguration" representedClassName="XCBuildConfiguration" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
-        <attribute name="buildSetting_CURRENT_PROJECT_VERSION" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_DYLIB_COMPATIBILITY_VERSION" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_DYLIB_CURRENT_VERSION" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_INFOPLIST_FILE" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_MARKETING_VERSION" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSION_INFO_BUILDER" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSION_INFO_EXPORT_DECL" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSION_INFO_FILE" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSION_INFO_PREFIX" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSION_INFO_SUFFIX" optional="YES" attributeType="String"/>
-        <attribute name="buildSetting_VERSIONING_SYSTEM" optional="YES" attributeType="String"/>
         <attribute name="name" attributeType="String"/>
         <attribute name="rawBuildSettings" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
         <relationship name="baseConfigurationReference" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXFileReference" inverseName="buildConfigurations" inverseEntity="PBXFileReference"/>
@@ -187,7 +176,7 @@
         <element name="PBXTarget" positionX="-82.859375" positionY="124.27734375" width="128" height="133"/>
         <element name="PBXTargetDependency" positionX="-364.64453125" positionY="265.9609375" width="148.2578125" height="88"/>
         <element name="PBXVariantGroup" positionX="-376.34765625" positionY="-479.81640625" width="128" height="58"/>
-        <element name="XCBuildConfiguration" positionX="277.0859375" positionY="-709.765625" width="254.86328125" height="268"/>
+        <element name="XCBuildConfiguration" positionX="269.82421875" positionY="-545.921875" width="254.86328125" height="103"/>
         <element name="XCConfigurationList" positionX="659.109375" positionY="-138.04296875" width="183.18359375" height="118"/>
         <element name="XCRemoteSwiftPackageReference" positionX="369.7109375" positionY="-261.953125" width="195.94140625" height="103"/>
         <element name="XCSwiftPackageProductDependency" positionX="-171.39453125" positionY="-333.4375" width="223.52734375" height="118"/>
