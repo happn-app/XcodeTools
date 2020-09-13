@@ -9,6 +9,20 @@ products in this SPM project.
 A reusable lib to work with xcodeproj files. Specifically the lib allows easy
 parsing of pbxproj and xcconfig files. Schemes are not supported (yet).
 
+Example of use:
+[source,swift]
+----
+let xcodeproj = try XcodeProj(autodetectInFolderAtPath: "/path/to/project/")
+try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configurationName, combinedBuildSettings in
+   print("\(targetName) - \(configurationName)")
+   print(combinedBuildSettings[BuildSettingKey(key: "MARKETING_VERSION")])
+}
+----
+
+_Note_: Parsing the parameters in a build configuration (e.g. `FOO[sdk=macosx*]`)
+is supported, however, the resolution of the variables do not take the parameters
+in account yet.
+
 === hagvtool
 An executable to manage the versions in an Xcode project.
 

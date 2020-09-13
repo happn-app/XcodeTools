@@ -14,9 +14,10 @@ struct GetBuildVersions : ParsableCommand {
 	var failOnMultipleVersions = false
 	
 	func run() throws {
-		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
+		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
 			print("\(targetName) - \(configurationName)")
+			print(combinedBuildSettings[BuildSettingKey(key: "MARKETING_VERSION")])
 		}
 	}
 	

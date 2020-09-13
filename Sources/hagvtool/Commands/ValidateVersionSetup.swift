@@ -12,7 +12,7 @@ struct ValidateVersionSetup : ParsableCommand {
 	
 	func run() throws {
 		var nErrors = 0
-		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectFolder: ".")
+		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		let xcodeprojURL = xcodeproj.xcodeprojURL
 		
 		do {

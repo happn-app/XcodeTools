@@ -15,13 +15,13 @@ public struct XcodeProj {
 	public let managedObjectModel: NSManagedObjectModel
 	public let managedObjectContext: NSManagedObjectContext
 	
-	public init(path: String? = nil, autodetectFolder: String = ".") throws {
+	public init(path: String? = nil, autodetectInFolderAtPath: String = ".") throws {
 		let xcodeprojPath: String
 		if let p = path {
 			xcodeprojPath = p
 		} else {
 			let fm = FileManager.default
-			let xcodeprojs = try fm.contentsOfDirectory(atPath: autodetectFolder).filter{
+			let xcodeprojs = try fm.contentsOfDirectory(atPath: autodetectInFolderAtPath).filter{
 				var isDir = ObjCBool(false)
 				guard $0.hasSuffix(".xcodeproj") else {return false}
 				guard fm.fileExists(atPath: $0, isDirectory: &isDir), isDir.boolValue else {return false}
