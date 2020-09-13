@@ -29,7 +29,7 @@ public struct PBXProj {
 		
 		//var format = PropertyListSerialization.PropertyListFormat.xml
 		guard let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: nil/*&format*/) as? [String: Any] else {
-			throw HagvtoolError(message: "Got unexpected type for decoded pbxproj plist (not [String: Any]) in pbxproj.")
+			throw XcodeProjKitError(message: "Got unexpected type for decoded pbxproj plist (not [String: Any]) in pbxproj.")
 		}
 		/* Now, "format" is (should be) PropertyListSerialization.PropertyListFormat.openStep */
 		
@@ -37,18 +37,18 @@ public struct PBXProj {
 		
 		archiveVersion = try rawDecoded.get("archiveVersion")
 		guard archiveVersion == "1" else {
-			throw HagvtoolError(message: "Got unexpected value for the “archiveVersion” property in pbxproj.")
+			throw XcodeProjKitError(message: "Got unexpected value for the “archiveVersion” property in pbxproj.")
 		}
 		
 		let ov: String = try rawDecoded.get("objectVersion")
 		guard ov == "48" || ov == "50" || ov == "52" || ov == "53" else {
-			throw HagvtoolError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
+			throw XcodeProjKitError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
 		
 		let classes: [String: Any] = try rawDecoded.get("classes")
 		guard classes.isEmpty else {
-			throw HagvtoolError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
+			throw XcodeProjKitError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
 		
 		let roid: String = try rawDecoded.get("rootObject")
@@ -57,7 +57,7 @@ public struct PBXProj {
 		rawObjects = ro
 		
 		guard rawDecoded.count == 5 else {
-			throw HagvtoolError(message: "Got unexpected properties in pbxproj.")
+			throw XcodeProjKitError(message: "Got unexpected properties in pbxproj.")
 		}
 		
 		rootObject = try context.performAndWait{

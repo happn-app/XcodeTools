@@ -34,11 +34,11 @@ public struct BuildSettings {
 		
 		if #available(OSX 10.15.4, *) {
 			guard let output = try pipe.fileHandleForReading.readToEnd().flatMap({ String(data: $0, encoding: .utf8) }), !output.isEmpty else {
-				throw HagvtoolError(message: "Cannot get DEVELOPER_DIR")
+				throw XcodeProjKitError(message: "Cannot get DEVELOPER_DIR")
 			}
 			return output.trimmingCharacters(in: .whitespacesAndNewlines)
 		} else {
-			throw HagvtoolError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
+			throw XcodeProjKitError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
 		}
 	}
 	
@@ -70,7 +70,7 @@ public struct BuildSettings {
 		var isDir = ObjCBool(false)
 		if !FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) {
 			if failIfFileDoesNotExist {
-				throw HagvtoolError(message: "Cannot find xcconfig file at URL \(url.absoluteString)")
+				throw XcodeProjKitError(message: "Cannot find xcconfig file at URL \(url.absoluteString)")
 			} else {
 				settings = []
 				return
@@ -106,14 +106,14 @@ public struct BuildSettings {
 						case "include"?:
 							_ = scanner.scanCharacters(from: xcconfigWhitespace)
 							guard scanner.scanString("\"") != nil else {
-								throw HagvtoolError(message: "Expected a double-quote after include directive in xcconfig file \(url).")
+								throw XcodeProjKitError(message: "Expected a double-quote after include directive in xcconfig file \(url).")
 							}
 							guard var filename = scanner.scanUpToString("\"") else {
-								throw HagvtoolError(message: "Cannot parse include directive filename in xcconfig file \(url).")
+								throw XcodeProjKitError(message: "Cannot parse include directive filename in xcconfig file \(url).")
 							}
 							_ = scanner.scanString("\"")
 							guard scanner.isAtEnd else {
-								throw HagvtoolError(message: "Unexpected characters after include directive in xcconfig file \(url).")
+								throw XcodeProjKitError(message: "Unexpected characters after include directive in xcconfig file \(url).")
 							}
 							
 							/* If filename starts with <DEVELOPER_DIR>, the include is
@@ -148,17 +148,17 @@ public struct BuildSettings {
 							}
 							
 						default:
-							throw HagvtoolError(message: "Unknown directive “\(directive ?? "<nil>")” in xcconfig file \(url).")
+							throw XcodeProjKitError(message: "Unknown directive “\(directive ?? "<nil>")” in xcconfig file \(url).")
 					}
 				} else {
 					/* We should have a normal line (setting = value) */
 					let variableName: String
 					do {
 						guard let firstChar = scanner.scanCharacter() else {
-							throw HagvtoolError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
+							throw XcodeProjKitError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
 						}
 						guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettings.charactersValidForFirstVariableCharacter.contains(scalar) else {
-							throw HagvtoolError(message: "Invalid first char for a variable in xcconfig \(url.absoluteString).")
+							throw XcodeProjKitError(message: "Invalid first char for a variable in xcconfig \(url.absoluteString).")
 						}
 						let restOfVariableName = scanner.scanCharacters(from: BuildSettings.charactersValidInVariableName) ?? ""
 						variableName = String(firstChar) + restOfVariableName
@@ -168,7 +168,7 @@ public struct BuildSettings {
 					
 					_ = scanner.scanCharacters(from: xcconfigWhitespace)
 					guard scanner.scanString("=") != nil else {
-						throw HagvtoolError(message: "Unexpected character after variable name in xcconfig \(url.absoluteString).")
+						throw XcodeProjKitError(message: "Unexpected character after variable name in xcconfig \(url.absoluteString).")
 					}
 					
 					let value: String

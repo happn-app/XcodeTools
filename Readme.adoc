@@ -1,10 +1,11 @@
-= hagvtool
+= XcodeProjKit
 François Lamboley <francois.lamboley@happn.com>
 
-== What Does It Do?
-This tool allows you to retrieve the versions of a project (target by target, or
-even configuration by configuration).
+== What Is This?
+It allows you to parse xcodeproj files easily. Specifically the pbxproj inside the xcodeproj; the schemes are not supported.
 
-You can also validate the sanity of the version settings in your project.
-
-At a later time, hagvtool will allow modifying the version of a project.
+== References and Useful Links for Parsing the pbxproj & co
+- http://www.monobjc.net/xcode-project-file-format.html
+- https://pewpewthespells.com/blog/xcconfig_guide.html
+- https://nshipster.com/xcconfig/
+- https://stackoverflow.com/q/1393987

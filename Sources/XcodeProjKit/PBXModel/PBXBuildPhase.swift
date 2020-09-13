@@ -28,14 +28,14 @@ public class PBXBuildPhase : PBXObject {
 		do {
 			let buildActionMaskStr: String = try rawObject.get("buildActionMask")
 			guard let value = Int32(buildActionMaskStr) else {
-				throw HagvtoolError(message: "Unexpected include in index value \(buildActionMaskStr)")
+				throw XcodeProjKitError(message: "Unexpected include in index value \(buildActionMaskStr)")
 			}
 			buildActionMask = value
 		}
 		do {
 			let runOnlyForDeploymentPostprocessingStr: String = try rawObject.get("runOnlyForDeploymentPostprocessing")
 			guard let value = Int(runOnlyForDeploymentPostprocessingStr) else {
-				throw HagvtoolError(message: "Unexpected include in index value \(runOnlyForDeploymentPostprocessingStr)")
+				throw XcodeProjKitError(message: "Unexpected include in index value \(runOnlyForDeploymentPostprocessingStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

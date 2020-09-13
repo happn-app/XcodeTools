@@ -18,7 +18,7 @@ public class PBXObject : NSManagedObject {
 	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
-				throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary for id \(id).")
+				throw XcodeProjKitError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary for id \(id).")
 			}
 			return result
 		}
@@ -27,16 +27,16 @@ public class PBXObject : NSManagedObject {
 		let isa: String = try rawObject.get("isa")
 		
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
-			throw HagvtoolError(message: "Given context does not have a model!")
+			throw XcodeProjKitError(message: "Given context does not have a model!")
 		}
 		guard let entity = model.entitiesByName[isa] ?? (allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
-			throw HagvtoolError(message: "Did not find isa \(isa) in the CoreData model.")
+			throw XcodeProjKitError(message: "Did not find isa \(isa) in the CoreData model.")
 		}
 		guard !entity.isAbstract || (allowPBXObjectAllocation && entity.name == "PBXObject") else {
-			throw HagvtoolError(message: "Given isa \(isa) is abstract in the CoreData model (entity = \(entity.name ?? "<unknown>")")
+			throw XcodeProjKitError(message: "Given isa \(isa) is abstract in the CoreData model (entity = \(entity.name ?? "<unknown>")")
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
-			throw HagvtoolError(message: "Given isa \(isa) whose entity is not related to PBXObject! This is an internal logic error.")
+			throw XcodeProjKitError(message: "Given isa \(isa) whose entity is not related to PBXObject! This is an internal logic error.")
 		}
 		
 		/* First let’s see if the object is not already in the graph */
@@ -45,7 +45,7 @@ public class PBXObject : NSManagedObject {
 		fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), id)
 		let results = try context.fetch(fetchRequest)
 		guard results.count <= 1 else {
-			throw HagvtoolError(message: "Internal error: got \(results.count) where at most 1 was expected.")
+			throw XcodeProjKitError(message: "Internal error: got \(results.count) where at most 1 was expected.")
 		}
 		
 		let created: Bool
@@ -55,7 +55,7 @@ public class PBXObject : NSManagedObject {
 		
 		guard let result = resultObject as? Self else {
 			if created {context.delete(resultObject)}
-			throw HagvtoolError(message: "Error, expected an object of type \(self), but got something else for id \(id).")
+			throw XcodeProjKitError(message: "Error, expected an object of type \(self), but got something else for id \(id).")
 		}
 		
 		do {
@@ -74,7 +74,7 @@ public class PBXObject : NSManagedObject {
 	
 	open func fillValues(rawObject: [String: Any], rawObjects: [String: [String: Any]], context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws {
 		guard context === managedObjectContext else {
-			throw HagvtoolError(message: "Internal error: asked to fill values of an object with a context != than object’s context")
+			throw XcodeProjKitError(message: "Internal error: asked to fill values of an object with a context != than object’s context")
 		}
 		
 		self.rawObject = rawObject

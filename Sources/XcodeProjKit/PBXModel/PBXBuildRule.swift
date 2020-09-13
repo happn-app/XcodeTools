@@ -21,7 +21,7 @@ public class PBXBuildRule : PBXObject {
 		do {
 			let isEditableStr: String = try rawObject.get("isEditable")
 			guard let value = Int(isEditableStr) else {
-				throw HagvtoolError(message: "Unexpected is editable value \(isEditableStr) in object \(xcID ?? "<unknown>")")
+				throw XcodeProjKitError(message: "Unexpected is editable value \(isEditableStr) in object \(xcID ?? "<unknown>")")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for isEditable \(isEditableStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

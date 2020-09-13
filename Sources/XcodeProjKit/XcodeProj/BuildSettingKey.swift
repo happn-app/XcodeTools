@@ -40,7 +40,7 @@ public struct BuildSettingKey : Hashable {
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		if !scanner.isAtEnd {
-			throw HagvtoolError(message: "Got build setting which seems invalid (scanner not at end after parsing parameters). Raw key is: “\(serializedKey)”.")
+			throw XcodeProjKitError(message: "Got build setting which seems invalid (scanner not at end after parsing parameters). Raw key is: “\(serializedKey)”.")
 		}
 	}
 	

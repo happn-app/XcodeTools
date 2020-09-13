@@ -14,14 +14,14 @@ public struct CombinedBuildSettings {
 	
 	/**
 	Returns a dictionary whose keys are the target names and values are another
-	dictionary, whose keys are the configuration names and values are the build
-	settings.
+	dictionary, whose keys are the configuration names and values are a tuple of
+	the target and the build settings.
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
 	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: [String: CombinedBuildSettings]] {
 		guard let targets = project.targets else {
-			throw HagvtoolError(message: "targets property is not set in project \(project)")
+			throw XcodeProjKitError(message: "targets property is not set in project \(project)")
 		}
 		
 		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
@@ -29,12 +29,12 @@ public struct CombinedBuildSettings {
 		
 		let targetsSettings: [(String, [String : CombinedBuildSettings])] = try targets.map{ target in
 			guard let name = target.name else {
-				throw HagvtoolError(message: "Got target \(target.xcID ?? "<unknown>") which does not have a name")
+				throw XcodeProjKitError(message: "Got target \(target.xcID ?? "<unknown>") which does not have a name")
 			}
 			return try (name, allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(targetsSettings, uniquingKeysWith: { (current, new) in
-			throw HagvtoolError(message: "Got two targets with the same same; this is not normal.")
+			throw XcodeProjKitError(message: "Got two targets with the same same; this is not normal.")
 		})
 	}
 	
@@ -46,30 +46,30 @@ public struct CombinedBuildSettings {
 	the xcodeproj path. */
 	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettings]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: CombinedBuildSettings] {
 		guard let configurations = configurations else {
-			throw HagvtoolError(message: "configurations property not set")
+			throw XcodeProjKitError(message: "configurations property not set")
 		}
 		
 		let settings: [(String, CombinedBuildSettings)] = try configurations.map{ configuration in
 			guard let name = configuration.name else {
-				throw HagvtoolError(message: "Got configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
+				throw XcodeProjKitError(message: "Got configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 			}
 			let targetAndProjectSettings: (PBXTarget, [BuildSettings])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
 				let (target, projectSettingsPerConfigName) = targetAndProjectSettingsPerConfigName
 				guard let projectSettings = projectSettingsPerConfigName[name] else {
-					throw HagvtoolError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
+					throw XcodeProjKitError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
 				}
 				return (target, projectSettings)
 			}
 			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
-			throw HagvtoolError(message: "Got two configuration with the same same; this is not normal.")
+			throw XcodeProjKitError(message: "Got two configuration with the same same; this is not normal.")
 		})
 	}
 	
 	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettings])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws {
 		guard let configName = configuration.name else {
-			throw HagvtoolError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
+			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 		}
 		configurationName = configName
 		
@@ -77,7 +77,7 @@ public struct CombinedBuildSettings {
 		
 		if let (target, projectSettings) = targetAndProjectSettings {
 			guard let name = target.name else {
-				throw HagvtoolError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") which does not have a name")
+				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") which does not have a name")
 			}
 			targetName = name
 			buildSettingsLevelsBuilding.append(contentsOf: projectSettings)
@@ -87,7 +87,7 @@ public struct CombinedBuildSettings {
 		
 		if let baseConfigurationReference = configuration.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
-				throw HagvtoolError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
+				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
 			let config = try BuildSettings(xcconfigURL: url)
@@ -95,7 +95,7 @@ public struct CombinedBuildSettings {
 		}
 		
 		guard let rawBuildSettings = configuration.rawBuildSettings else {
-			throw HagvtoolError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
+			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
 		let buildSettings = BuildSettings(rawBuildSettings: rawBuildSettings)
