@@ -1,2 +1,0 @@
-TEST_INCLUDES=$(inherited) test3
-TEST_INCLUDES_2=$(TEST_INCLUDES_2) test3
