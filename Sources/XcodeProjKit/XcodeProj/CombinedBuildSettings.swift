@@ -130,6 +130,10 @@ public struct CombinedBuildSettings {
 		self.buildSettingsLevels = buildSettingsLevels
 	}
 	
+	public subscript(_ key: String) -> String {
+		return self[BuildSettingKey(laxSerializedKey: key)]
+	}
+	
 	/**
 	Returns the value that matches the given settings key. For now, no variable
 	substitution is done.

@@ -17,7 +17,7 @@ struct GetBuildVersions : ParsableCommand {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
 			print("\(targetName) - \(configurationName)")
-			print(combinedBuildSettings[BuildSettingKey(key: "MARKETING_VERSION")])
+			print(combinedBuildSettings["MARKETING_VERSION"])
 		}
 	}
 	

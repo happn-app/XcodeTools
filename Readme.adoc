@@ -15,7 +15,14 @@ Example of use:
 let xcodeproj = try XcodeProj(autodetectInFolderAtPath: "/path/to/project/")
 try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configurationName, combinedBuildSettings in
    print("\(targetName) - \(configurationName)")
-   print(combinedBuildSettings[BuildSettingKey(key: "MARKETING_VERSION")])
+   /* The line below returns the resolved value of the MARKETING_VERSION build
+    * setting. All the rules I’m aware of (Xcode 12 beta 6) are followed,
+    * including but not limited to:
+    *    - Thorough xcconfig files parsing;
+    *    - Embedded variables like so “$(VALUE_$(VARIANT))”;
+    *    - Resolution of variable depending on build config levels (project config, then targets);
+    *    - Other… */
+   print(combinedBuildSettings["MARKETING_VERSION"])
 }
 ----
 
