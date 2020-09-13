@@ -14,8 +14,8 @@ public struct CombinedBuildSettings {
 	
 	/**
 	Returns a dictionary whose keys are the target names and values are another
-	dictionary, whose keys are the configuration names and values are a tuple of
-	the target and the build settings.
+	dictionary, whose keys are the configuration names and values are the build
+	settings.
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
