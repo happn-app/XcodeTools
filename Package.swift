@@ -8,16 +8,18 @@ let package = Package(
 		.macOS(.v10_15)
 	],
 	products: [
+		.library(name: "libhagvtool", targets: ["libhagvtool"]),
 		.executable(name: "hagvtool", targets: ["hagvtool"])
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.1"),
-		.package(url: "https://github.com/happn-tech/XcodeProjKit.git", from: "0.1.0")
+		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.1")
 	],
 	targets: [
+		.target(name: "libhagvtool", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
 		.target(name: "hagvtool", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			"XcodeProjKit"
-		])
+			"libhagvtool"
+		]),
+		.testTarget(name: "libhagvtoolTests", dependencies: ["libhagvtool"])
 	]
 )
