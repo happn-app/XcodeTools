@@ -1,8 +1,16 @@
-= XcodeProjKit
+= XcodeTools
 François Lamboley <francois.lamboley@happn.com>
 
 == What Is This?
-It allows you to parse xcodeproj files easily. Specifically the pbxproj inside the xcodeproj; the schemes are not supported.
+A collection of utilities to work with Xcode files. Currently there are two
+products in this SPM project.
+
+=== XcodeProjKit
+A reusable lib to work with xcodeproj files. Specifically the lib allows easy
+parsing of pbxproj and xcconfig files. Schemes are not supported (yet).
+
+=== hagvtool
+An executable to manage the versions in an Xcode project.
 
 == References and Useful Links for Parsing the pbxproj & co
 - http://www.monobjc.net/xcode-project-file-format.html
