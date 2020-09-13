@@ -27,7 +27,7 @@ public struct BuildSettingKey : Hashable {
 	public var parameters: [BuildSettingKeyParam]
 	
 	public init(laxSerializedKey serializedKey: String, allowCommaSeparatorForParameters: Bool = false) {
-		let scanner = Scanner(string: serializedKey)
+		let scanner = Scanner(forParsing: serializedKey)
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		if !scanner.isAtEnd {
@@ -36,7 +36,7 @@ public struct BuildSettingKey : Hashable {
 	}
 	
 	public init(serializedKey: String, allowCommaSeparatorForParameters: Bool = false) throws {
-		let scanner = Scanner(string: serializedKey)
+		let scanner = Scanner(forParsing: serializedKey)
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		if !scanner.isAtEnd {
@@ -44,7 +44,7 @@ public struct BuildSettingKey : Hashable {
 		}
 	}
 	
-	public init(key: String, parameters: [BuildSettingKeyParam]) {
+	public init(key: String, parameters: [BuildSettingKeyParam] = []) {
 		self.key = key
 		self.parameters = parameters
 	}

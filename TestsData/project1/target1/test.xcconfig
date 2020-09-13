@@ -10,8 +10,10 @@
 
 TEST_IMPORTED_SRCROOT = NO
 TEST_IMPORTED_DEV_DIR = NO
-// So it seems only when the path starts with <DEVELOPER_DIR> the variable is
-// replaced, and only this variable too
+// The three includes below show that “<DEVELOPER_DIR>” is replaced by the
+// current developer dir, only when prefix of the import path.
+// Other variables do not seems to work (we tested SRCROOT on third import here,
+// which works, but only because we have created the “<SRCROOT>” folder.
 #include "<DEVELOPER_DIR>/Library/Xcode/Templates/File Templates/Other/Configuration Settings File.xctemplate/___FILEBASENAME___.xcconfig"
 #include "./<DEVELOPER_DIR>/test_dev_dir.xcconfigimport"
 #include "<SRCROOT>/target1/test_srcroot.xcconfigimport"
@@ -38,6 +40,8 @@ TEST_VARIANT[sdk=iphoneos*] = hello3
 TEST_VARIANT[sdk=macosx*] = hello4
 TEST_VARIANT[sdk=macosx*,arch=*] = hello5
 
+TEST_RESOLUTION_OF_VARIANT = prefix $(TEST_VARIANT[sdk=macosx*]) suffix
+
 TEST_VARIANT_2[sdk=macosx*][arch=*] = hello2
 TEST_VARIANT_3[sdk=macosx*,arch=*] = hello2
 
@@ -54,3 +58,37 @@ SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(CUSTOM_SWIFT_ACTIVE_COMPILATION_CONDITIO
 
 TEST_RECURSION_2 = $(TEST_RECURSION_1)
 TEST_RECURSION_1 = $(TEST_RECURSION_2)
+
+VALUE_1 = one
+VALUE_2 = two
+VALUE_3 = three
+NUMBER = 1
+TEST_EMBEDDED = $(VALUE_$(NUMBER))
+TEST_INVALID_EMBEDDED_1 = $(VALUE_$(NUMBER)
+TEST_INVALID_EMBEDDED_2 = $(VALUE_$(NUMBER
+
+TEST_VARIABLE_1 = $$(VALUE_$(NUMBER
+TEST_VARIABLE_2 = /$()/
+
+// LEVEL_UP is defined in the project settings
+TEST_RESOLUTION_LEVEL_UP = prefix $(LEVEL_UP) suffix
+
+TEST_RESOLUTION_ASYMETRIC = prefix $(TEST_VARIABLE_2} suffix
+TEST_RESOLUTION_ASYMETRIC2 = prefix ${TEST_VARIABLE_2) suffix
+// Asymetric in plist
+TEST_RESOLUTION_ASYMETRIC3 = hello
+
+TEST_RESOLUTION_NO_PARENTHESIS = prefix $A suffix
+TEST_RESOLUTION_NO_PARENTHESIS2 = prefix $VALUE_1 suffix
+TEST_RESOLUTION_NO_PARENTHESIS3 = prefix $VALUE_1	suffix
+TEST_RESOLUTION_NO_PARENTHESIS4 = prefix $VALUE_1suffix
+TEST_RESOLUTION_NO_PARENTHESIS5 = prefix $DOES_NOT_EXIST suffix
+TEST_RESOLUTION_NO_PARENTHESIS6 = prefix $$VALUE_1 suffix
+TEST_RESOLUTION_NO_PARENTHESIS7 = prefix $VALUE_$NUMBER suffix
+
+TEST_RESOLUTION_DOES_NOT_EXIST = prefix $(DOES_NOT_EXIST) suffix
+
+TEST_SINGLE_DOLLAR = prefix $ suffix
+
+TEST_INHERIT_NO_PARENTHESIS = yo
+TEST_INHERIT_NO_PARENTHESIS = $inherited yo

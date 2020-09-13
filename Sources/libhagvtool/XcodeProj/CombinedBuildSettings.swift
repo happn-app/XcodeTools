@@ -104,6 +104,12 @@ public struct CombinedBuildSettings {
 		buildSettingsLevels = buildSettingsLevelsBuilding
 	}
 	
+	public init(targetName: String? = nil, configurationName: String, buildSettingsLevels: [BuildSettings]) {
+		self.targetName = targetName
+		self.configurationName = configurationName
+		self.buildSettingsLevels = buildSettingsLevels
+	}
+	
 	/**
 	Returns the value that matches the given settings key. For now, no variable
 	substitution is done.
@@ -121,10 +127,117 @@ public struct CombinedBuildSettings {
 	If a build setting have an unknown type (neither a String nor an array of
 	Strings), we return en empty String for this value. */
 	public subscript(_ key: BuildSettingKey) -> String {
-		let searchedSettings = buildSettingsLevels.flatMap{ $0.settings }
-		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.key.key == key.key }
-		#warning("TODO: Implement variable resolution and stuff…")
-		return settingsWhoseKeyMatch.last?.stringValue ?? ""
+		return resolvedValue(for: key) ?? ""
+	}
+	
+	/** Returns `nil` if the key does not exist in the settings. */
+	public func resolvedValue(for key: BuildSettingKey) -> String? {
+		/* We want to retrieve an array of (Int, BuildSetting), where the Int
+		 * represents the level from which the build setting is from.
+		 * I did this because I though I’d need this, but I actually won’t.
+		 * Note that the pre-Xcode-10 way of resolving variables needed this I
+		 * think! https://stackoverflow.com/a/50731052
+		 * Basically before Xcode 10 I think the equivalent BuildSettings internal
+		 * structure in Xcode held its settings as a dictionary instead of an
+		 * array of BuildSetting, which prevented it from doing the smarter
+		 * resolution it now has. */
+		let searchedSettings = buildSettingsLevels.enumerated().flatMap{ elementAndOffset in elementAndOffset.element.settings.map{ (level: elementAndOffset.offset, setting: $0) } }
+		#warning("TODO: Implement variable conditionals…")
+		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.setting.key.key == key.key }
+		
+		guard !settingsWhoseKeyMatch.isEmpty else {
+			return nil
+		}
+		
+		var resolvedValue = ""
+		var currentlyResolvedValues = [key.key: resolvedValue]
+		for rawValue in settingsWhoseKeyMatch.map({ $0.setting.stringValue }) {
+			let scanner = Scanner(forParsing: rawValue)
+			resolvedValue = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, inheritedVariableName: key.key)
+			currentlyResolvedValues[key.key] = resolvedValue
+		}
+		
+		return resolvedValue
+	}
+	
+	public func resolveVariables(in string: String) -> String {
+		let scanner = Scanner(forParsing: string)
+		var currentlyResolvedValues = [String: String]()
+		return resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues)
+	}
+	
+	/**
+	Resolve the variables in the given string (via a Scanner).
+	
+	varEndChars contains the characters that should end the parsing of the
+	variable (for embedded variables). Always call with an empty string first to
+	parse the whole string.
+	
+	Example: $(VAR1_${VAR2}), when parser is called first, the value will be an
+	empty string, then “`)`” then “`}`”.
+	
+	The inheritedVariableName is given to resolve the “inherited” variable name. */
+	private func resolveVariables(scanner: Scanner, currentlyResolvedValues: inout [String: String], inheritedVariableName: String? = nil, varEndChars: String = "") -> String {
+		var result = ""
+		
+		/** Returns `true` if a potential variable start has been found. */
+		func parseUpToStartOfVariableIncludingDollar() -> Bool {
+			result.append(scanner.scanUpToCharacters(from: CharacterSet(charactersIn: "$" + varEndChars)) ?? "")
+			
+			if scanner.scanString("$") != nil {
+				/* If we have found a dollar sign, we have found the potential start
+				 * of a variable. We return true. */
+				return true
+			}
+			
+			/* Now we still have to parse a potential stray character (the end char
+			 * or something else, if we just parsed a variable without parenthesis,
+			 * in which case we don’t want to parse it, that’s why we come back to
+			 * previous location is scanned char is not in varEndChars). */
+			let scanIndex = scanner.currentIndex
+			if let c = scanner.scanCharacter(), !varEndChars.contains(c) {
+				scanner.currentIndex = scanIndex
+			}
+			return false
+		}
+		
+		while parseUpToStartOfVariableIncludingDollar() {
+			/* We might have reached the start of a variable. Let’s verify that.
+			 * AFAICT (from the tests in the project 1 in the tests data), the only
+			 * way to _not_ have a variable start is to parse a dollar here. */
+			guard scanner.scanString("$") == nil else {
+				result.append("$")
+				continue
+			}
+			
+			let mustExist: Bool
+			let rawVariableName: String
+			if scanner.scanString("(") != nil {
+				mustExist = false
+				rawVariableName = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: ")")
+			} else if scanner.scanString("{") != nil {
+				mustExist = false
+				rawVariableName = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: "}")
+			} else {
+				mustExist = true
+				rawVariableName = scanner.scanCharacters(from: BuildSettings.charactersValidInVariableName) ?? ""
+			}
+			
+			let variableName: String
+			if rawVariableName == "inherited" {variableName = inheritedVariableName ?? ""}
+			else                              {variableName = rawVariableName}
+			
+			let resolvedOptional = currentlyResolvedValues[variableName] ?? resolvedValue(for: BuildSettingKey(key: variableName, parameters: []))
+			let resolved: String
+			if let r = resolvedOptional {resolved = r}
+			else if mustExist           {resolved = "$" + variableName}
+			else                        {resolved = ""}
+			
+			currentlyResolvedValues[variableName] = resolved
+			result.append(resolved)
+		}
+		
+		return result
 	}
 	
 }

@@ -29,8 +29,6 @@ class BuildSettingsTests : XCTestCase {
 	
 	private func compareBuildSettings(_ s1: BuildSettings, _ s2: BuildSettings) {
 		XCTAssertEqual(s1.settings.map{ $0.key }, s2.settings.map{ $0.key })
-		XCTAssertEqual(s1.settings.map{ $0.parameters.map{ $0.key } }, s2.settings.map{ $0.parameters.map{ $0.key } })
-		XCTAssertEqual(s1.settings.map{ $0.parameters.map{ $0.value } }, s2.settings.map{ $0.parameters.map{ $0.value } })
 	}
 	
 }

@@ -89,8 +89,6 @@ public struct BuildSettings {
 		/* We spcifically want space and tabs; other unicode whitespaces are not
 		 * valid for our use case. */
 		let xcconfigWhitespace = CharacterSet(charactersIn: " \t")
-		let firstCharVar = CharacterSet(charactersIn: "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-		let otherVarChars = firstCharVar.union(CharacterSet(charactersIn: "0123456789"))
 		
 		var error: Error?
 		var result = [BuildSetting]()
@@ -99,7 +97,7 @@ public struct BuildSettings {
 				let line = line.components(separatedBy: "//").first!.trimmingCharacters(in: xcconfigWhitespace)
 				guard !line.isEmpty else {return}
 				
-				let scanner = Scanner(string: line)
+				let scanner = Scanner(forParsing: line)
 				if scanner.scanString("#") != nil {
 					/* We have a preprocessor directive line. */
 					let directive = scanner.scanUpToCharacters(from: xcconfigWhitespace.union(CharacterSet(charactersIn: "?")))
@@ -159,10 +157,10 @@ public struct BuildSettings {
 						guard let firstChar = scanner.scanCharacter() else {
 							throw HagvtoolError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
 						}
-						guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, firstCharVar.contains(scalar) else {
+						guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettings.charactersValidForFirstVariableCharacter.contains(scalar) else {
 							throw HagvtoolError(message: "Invalid first char for a variable in xcconfig \(url.absoluteString).")
 						}
-						let restOfVariableName = scanner.scanCharacters(from: otherVarChars) ?? ""
+						let restOfVariableName = scanner.scanCharacters(from: BuildSettings.charactersValidInVariableName) ?? ""
 						variableName = String(firstChar) + restOfVariableName
 					}
 					
@@ -192,5 +190,8 @@ public struct BuildSettings {
 		
 		settings = result
 	}
+	
+	static let charactersValidForFirstVariableCharacter = CharacterSet(charactersIn: "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	static let charactersValidInVariableName = charactersValidForFirstVariableCharacter.union(CharacterSet(charactersIn: "0123456789"))
 	
 }
