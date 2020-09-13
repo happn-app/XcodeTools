@@ -5,7 +5,7 @@ import XcodeProjKit
 
 
 
-struct GetBuildVersions : ParsableCommand {
+struct GetMarketingVersions : ParsableCommand {
 	
 	@OptionGroup
 	var hagvtoolOptions: Hagvtool.Options
@@ -16,7 +16,7 @@ struct GetBuildVersions : ParsableCommand {
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
-			print(#"\#(targetName)[\#(configurationName)] = "\#(combinedBuildSettings["CURRENT_PROJECT_VERSION"])""#)
+			print(#"\#(targetName)[\#(configurationName)] = "\#(combinedBuildSettings["MARKETING_VERSION"])""#)
 		}
 	}
 	
