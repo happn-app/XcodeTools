@@ -19,10 +19,10 @@ extension Dictionary {
 	
 	func get<T>(_ key: Key) throws -> T {
 		guard let e = self[key] else {
-			throw HagvtoolError(message: "Value not found for key \(key)")
+			throw XcodeProjKitError(message: "Value not found for key \(key)")
 		}
 		guard let t = e as? T else {
-			throw HagvtoolError(message: "Value does not have correct type for key \(key)")
+			throw XcodeProjKitError(message: "Value does not have correct type for key \(key)")
 		}
 		return t
 	}
@@ -32,7 +32,7 @@ extension Dictionary {
 			return nil
 		}
 		guard let t = e as? T else {
-			throw HagvtoolError(message: "Value does not have correct type for key \(key)")
+			throw XcodeProjKitError(message: "Value does not have correct type for key \(key)")
 		}
 		return t
 	}

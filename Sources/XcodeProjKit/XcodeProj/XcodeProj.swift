@@ -29,7 +29,7 @@ public struct XcodeProj {
 				return true
 			}
 			guard let e = xcodeprojs.onlyElement else {
-				throw HagvtoolError(message: "Cannot find xcodeproj")
+				throw XcodeProjKitError(message: "Cannot find xcodeproj")
 			}
 			xcodeprojPath = e
 		}
@@ -41,7 +41,7 @@ public struct XcodeProj {
 		/* *** Load CoreData model *** */
 		
 		guard let modelURL = Bundle.module.url(forResource: "PBXModel", withExtension: "momd"), let model = NSManagedObjectModel(contentsOf: modelURL) else {
-			throw HagvtoolError(message: "Cannot load CoreData model")
+			throw XcodeProjKitError(message: "Cannot load CoreData model")
 		}
 		managedObjectModel = model
 		

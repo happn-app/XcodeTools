@@ -26,7 +26,7 @@ public class PBXProject : PBXObject {
 		projectRoot = try rawObject.get("projectRoot")
 		projectDirPath = try rawObject.get("projectDirPath")
 		guard projectRoot == "", projectDirPath == "" else {
-			throw HagvtoolError(message: "Don’t know how to handle non-empty projectRoot or projectDirPath.")
+			throw XcodeProjKitError(message: "Don’t know how to handle non-empty projectRoot or projectDirPath.")
 		}
 		
 		knownRegions = try rawObject.get("knownRegions")
@@ -35,7 +35,7 @@ public class PBXProject : PBXObject {
 		do {
 			let hasScannedForEncodingsStr: String = try rawObject.get("hasScannedForEncodings")
 			guard let value = Int(hasScannedForEncodingsStr) else {
-				throw HagvtoolError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
+				throw XcodeProjKitError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for hasScannedForEncodings \(hasScannedForEncodingsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

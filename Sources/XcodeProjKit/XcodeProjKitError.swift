@@ -2,7 +2,7 @@ import Foundation
 
 
 
-public struct HagvtoolError : Error {
+public struct XcodeProjKitError : Error {
 	
 	public var message: String
 	
