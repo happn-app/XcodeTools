@@ -1,8 +1,8 @@
-= hagvtool
+= XcodeProjKit
 François Lamboley <francois.lamboley@happn.com>
 
 == What Does It Do?
-For now, not much, except parsing the pbxproj, and associated xcconfig files.
+It allows you to parse xcodeproj files easily. Specifically the pbxproj inside the xcodeproj; the schemes are not supported.
 
 == References and Useful Links for Parsing the pbxproj & co
 - http://www.monobjc.net/xcode-project-file-format.html
