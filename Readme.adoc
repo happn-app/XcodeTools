@@ -30,6 +30,18 @@ _Note_: Parsing the parameters in a build configuration (e.g. `FOO[sdk=macosx*]`
 is supported, however, the resolution of the variables do not take the parameters
 in account yet.
 
+_Other Note_: I use the post-Xcode 10 variable resolution to resolve variables.
+You might see a difference in the values `XcodeProjKit` computes and the ones
+Xcode shows in the GUI editor. That is expected; the GUI seems to still use the
+pre-Xcode 10 algorithm to resolve its variables. +
+You should however get the same values than `XcodeProjKit` at build time, if you
+don’t please file an issue! +
+You can check whether the values are the same by adding a key in your
+`Info.plist` file with the value set to `$(VAR_TO_CHECK)` and checking the
+values in the plist at runtime. +
+See https://stackoverflow.com/a/50731052 for more info about Xcode variable
+resolutions.
+
 === hagvtool
 An executable to manage the versions in an Xcode project.
 
