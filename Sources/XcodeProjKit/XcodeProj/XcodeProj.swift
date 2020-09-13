@@ -54,4 +54,26 @@ public struct XcodeProj {
 		pbxproj = try PBXProj(url: pbxprojURL, context: managedObjectContext)
 	}
 	
+	public func iterateCombinedBuildSettings(_ handler: () throws -> Void) throws {
+		let defaultBuildSettings = BuildSettings.standardDefaultSettings(xcodprojURL: xcodeprojURL)
+		try iterateCombinedBuildSettings(defaultBuildSettings: defaultBuildSettings, handler)
+	}
+	
+	public func iterateCombinedBuildSettings(defaultBuildSettings: BuildSettings, _ handler: (_ targetName: String, configurationName: String, _ combinedBuildSettings: CombinedBuildSettings, _ target: PBXTarget) throws -> Void) throws {
+		try managedObjectContext.performAndWait{
+			let pbxProject = pbxproj.rootObject
+			let allCombinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: pbxProject, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
+			
+			
+			for (targetName, configurationNameAndBuildSettings) in allCombinedBuildSettings.sorted(by: { $0.key < $1.key }) {
+				guard let target = pbxProject.targets?.filter({ $0.name == targetName }).onlyElement else {
+					throw XcodeProjKitError(message: "Internal error: Cannot find the target by name when iterating combined build configs (either got mutliple targets w/ the same name or no target w/ the given name)")
+				}
+				
+				for (configurationName, combinedBuildSettings) in configurationNameAndBuildSettings.sorted(by: { $0.key < $1.key }) {
+				}
+			}
+		}
+	}
+	
 }
