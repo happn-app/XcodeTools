@@ -34,9 +34,12 @@ public struct XcodeProj {
 			xcodeprojPath = e
 		}
 		
-		xcodeprojURL = URL(fileURLWithPath: xcodeprojPath, isDirectory: true)
+		try self.init(xcodeprojURL: URL(fileURLWithPath: xcodeprojPath, isDirectory: true))
+	}
+	
+	public init(xcodeprojURL url: URL) throws {
+		xcodeprojURL = url
 		pbxprojURL = xcodeprojURL.appendingPathComponent("project.pbxproj", isDirectory: false)
-		
 		
 		/* *** Load CoreData model *** */
 		
