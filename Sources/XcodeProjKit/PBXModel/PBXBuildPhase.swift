@@ -25,22 +25,20 @@ public class PBXBuildPhase : PBXObject {
 		let filesIDs: [String] = try rawObject.get("files")
 		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
-		do {
-			let buildActionMaskStr: String = try rawObject.get("buildActionMask")
+		if let buildActionMaskStr: String = try rawObject.getIfExists("buildActionMask") {
 			guard let value = Int32(buildActionMaskStr) else {
-				throw XcodeProjKitError(message: "Unexpected include in index value \(buildActionMaskStr)")
+				throw XcodeProjKitError(message: "Unexpected build action mask value \(buildActionMaskStr) in object \(xcID ?? "<unknown>")")
 			}
-			buildActionMask = value
+			buildActionMask = NSNumber(value: value)
 		}
-		do {
-			let runOnlyForDeploymentPostprocessingStr: String = try rawObject.get("runOnlyForDeploymentPostprocessing")
-			guard let value = Int(runOnlyForDeploymentPostprocessingStr) else {
-				throw XcodeProjKitError(message: "Unexpected include in index value \(runOnlyForDeploymentPostprocessingStr)")
+		if let runOnlyForDeploymentPostprocessingStr: String = try rawObject.getIfExists("runOnlyForDeploymentPostprocessing") {
+			guard let value = Int16(runOnlyForDeploymentPostprocessingStr) else {
+				throw XcodeProjKitError(message: "Unexpected run only for deployment postprocessing value \(runOnlyForDeploymentPostprocessingStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				NSLog("%@", "Warning: Unknown value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
-			runOnlyForDeploymentPostprocessing = (value != 0)
+			runOnlyForDeploymentPostprocessing = NSNumber(value: value != 0)
 		}
 	}
 	

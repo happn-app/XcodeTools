@@ -3,6 +3,7 @@ import Foundation
 
 
 
+#warning("TODO: PBXReferenceProxy object")
 public struct PBXProj {
 	
 	public let rawDecoded: [String: Any]
@@ -41,13 +42,13 @@ public struct PBXProj {
 		}
 		
 		let ov: String = try rawDecoded.get("objectVersion")
-		guard ov == "48" || ov == "50" || ov == "52" || ov == "53" else {
+		guard ov == "46" || ov == "48" || ov == "50" || ov == "52" || ov == "53" else {
 			throw XcodeProjKitError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
 		
-		let classes: [String: Any] = try rawDecoded.get("classes")
-		guard classes.isEmpty else {
+		let classes: [String: Any]? = try rawDecoded.getIfExists("classes")
+		guard classes?.isEmpty ?? true else {
 			throw XcodeProjKitError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
 		
@@ -56,7 +57,7 @@ public struct PBXProj {
 		rootObjectID = roid
 		rawObjects = ro
 		
-		guard rawDecoded.count == 5 else {
+		guard rawDecoded.count == (classes == nil ? 4 : 5) else {
 			throw XcodeProjKitError(message: "Got unexpected properties in pbxproj.")
 		}
 		

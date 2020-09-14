@@ -23,10 +23,10 @@ public class PBXProject : PBXObject {
 		
 		compatibilityVersion = try rawObject.get("compatibilityVersion")
 		
-		projectRoot = try rawObject.get("projectRoot")
 		projectDirPath = try rawObject.get("projectDirPath")
-		guard projectRoot == "", projectDirPath == "" else {
-			throw XcodeProjKitError(message: "Don’t know how to handle non-empty projectRoot or projectDirPath.")
+		projectRoot = try rawObject.getIfExists("projectRoot")
+		if !(projectRoot?.isEmpty ?? true) {
+			NSLog("%@", "Warning: Suspicious non empty value for projectRoot: \(projectRoot ?? "<nil>"). This probably changes nothing, but I can’t guarantee it.")
 		}
 		
 		knownRegions = try rawObject.get("knownRegions")
@@ -52,8 +52,8 @@ public class PBXProject : PBXObject {
 		let mainGroupIDs: String = try rawObject.get("mainGroup")
 		mainGroup = try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: mainGroupIDs, context: context, decodedObjects: &decodedObjects)
 		
-		let productRefGroupIDs: String = try rawObject.get("productRefGroup")
-		productRefGroup = try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: productRefGroupIDs, context: context, decodedObjects: &decodedObjects)
+		let productRefGroupID: String? = try rawObject.getIfExists("productRefGroup")
+		productRefGroup = try productRefGroupID.flatMap{ try PBXGroup.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)

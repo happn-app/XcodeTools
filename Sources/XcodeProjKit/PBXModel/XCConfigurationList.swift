@@ -20,7 +20,7 @@ public class XCConfigurationList : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		defaultConfigurationName = try rawObject.get("defaultConfigurationName")
+		defaultConfigurationName = try rawObject.getIfExists("defaultConfigurationName")
 		
 		/* No idea what defaultConfigurationIsVisible changes, but it exists… */
 		let defaultConfigurationIsVisibleStr: String = try rawObject.get("defaultConfigurationIsVisible")

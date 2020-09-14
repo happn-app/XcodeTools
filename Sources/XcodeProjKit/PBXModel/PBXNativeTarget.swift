@@ -21,13 +21,13 @@ public class PBXNativeTarget : PBXTarget {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		let productReferenceID: String = try rawObject.get("productReference")
-		productReference = try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: productReferenceID, context: context, decodedObjects: &decodedObjects)
+		let productReferenceID: String? = try rawObject.getIfExists("productReference")
+		productReference = try productReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
 		productType = try rawObject.get("productType")
 		
-		let buildRulesIDs: [String] = try rawObject.get("buildRules")
-		buildRules = try buildRulesIDs.map{ try PBXBuildRule.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		let buildRulesIDs: [String]? = try rawObject.getIfExists("buildRules")
+		buildRules = try buildRulesIDs?.map{ try PBXBuildRule.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
 		let packageProductDependenciesIDs: [String]? = try rawObject.getIfExists("packageProductDependencies")
 		packageProductDependencies = try packageProductDependenciesIDs?.map{ try XCSwiftPackageProductDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
