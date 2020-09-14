@@ -10,11 +10,14 @@ struct GetVersions : ParsableCommand {
 	@OptionGroup
 	var hagvtoolOptions: Hagvtool.Options
 	
-	@Option
-	var failOnMultipleVersions = false
+	@Flag
+	var failOnMultipleBuildVersions = false
 	
-	@Option
-	var collapseVersion = false
+	@Flag
+	var failOnMultipleMarketingVersions = false
+	
+	@Flag(help: #"An alias for "--fail-on-multiple-build-versions --fail-on-multiple-marketing-versions""#)
+	var failOnMultipleVersions = false
 	
 	@Option
 	var outputFormat = OutputFormat.text
@@ -76,6 +79,17 @@ struct GetVersions : ParsableCommand {
 					throw HagvtoolError(message: "Cannot convert JSON data to string")
 				}
 				print(jsonStr)
+		}
+		
+		if failOnMultipleBuildVersions || failOnMultipleVersions {
+			guard output.reducedBuildVersionForAll != nil else {
+				throw ExitCode(1)
+			}
+		}
+		if failOnMultipleMarketingVersions || failOnMultipleVersions {
+			guard output.reducedMarketingVersionForAll != nil else {
+				throw ExitCode(1)
+			}
 		}
 	}
 	
