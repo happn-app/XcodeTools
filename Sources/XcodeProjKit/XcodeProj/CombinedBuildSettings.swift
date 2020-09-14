@@ -184,6 +184,41 @@ public struct CombinedBuildSettings {
 		return resolvedValue
 	}
 	
+	public func infoPlistURL(xcodeprojURL: URL) -> URL? {
+		guard let path = resolvedValue(for: BuildSettingKey(key: "INFOPLIST_FILE")) else {
+			return nil
+		}
+		return URL(fileURLWithPath: path, isDirectory: false, relativeTo: xcodeprojURL)
+	}
+	
+	public func infoPlistRaw(xcodeprojURL: URL) throws -> [String: Any]? {
+		guard let plistURL = infoPlistURL(xcodeprojURL: xcodeprojURL.deletingLastPathComponent()) else {
+			return nil
+		}
+		let plistData = try Data(contentsOf: plistURL)
+		let deserializedPlist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil)
+		guard let deserializedPlistObject = deserializedPlist as? [String: Any] else {
+			throw XcodeProjKitError(message: "Cannot deserialize plist file at URL \(plistURL) as a [String: Any].")
+		}
+		return deserializedPlistObject
+	}
+	
+	/**
+	Get the Info.plist if any, then deserialize it and resolved the variables.
+	
+	- Note: Does _not_ resolve localized strings. */
+	public func infoPlistResolved(xcodeprojURL: URL) throws -> [String: Any]? {
+		func resolveVariablesGeneric<T>(_ object: T) -> T {
+			switch object {
+				case let string as String:            return resolveVariables(in: string) as! T
+				case let array as [Any]:              return array.map(resolveVariablesGeneric) as! T
+				case let dictionary as [String: Any]: return dictionary.mapValues(resolveVariablesGeneric) as! T
+				default:                              return object
+			}
+		}
+		return try infoPlistRaw(xcodeprojURL: xcodeprojURL).flatMap(resolveVariablesGeneric)
+	}
+	
 	public func resolveVariables(in string: String) -> String {
 		let scanner = Scanner(forParsing: string)
 		var currentlyResolvedValues = [String: String]()

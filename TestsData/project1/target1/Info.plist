@@ -98,5 +98,16 @@
 	<string>$(TEST_SINGLE_DOLLAR)</string>
 	<key>TEST_INHERIT_NO_PARENTHESIS</key>
 	<string>$(TEST_INHERIT_NO_PARENTHESIS)</string>
+	<key>TEST_ARRAY</key>
+	<array>
+		<string>${PRODUCT_BUNDLE_IDENTIFIER}</string>
+	</array>
+	<key>TEST_DICTIONARY</key>
+	<dict>
+		<key>$(EXECUTABLE_NAME)</key>
+		<string>VALUE</string>
+		<key>KEY</key>
+		<string>${PRODUCT_BUNDLE_IDENTIFIER}</string>
+	</dict>
 </dict>
 </plist>
