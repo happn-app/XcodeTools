@@ -16,7 +16,10 @@ struct GetBuildVersions : ParsableCommand {
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
-			print(#"\#(targetName)[\#(configurationName)] = "\#(combinedBuildSettings["CURRENT_PROJECT_VERSION"])""#)
+			print(#"[\#(targetName)][\#(configurationName)] = "\#(combinedBuildSettings["CURRENT_PROJECT_VERSION"])""#)
+			if let plist = try combinedBuildSettings.infoPlistResolved(xcodeprojURL: xcodeproj.xcodeprojURL) {
+				print(#"[\#(targetName)][\#(configurationName)][plist] = "\#(plist["CFBundleVersion"] ?? "")""#)
+			}
 		}
 	}
 	
