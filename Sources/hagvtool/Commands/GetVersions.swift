@@ -29,14 +29,14 @@ struct GetVersions : ParsableCommand {
 					targetName: targetName,
 					configurationName: configurationName,
 					versionSource: .buildConfiguration,
-					versionValue: combinedBuildSettings["CURRENT_PROJECT_VERSION"]
+					value: combinedBuildSettings["CURRENT_PROJECT_VERSION"]
 				),
 				Output.Version(
 					versionType: .marketingVersion,
 					targetName: targetName,
 					configurationName: configurationName,
 					versionSource: .buildConfiguration,
-					versionValue: combinedBuildSettings["MARKETING_VERSION"]
+					value: combinedBuildSettings["MARKETING_VERSION"]
 				),
 				plist.flatMap{ plist in
 					Output.Version(
@@ -44,7 +44,7 @@ struct GetVersions : ParsableCommand {
 						targetName: targetName,
 						configurationName: configurationName,
 						versionSource: .plist,
-						versionValue: plist["CFBundleVersion"] as? String ?? ""
+						value: plist["CFBundleVersion"] as? String ?? ""
 					)
 				},
 				plist.flatMap{ plist in
@@ -53,14 +53,30 @@ struct GetVersions : ParsableCommand {
 						targetName: targetName,
 						configurationName: configurationName,
 						versionSource: .plist,
-						versionValue: plist["CFBundleShortVersionString"] as? String ?? ""
+						value: plist["CFBundleShortVersionString"] as? String ?? ""
 					)
 				}
 			].compactMap{ $0 }
 		}.flatMap{ $0 }
 		
 		let output = Output(versions: versions)
-		print(output.unreducedDescription)
+		switch outputFormat {
+			case .text:
+				#warning("TODO")
+				print(output.unreducedDescription)
+				
+			case .json, .jsonPrettyPrinted:
+				let encoder = JSONEncoder()
+				encoder.keyEncodingStrategy = .convertToSnakeCase
+				encoder.outputFormatting = [.withoutEscapingSlashes]
+				if outputFormat == .jsonPrettyPrinted {
+					encoder.outputFormatting = encoder.outputFormatting.union([.prettyPrinted, .sortedKeys])
+				}
+				guard let jsonStr = try String(data: encoder.encode(output), encoding: .utf8) else {
+					throw HagvtoolError(message: "Cannot convert JSON data to string")
+				}
+				print(jsonStr)
+		}
 	}
 	
 	private struct Output : Encodable {
@@ -87,19 +103,25 @@ struct GetVersions : ParsableCommand {
 			var configurationName: String
 			var versionSource: VersionSourse
 			
-			var versionValue: String
+			var value: String
 			
 		}
 		
 		var versions: [Version]
 		
+		@NullEncodable
 		var reducedBuildVersionForAll: String?
 		var reducedBuildVersionPerTargets: [String: String?]
 		var reducedBuildVersionPerConfigurations: [String: String?]
 		
+		@NullEncodable
+		var reducedMarketingVersionForAll: String?
+		var reducedMarketingVersionPerTargets: [String: String?]
+		var reducedMarketingVersionPerConfigurations: [String: String?]
+		
 		var unreducedDescription: String {
 			return versions.map{ version in
-				return version.versionType.rawValue.bracketEscaped() + "[" + version.targetName.bracketEscaped() + "][" + version.configurationName.bracketEscaped() + "][" + version.versionSource.rawValue.bracketEscaped() + "] = \"" + version.versionValue.quoteEscaped() + "\""
+				return version.versionType.rawValue.bracketEscaped() + "[" + version.targetName.bracketEscaped() + "][" + version.configurationName.bracketEscaped() + "][" + version.versionSource.rawValue.bracketEscaped() + "] = \"" + version.value.quoteEscaped() + "\""
 			}.joined(separator: "\n")
 		}
 		
@@ -120,9 +142,14 @@ struct GetVersions : ParsableCommand {
 				return true
 			}
 			
-			reducedBuildVersionForAll = nil
+			reducedBuildVersionForAll     = versions.filter{ $0.versionType == .buildVersion     }.reduce(versions.first?.value, { $0 == $1.value ? $0 : nil })
+			reducedMarketingVersionForAll = versions.filter{ $0.versionType == .marketingVersion }.reduce(versions.first?.value, { $0 == $1.value ? $0 : nil })
+			
 			reducedBuildVersionPerTargets = [:]
+			reducedMarketingVersionPerTargets = [:]
+			
 			reducedBuildVersionPerConfigurations = [:]
+			reducedMarketingVersionPerConfigurations = [:]
 		}
 		
 	}
