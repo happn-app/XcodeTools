@@ -46,9 +46,6 @@ public struct CombinedBuildSettings {
 			.mapValues{ $0.buildSettingsLevels }
 		
 		return try targets.flatMap{ target -> [CombinedBuildSettings] in
-			guard let name = target.name else {
-				throw XcodeProjKitError(message: "Got target \(target.xcID ?? "<unknown>") which does not have a name")
-			}
 			return try Array(allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings).values)
 		}
 	}
