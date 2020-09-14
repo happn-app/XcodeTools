@@ -64,6 +64,9 @@ struct GetVersions : ParsableCommand {
 		
 		let output = Output(versions: versions)
 		switch outputFormat {
+			case .none:
+				(/*nop*/)
+			
 			case .text:
 				print(output)
 				
