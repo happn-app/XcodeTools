@@ -65,8 +65,7 @@ struct GetVersions : ParsableCommand {
 		let output = Output(versions: versions)
 		switch outputFormat {
 			case .text:
-				#warning("TODO")
-				print(output.unreducedDescription)
+				print(output)
 				
 			case .json, .jsonPrettyPrinted:
 				let encoder = JSONEncoder()
@@ -93,7 +92,7 @@ struct GetVersions : ParsableCommand {
 		}
 	}
 	
-	private struct Output : Encodable {
+	private struct Output : Encodable, CustomStringConvertible {
 		
 		struct Version : Encodable {
 			
@@ -126,19 +125,41 @@ struct GetVersions : ParsableCommand {
 		@NullEncodable
 		var reducedBuildVersionForAll: String?
 		var reducedBuildVersionPerTargets: [String: String?]
-		/* This one could be removed, probably. */
-		var reducedBuildVersionPerConfigurations: [String: String?]
 		
 		@NullEncodable
 		var reducedMarketingVersionForAll: String?
 		var reducedMarketingVersionPerTargets: [String: String?]
-		/* This one could be removed, probably. */
-		var reducedMarketingVersionPerConfigurations: [String: String?]
 		
-		var unreducedDescription: String {
-			return versions.map{ version in
+		var description: String {
+			var lines = [String]()
+			
+			lines += versions.map{ version in
 				return version.versionType.rawValue.bracketEscaped() + "[" + version.targetName.bracketEscaped() + "][" + version.configurationName.bracketEscaped() + "][" + version.versionSource.rawValue.bracketEscaped() + "] = \"" + version.value.quoteEscaped() + "\""
-			}.joined(separator: "\n")
+			}
+			
+			for (targetName, version) in reducedBuildVersionPerTargets.map({ $0 }) {
+				guard let version = version else {
+					continue
+				}
+				lines.append(Version.VersionType.buildVersion.rawValue.bracketEscaped() + "[" + targetName.bracketEscaped() + "] = \"" + version.quoteEscaped() + "\"")
+			}
+			
+			for (targetName, version) in reducedMarketingVersionPerTargets.map({ $0 }) {
+				guard let version = version else {
+					continue
+				}
+				lines.append(Version.VersionType.marketingVersion.rawValue.bracketEscaped() + "[" + targetName.bracketEscaped() + "] = \"" + version.quoteEscaped() + "\"")
+			}
+			
+			if let v = reducedBuildVersionForAll {
+				lines.append(Version.VersionType.buildVersion.rawValue.bracketEscaped() + " = \"" + v.quoteEscaped() + "\"")
+			}
+			
+			if let v = reducedMarketingVersionForAll {
+				lines.append(Version.VersionType.marketingVersion.rawValue.bracketEscaped() + " = \"" + v.quoteEscaped() + "\"")
+			}
+			
+			return lines.joined(separator: "\n")
 		}
 		
 		init(versions vs: [Version]) {
@@ -173,15 +194,6 @@ struct GetVersions : ParsableCommand {
 				return (targetName, filtered.reduce(filtered.first?.value, { $0 == $1.value ? $0 : nil }) )
 			}, uniquingKeysWith: { _,_ in fatalError("Internal Error: Got the same target twice when merging marketing versions. This should not be possible.") })
 			
-			let ·reducedBuildVersionPerConfigurations: [String: String?] = Dictionary(Set(buildVersions.map{ $0.configurationName }).map{ configurationName in
-				let filtered = buildVersions.filter{ $0.configurationName == configurationName }
-				return (configurationName, filtered.reduce(filtered.first?.value, { $0 == $1.value ? $0 : nil }) )
-			}, uniquingKeysWith: { _,_ in fatalError("Internal Error: Got the same config twice when merging build versions. This should not be possible.") })
-			let ·reducedMarketingVersionPerConfigurations: [String: String?] = Dictionary(Set(marketingVersions.map{ $0.configurationName }).map{ configurationName in
-				let filtered = marketingVersions.filter{ $0.configurationName == configurationName }
-				return (configurationName, filtered.reduce(filtered.first?.value, { $0 == $1.value ? $0 : nil }) )
-			}, uniquingKeysWith: { _,_ in fatalError("Internal Error: Got the same config twice when merging marketing versions. This should not be possible.") })
-			
 			
 			versions = ·versions
 			
@@ -190,9 +202,6 @@ struct GetVersions : ParsableCommand {
 			
 			reducedBuildVersionPerTargets = ·reducedBuildVersionPerTargets
 			reducedMarketingVersionPerTargets = ·reducedMarketingVersionPerTargets
-			
-			reducedBuildVersionPerConfigurations = ·reducedBuildVersionPerConfigurations
-			reducedMarketingVersionPerConfigurations = ·reducedMarketingVersionPerConfigurations
 		}
 		
 	}
