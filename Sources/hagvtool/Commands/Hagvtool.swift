@@ -2,8 +2,6 @@ import Foundation
 
 import ArgumentParser
 
-import libhagvtool
-
 
 
 struct Hagvtool : ParsableCommand {
