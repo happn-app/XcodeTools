@@ -17,6 +17,16 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		
 		shellPath = try rawObject.get("shellPath")
 		shellScript = try rawObject.get("shellScript")
+		
+		if let showEnvVarsInLogStr: String = try rawObject.getIfExists("showEnvVarsInLog") {
+			guard let value = Int(showEnvVarsInLogStr) else {
+				throw XcodeProjKitError(message: "Unexpected show env vars in log value \(showEnvVarsInLogStr)")
+			}
+			if value != 0 && value != 1 {
+				NSLog("%@", "Warning: Suspicious value for showEnvVarsInLog \(showEnvVarsInLogStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+			}
+			showEnvVarsInLog = NSNumber(value: value != 0)
+		}
 	}
 	
 }

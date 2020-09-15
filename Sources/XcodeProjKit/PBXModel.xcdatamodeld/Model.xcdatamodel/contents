@@ -111,6 +111,7 @@
         <attribute name="outputPaths" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="shellPath" attributeType="String"/>
         <attribute name="shellScript" attributeType="String"/>
+        <attribute name="showEnvVarsInLog" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
     </entity>
     <entity name="PBXSourcesBuildPhase" representedClassName="PBXSourcesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXTarget" representedClassName="PBXTarget" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
@@ -178,7 +179,7 @@
         <element name="PBXObject" positionX="-96.59765625" positionY="-162.03125" width="128" height="88"/>
         <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="223"/>
         <element name="PBXResourcesBuildPhase" positionX="-830.046875" positionY="-98" width="161.390625" height="43"/>
-        <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="133"/>
+        <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="148"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
         <element name="PBXTarget" positionX="-82.859375" positionY="124.27734375" width="128" height="133"/>
         <element name="PBXTargetDependency" positionX="-364.64453125" positionY="265.9609375" width="148.2578125" height="88"/>
