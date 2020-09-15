@@ -25,6 +25,7 @@ public class PBXNativeTarget : PBXTarget {
 		productReference = try productReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
 		productType = try rawObject.get("productType")
+		productInstallPath = try rawObject.getIfExists("productInstallPath")
 		
 		let buildRulesIDs: [String]? = try rawObject.getIfExists("buildRules")
 		buildRules = try buildRulesIDs?.map{ try PBXBuildRule.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
