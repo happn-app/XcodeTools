@@ -45,6 +45,8 @@ public struct BuildSettings {
 	public static func standardDefaultSettings(xcodprojURL: URL) -> BuildSettings {
 		let projectDirPath = xcodprojURL.deletingLastPathComponent().path
 		return BuildSettings(rawBuildSettings: [
+			"HOME": FileManager.default.homeDirectoryForCurrentUser.path,
+			
 			/* https://stackoverflow.com/a/43751741 */
 			"PROJECT_DIR": projectDirPath,
 			"PROJECT_FILE_PATH": xcodprojURL.path,
