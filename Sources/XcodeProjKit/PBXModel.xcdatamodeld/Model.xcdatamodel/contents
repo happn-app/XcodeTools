@@ -97,7 +97,7 @@
         <attribute name="hasScannedForEncodings" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="knownRegions" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="projectDirPath" attributeType="String"/>
-        <attribute name="projectReferences" optional="YES" attributeType="Transformable" customClassName="[[String: String]]"/>
+        <attribute name="projectReferences" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[[String: String]]"/>
         <attribute name="projectRoot" optional="YES" attributeType="String"/>
         <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="project" inverseEntity="XCConfigurationList"/>
         <relationship name="mainGroup" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForMainGroup" inverseEntity="PBXGroup"/>
