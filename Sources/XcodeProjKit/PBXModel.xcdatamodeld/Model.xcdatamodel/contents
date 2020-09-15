@@ -30,6 +30,7 @@
         <attribute name="proxyType" attributeType="Integer 16" usesScalarValueType="YES"/>
         <attribute name="remoteGlobalIDString" attributeType="String"/>
         <attribute name="remoteInfo" attributeType="String"/>
+        <relationship name="referenceProxies" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXReferenceProxy" inverseName="remoteRef" inverseEntity="PBXReferenceProxy"/>
         <relationship name="targetDependencies" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXTargetDependency" inverseName="targetProxy" inverseEntity="PBXTargetDependency"/>
     </entity>
     <entity name="PBXCopyFilesBuildPhase" representedClassName="PBXCopyFilesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category">
@@ -105,6 +106,10 @@
         <relationship name="productRefGroup" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXGroup" inverseName="projectForProductRef" inverseEntity="PBXGroup"/>
         <relationship name="targets_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTarget" inverseName="project" inverseEntity="PBXTarget"/>
     </entity>
+    <entity name="PBXReferenceProxy" representedClassName="PBXReferenceProxy" parentEntity="PBXFileElement" syncable="YES" codeGenerationType="category">
+        <attribute name="fileType" attributeType="String"/>
+        <relationship name="remoteRef" maxCount="1" deletionRule="Nullify" destinationEntity="PBXContainerItemProxy" inverseName="referenceProxies" inverseEntity="PBXContainerItemProxy"/>
+    </entity>
     <entity name="PBXResourcesBuildPhase" representedClassName="PBXResourcesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXShellScriptBuildPhase" representedClassName="PBXShellScriptBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category">
         <attribute name="inputFileListPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
@@ -169,18 +174,19 @@
         <element name="PBXAppleScriptBuildPhase" positionX="-572.61328125" positionY="154.96484375" width="161.9375" height="43"/>
         <element name="PBXBuildFile" positionX="-374.79296875" positionY="-187.96875" width="128" height="103"/>
         <element name="PBXBuildPhase" positionX="-642.42578125" positionY="10.30078125" width="219.78515625" height="118"/>
-        <element name="PBXBuildRule" positionX="495.80078125" positionY="223.984375" width="128" height="163"/>
-        <element name="PBXContainerItemProxy" positionX="-575.7265625" positionY="224.48828125" width="158.87890625" height="118"/>
+        <element name="PBXBuildRule" positionX="494.51171875" positionY="247.4609375" width="128" height="163"/>
+        <element name="PBXContainerItemProxy" positionX="-575.7265625" positionY="224.48828125" width="158.87890625" height="133"/>
         <element name="PBXCopyFilesBuildPhase" positionX="-878.55078125" positionY="-33.3984375" width="162.9375" height="73"/>
         <element name="PBXFileElement" positionX="-564.8359375" positionY="-438.203125" width="128" height="178"/>
         <element name="PBXFileReference" positionX="-153.18359375" positionY="-559.30859375" width="191.140625" height="223"/>
         <element name="PBXFrameworksBuildPhase" positionX="-896.73046875" positionY="59.703125" width="170.8125" height="43"/>
         <element name="PBXGroup" positionX="-744.71875" positionY="-273.01171875" width="128" height="88"/>
-        <element name="PBXHeadersBuildPhase" positionX="-743.3515625" positionY="161.7109375" width="152.36328125" height="43"/>
+        <element name="PBXHeadersBuildPhase" positionX="-752.921875" positionY="170.6953125" width="152.36328125" height="43"/>
         <element name="PBXLegacyTarget" positionX="5.87109375" positionY="334.3125" width="128" height="103"/>
         <element name="PBXNativeTarget" positionX="245.41015625" positionY="274.4921875" width="193.0703125" height="118"/>
         <element name="PBXObject" positionX="-96.59765625" positionY="-162.03125" width="128" height="88"/>
         <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="238"/>
+        <element name="PBXReferenceProxy" positionX="-752.46875" positionY="-400.33984375" width="128" height="73"/>
         <element name="PBXResourcesBuildPhase" positionX="-830.046875" positionY="-98" width="161.390625" height="43"/>
         <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="148"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
@@ -189,7 +195,7 @@
         <element name="PBXVariantGroup" positionX="-376.34765625" positionY="-479.81640625" width="128" height="58"/>
         <element name="XCBuildConfiguration" positionX="269.82421875" positionY="-545.921875" width="254.86328125" height="103"/>
         <element name="XCConfigurationList" positionX="659.109375" positionY="-138.04296875" width="183.18359375" height="118"/>
-        <element name="XCRemoteSwiftPackageReference" positionX="369.7109375" positionY="-261.953125" width="195.94140625" height="103"/>
+        <element name="XCRemoteSwiftPackageReference" positionX="367.1953125" positionY="-235.484375" width="195.94140625" height="103"/>
         <element name="XCSwiftPackageProductDependency" positionX="-171.39453125" positionY="-333.4375" width="223.52734375" height="118"/>
         <element name="XCVersionGroup" positionX="-356.78515625" positionY="-373.09375" width="128" height="88"/>
     </elements>

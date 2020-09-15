@@ -3,7 +3,6 @@ import Foundation
 
 
 
-#warning("TODO: PBXReferenceProxy object")
 public struct PBXProj {
 	
 	public let rawDecoded: [String: Any]
