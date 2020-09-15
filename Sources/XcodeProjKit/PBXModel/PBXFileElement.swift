@@ -89,7 +89,7 @@ public class PBXFileElement : PBXObject {
 	}
 	
 	var path: String? {
-		rawPath ?? rawName
+		rawPath
 	}
 	
 	var sourceTree: SourceTree? {
