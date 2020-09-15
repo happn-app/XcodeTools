@@ -33,6 +33,7 @@ public class PBXFileReference : PBXFileElement {
 		explicitFileType = try rawObject.getIfExists("explicitFileType")
 		lastKnownFileType = try rawObject.getIfExists("lastKnownFileType")
 		xcLanguageSpecificationIdentifier = try rawObject.getIfExists("xcLanguageSpecificationIdentifier")
+		plistStructureDefinitionIdentifier = try rawObject.getIfExists("plistStructureDefinitionIdentifier")
 	}
 	
 }

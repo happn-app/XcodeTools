@@ -57,6 +57,7 @@
         <attribute name="includeInIndex" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <attribute name="lastKnownFileType" optional="YES" attributeType="String"/>
         <attribute name="lineEnding" optional="YES" attributeType="Integer 16" usesScalarValueType="NO"/>
+        <attribute name="plistStructureDefinitionIdentifier" optional="YES" attributeType="String"/>
         <attribute name="xcLanguageSpecificationIdentifier" optional="YES" attributeType="String"/>
         <relationship name="buildConfigurations" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="XCBuildConfiguration" inverseName="baseConfigurationReference" inverseEntity="XCBuildConfiguration"/>
         <relationship name="nativeTargets" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXNativeTarget" inverseName="productReference" inverseEntity="PBXNativeTarget"/>
@@ -168,7 +169,7 @@
         <element name="PBXContainerItemProxy" positionX="-575.7265625" positionY="224.48828125" width="158.87890625" height="118"/>
         <element name="PBXCopyFilesBuildPhase" positionX="-878.55078125" positionY="-33.3984375" width="162.9375" height="73"/>
         <element name="PBXFileElement" positionX="-564.8359375" positionY="-438.203125" width="128" height="178"/>
-        <element name="PBXFileReference" positionX="-153.18359375" positionY="-559.30859375" width="191.140625" height="208"/>
+        <element name="PBXFileReference" positionX="-153.18359375" positionY="-559.30859375" width="191.140625" height="223"/>
         <element name="PBXFrameworksBuildPhase" positionX="-896.73046875" positionY="59.703125" width="170.8125" height="43"/>
         <element name="PBXGroup" positionX="-744.71875" positionY="-273.01171875" width="128" height="88"/>
         <element name="PBXHeadersBuildPhase" positionX="-743.3515625" positionY="161.7109375" width="152.36328125" height="43"/>
