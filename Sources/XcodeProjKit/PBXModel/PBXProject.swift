@@ -59,6 +59,8 @@ public class PBXProject : PBXObject {
 		
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
+		
+		projectReferences = try rawObject.getIfExists("projectReferences")
 	}
 	
 	public var targets: [PBXTarget]? {
