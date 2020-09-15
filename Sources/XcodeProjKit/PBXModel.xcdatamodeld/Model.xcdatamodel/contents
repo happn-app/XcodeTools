@@ -124,6 +124,7 @@
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets_cd" inverseEntity="PBXProject"/>
     </entity>
     <entity name="PBXTargetDependency" representedClassName="PBXTargetDependency" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="name" optional="YES" attributeType="String"/>
         <relationship name="productRef" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCSwiftPackageProductDependency" inverseName="targetDependencies" inverseEntity="XCSwiftPackageProductDependency"/>
         <relationship name="target" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXTarget" inverseName="dependencies" inverseEntity="PBXTarget"/>
         <relationship name="targetProxy" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXContainerItemProxy" inverseName="targetDependencies" inverseEntity="PBXContainerItemProxy"/>
@@ -183,7 +184,7 @@
         <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="148"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
         <element name="PBXTarget" positionX="-82.859375" positionY="124.27734375" width="128" height="133"/>
-        <element name="PBXTargetDependency" positionX="-364.64453125" positionY="265.9609375" width="148.2578125" height="88"/>
+        <element name="PBXTargetDependency" positionX="-364.64453125" positionY="265.9609375" width="148.2578125" height="103"/>
         <element name="PBXVariantGroup" positionX="-376.34765625" positionY="-479.81640625" width="128" height="58"/>
         <element name="XCBuildConfiguration" positionX="269.82421875" positionY="-545.921875" width="254.86328125" height="103"/>
         <element name="XCConfigurationList" positionX="659.109375" positionY="-138.04296875" width="183.18359375" height="118"/>
