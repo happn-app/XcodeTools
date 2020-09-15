@@ -29,8 +29,8 @@ public class PBXContainerItemProxy : PBXObject {
 			guard let value = Int16(proxyTypeStr) else {
 				throw XcodeProjKitError(message: "Unexpected proxy type value \(proxyTypeStr)")
 			}
-			if value != 1 {
-				NSLog("%@", "Warning: Unknown value for proxyType \(proxyTypeStr) in object \(xcID ?? "<unknown>"); expected 1.")
+			if value != 1 && value != 2 {
+				NSLog("%@", "Warning: Unknown value for proxyType \(proxyTypeStr) in object \(xcID ?? "<unknown>"); expected 1 or 2.")
 			}
 			proxyType = value
 		}
