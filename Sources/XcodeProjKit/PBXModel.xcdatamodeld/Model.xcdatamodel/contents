@@ -71,7 +71,12 @@
         <relationship name="projectForProductRef" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="productRefGroup" inverseEntity="PBXProject"/>
     </entity>
     <entity name="PBXHeadersBuildPhase" representedClassName="PBXHeadersBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
-    <entity name="PBXLegacyTarget" representedClassName="PBXLegacyTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
+    <entity name="PBXLegacyTarget" representedClassName="PBXLegacyTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category">
+        <attribute name="buildArgumentsString" attributeType="String"/>
+        <attribute name="buildToolPath" attributeType="String"/>
+        <attribute name="buildWorkingDirectory" attributeType="String"/>
+        <attribute name="passBuildSettingsInEnvironment" attributeType="Boolean" usesScalarValueType="YES"/>
+    </entity>
     <entity name="PBXNativeTarget" representedClassName="PBXNativeTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category">
         <attribute name="productType" attributeType="String"/>
         <relationship name="buildRules_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXBuildRule" inverseName="targets" inverseEntity="PBXBuildRule"/>
@@ -166,7 +171,7 @@
         <element name="PBXFrameworksBuildPhase" positionX="-896.73046875" positionY="59.703125" width="170.8125" height="43"/>
         <element name="PBXGroup" positionX="-744.71875" positionY="-273.01171875" width="128" height="88"/>
         <element name="PBXHeadersBuildPhase" positionX="-743.3515625" positionY="161.7109375" width="152.36328125" height="43"/>
-        <element name="PBXLegacyTarget" positionX="5.87109375" positionY="334.3125" width="128" height="43"/>
+        <element name="PBXLegacyTarget" positionX="5.87109375" positionY="334.3125" width="128" height="103"/>
         <element name="PBXNativeTarget" positionX="245.41015625" positionY="274.4921875" width="193.0703125" height="103"/>
         <element name="PBXObject" positionX="-96.59765625" positionY="-162.03125" width="128" height="88"/>
         <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="208"/>
