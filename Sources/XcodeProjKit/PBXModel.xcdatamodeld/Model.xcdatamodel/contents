@@ -89,6 +89,7 @@
         <attribute name="xcID" attributeType="String"/>
     </entity>
     <entity name="PBXProject" representedClassName="PBXProject" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
+        <attribute name="attributes" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String: Any]"/>
         <attribute name="compatibilityVersion" attributeType="String"/>
         <attribute name="developmentRegion" attributeType="String"/>
         <attribute name="hasScannedForEncodings" attributeType="Boolean" usesScalarValueType="YES"/>
@@ -174,7 +175,7 @@
         <element name="PBXLegacyTarget" positionX="5.87109375" positionY="334.3125" width="128" height="103"/>
         <element name="PBXNativeTarget" positionX="245.41015625" positionY="274.4921875" width="193.0703125" height="103"/>
         <element name="PBXObject" positionX="-96.59765625" positionY="-162.03125" width="128" height="88"/>
-        <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="208"/>
+        <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="223"/>
         <element name="PBXResourcesBuildPhase" positionX="-830.046875" positionY="-98" width="161.390625" height="43"/>
         <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="133"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>

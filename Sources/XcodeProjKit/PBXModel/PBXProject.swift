@@ -21,6 +21,8 @@ public class PBXProject : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
+		attributes = try rawObject.getIfExists("attributes")
+		
 		compatibilityVersion = try rawObject.get("compatibilityVersion")
 		
 		projectDirPath = try rawObject.get("projectDirPath")
