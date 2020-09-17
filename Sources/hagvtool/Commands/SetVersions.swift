@@ -12,7 +12,7 @@ struct SetVersions : ParsableCommand {
 	
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
-		print(try xcodeproj.pbxproj.stringSerialization())
+		print(try xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName))
 	}
 	
 }

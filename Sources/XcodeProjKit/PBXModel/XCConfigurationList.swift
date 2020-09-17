@@ -41,13 +41,12 @@ public class XCConfigurationList : PBXObject {
 		set {buildConfigurations_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
-	public override var stringSerializationName: String? {
+	open override func stringSerializationName(projectName: String) -> String? {
 		let usedByType: String
 		let usedByName: String
 		if let p = project {
 			usedByType = p.rawISA ?? "<unknown project type>"
-			#warning("TODO")
-			usedByName = "TODO"
+			usedByName = projectName
 		} else if let t = target {
 			usedByType = t.rawISA ?? "<unknown target type>"
 			usedByName = t.name ?? "<unknown targe name>"

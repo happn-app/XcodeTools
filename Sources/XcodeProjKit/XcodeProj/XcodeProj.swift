@@ -57,6 +57,10 @@ public struct XcodeProj {
 		pbxproj = try PBXProj(url: pbxprojURL, context: managedObjectContext)
 	}
 	
+	public var projectName: String {
+		return xcodeprojURL.deletingPathExtension().lastPathComponent
+	}
+	
 	@discardableResult
 	public func iterateCombinedBuildSettingsOfTargets<T>(_ handler: (_ target: PBXTarget, _ targetName: String, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
 		let defaultBuildSettings = BuildSettings.standardDefaultSettings(xcodprojURL: xcodeprojURL)

@@ -84,7 +84,7 @@ public class PBXFileElement : PBXObject {
 		}
 	}
 	
-	open override var stringSerializationName: String? {
+	open override func stringSerializationName(projectName: String) -> String? {
 		return name
 	}
 	

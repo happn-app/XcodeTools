@@ -81,7 +81,7 @@ public struct PBXProj {
 		}
 	}
 	
-	public func stringSerialization() throws -> String {
+	public func stringSerialization(projectName: String) throws -> String {
 		guard let context = rootObject.managedObjectContext else {
 			throw XcodeProjKitError(message: "Cannot serialize PBXProj because the root object does not have a context")
 		}
@@ -132,7 +132,7 @@ public struct PBXProj {
 						"""
 				}
 				previousISA = isa
-				ret += try object.stringSerialization(indentCount: 2)
+				ret += try object.stringSerialization(projectName: projectName, indentCount: 2)
 			}
 			printEndSection()
 		}

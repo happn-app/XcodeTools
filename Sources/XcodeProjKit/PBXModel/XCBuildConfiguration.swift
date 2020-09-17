@@ -28,7 +28,7 @@ public class XCBuildConfiguration : PBXObject {
 		baseConfigurationReference = try baseConfigurationReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}
 	
-	open override var stringSerializationName: String? {
+	open override func stringSerializationName(projectName: String) -> String? {
 		return name
 	}
 	

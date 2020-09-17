@@ -91,21 +91,22 @@ public class PBXObject : NSManagedObject {
 		return false
 	}
 	
-	open var stringSerializationName: String? {
+	open func stringSerializationName(projectName: String) -> String? {
 		return nil
 	}
 	
-	public var xcIDAndComment: String? {
-		return xcID.flatMap{ $0 + (stringSerializationName.flatMap{ " /* \($0) */" } ?? "") }
+	public func xcIDAndComment(projectName: String) -> String? {
+		return xcID.flatMap{ $0 + (stringSerializationName(projectName: projectName).flatMap{ " /* \($0) */" } ?? "") }
 	}
 	
-	public func stringSerialization(indentCount: Int = 0, indentBase: String = "\t") throws -> String {
+	/* Sadly, we do need the project name here… */
+	public func stringSerialization(projectName: String, indentCount: Int = 0, indentBase: String = "\t") throws -> String {
 		let indent = String(repeating: indentBase, count: indentCount)
 		
 		var ret = ""
 		ret += try """
 			
-			\(indent)\(xcIDAndComment.get())
+			\(indent)\(xcIDAndComment(projectName: projectName).get())
 			"""
 		
 		ret += " = {"
