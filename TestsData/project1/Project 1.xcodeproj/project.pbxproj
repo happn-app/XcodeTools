@@ -20,6 +20,7 @@
 		7B591CAC250CE0E800B6CA54 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B591CAB250CE0E800B6CA54 /* ActionViewController.swift */; };
 		7B591CAF250CE0E800B6CA54 /* ActionViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B591CAD250CE0E800B6CA54 /* ActionViewController.xib */; };
 		7B591CB4250CE0E800B6CA54 /* Target 2.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7B591CA5250CE0E800B6CA54 /* Target 2.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7BF8435025136BC1001EDEBF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7BF8434F25136BC1001EDEBF /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +71,7 @@
 		7BF7E4A8250D2FFD00A678A5 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
 		7BF7E4AB250D310E00A678A5 /* test_srcroot.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_srcroot.xcconfigimport; sourceTree = "<group>"; };
 		7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_srcroot.xcconfigimport; sourceTree = "<group>"; };
+		7BF8434F25136BC1001EDEBF /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +127,7 @@
 				7B591C9D250B59AB00B6CA54 /* test2.xcconfig */,
 				7B591C9F250B5C7100B6CA54 /* test3.xcconfig */,
 				7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */,
+				7BF8434F25136BC1001EDEBF /* Localizable.strings */,
 			);
 			name = Target1;
 			path = target1;
@@ -308,6 +311,7 @@
 				7B591CA0250B5C7100B6CA54 /* test3.xcconfig in Resources */,
 				7B591C9A250B51B400B6CA54 /* test.xcconfig in Resources */,
 				7B591C8E250B515400B6CA54 /* Assets.xcassets in Resources */,
+				7BF8435025136BC1001EDEBF /* Localizable.strings in Resources */,
 				7B591C9E250B59AB00B6CA54 /* test2.xcconfig in Resources */,
 				7B591C91250B515400B6CA54 /* Main.storyboard in Resources */,
 				7B591C9C250B51D400B6CA54 /* Utils.xcconfigimport in Resources */,
