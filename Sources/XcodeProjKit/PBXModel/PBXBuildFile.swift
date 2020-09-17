@@ -39,13 +39,13 @@ public class PBXBuildFile : PBXObject {
 		return fileName + " in " + buildPhaseName
 	}
 	
-	open override func serialized(projectName: String) throws -> [String: Any] {
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let s = rawSettings {mySerialization["settings"]   = s}
 		if let r = fileRef     {mySerialization["fileRef"]    = try r.xcIDAndComment(projectName: projectName).get()}
 		if let r = productRef  {mySerialization["productRef"] = try r.xcIDAndComment(projectName: projectName).get()}
 		
-		let parentSerialization = try super.serialized(projectName: projectName)
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
 		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
 			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
 			return new

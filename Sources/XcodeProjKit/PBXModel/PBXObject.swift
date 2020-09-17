@@ -95,12 +95,22 @@ public class PBXObject : NSManagedObject {
 		return nil
 	}
 	
-	open func serialized(projectName: String) throws -> [String: Any] {
+	open func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		return try ["isa": rawISA.get()]
 	}
-
-	func xcIDAndComment(projectName: String) -> ValueAndComment? {
-		return xcID.flatMap{ ValueAndComment(value: $0, comment: stringSerializationName(projectName: projectName)) }
+	
+	/**
+	All the values in the raw object, but modified w/ known values in the model. */
+	public func allSerialized(projectName: String) throws -> [String: Any] {
+		let known = try knownValuesSerialized(projectName: projectName)
+		let nonNilRawObject = rawObject ?? [:]
+		
+		let diffUnknownButExist = Set(nonNilRawObject.keys).subtracting(known.keys)
+		let diffKnownButDoNotExist = Set(known.keys).subtracting(nonNilRawObject.keys)
+		if !diffUnknownButExist.isEmpty {NSLog("%@", "Warning: Got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist)")}
+		if !diffKnownButDoNotExist.isEmpty {NSLog("%@", "Warning: Got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
+		
+		return (rawObject ?? [:]).merging(known, uniquingKeysWith: { _, new in new })
 	}
 	
 	/* Sadly, we do need the project name here… */
@@ -111,9 +121,14 @@ public class PBXObject : NSManagedObject {
 		
 		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
 		"""
-		let value = try serializeAnyToString(serialized(projectName: projectName), isRoot: true, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
+		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
 			
+	}
+	
+	/** The xcID of the object and its associated comment. */
+	func xcIDAndComment(projectName: String) -> ValueAndComment? {
+		return xcID.flatMap{ ValueAndComment(value: $0, comment: stringSerializationName(projectName: projectName)) }
 	}
 	
 	private func serializeAnyToString(_ v: Any, isRoot: Bool, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {
@@ -139,8 +154,7 @@ public class PBXObject : NSManagedObject {
 				ret += "("
 				for value in a {
 					if !oneLineStringSerialization {ret += "\n\(indent)\(indentBase)"}
-					ret += try serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
-					ret += ","
+					ret += try serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization) + ","
 					if oneLineStringSerialization {ret += " "}
 				}
 				if !oneLineStringSerialization {ret += "\n\(indent)"}
@@ -148,18 +162,12 @@ public class PBXObject : NSManagedObject {
 				
 			case let d as [String: Any]:
 				ret += "{"
-				
-				if !oneLineStringSerialization {
-					ret += "\n\(indent)\(indentBase)"
-				}
 				for (key, value) in d.sorted(by: { sortSerializationKeys($0, $1, isaFirst: isRoot) }) {
+					if !oneLineStringSerialization {ret += "\n\(indent)\(indentBase)"}
 					ret += try "\(key.escapedForPBXProjValue()) = \(serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization));"
 					if oneLineStringSerialization {ret += " "}
 				}
-				
-				if !oneLineStringSerialization {
-					ret += "\n\(indent)"
-				}
+				if !oneLineStringSerialization {ret += "\n\(indent)"}
 				ret += "}"
 				
 			default:
