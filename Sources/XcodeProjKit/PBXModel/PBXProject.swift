@@ -69,8 +69,8 @@ public class PBXProject : PBXObject {
 	}
 	
 	public var packageReferences: [XCRemoteSwiftPackageReference]? {
-		get {packageReferences_cd?.array as! [XCRemoteSwiftPackageReference]?}
-		set {packageReferences_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+		get {PBXObject.getOptionalToMany(packageReferences_cd, packageReferences_isSet)}
+		set {(packageReferences_cd, packageReferences_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {

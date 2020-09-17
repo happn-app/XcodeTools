@@ -25,8 +25,8 @@ public class PBXGroup : PBXFileElement {
 	}
 	
 	public var children: [PBXFileElement]? {
-		get {children_cd?.array as! [PBXFileElement]?}
-		set {children_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+		get {PBXObject.getOptionalToMany(children_cd, children_isSet)}
+		set {(children_cd, children_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {

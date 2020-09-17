@@ -72,6 +72,21 @@ public class PBXObject : NSManagedObject {
 		}
 	}
 	
+	static func getOptionalToMany<T>(_ cdValue: NSOrderedSet?, _ isSetFlag: Bool) -> [T]? {
+		guard isSetFlag else {
+			assert((cdValue?.count ?? 0) == 0)
+			return nil
+		}
+		return cdValue?.array as! [T]?
+	}
+	
+	static func setOptionalToManyTuple<T>(_ newValue: [T]?) -> (NSOrderedSet?, Bool) {
+		guard let v = newValue else {
+			return (nil, false)
+		}
+		return (NSOrderedSet(array: v), true)
+	}
+	
 	open func fillValues(rawObject: [String: Any], rawObjects: [String: [String: Any]], context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws {
 		guard context === managedObjectContext else {
 			throw XcodeProjKitError(message: "Internal error: asked to fill values of an object with a context != than object’s context")

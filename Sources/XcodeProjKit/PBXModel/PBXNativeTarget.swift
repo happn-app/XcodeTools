@@ -35,13 +35,13 @@ public class PBXNativeTarget : PBXTarget {
 	}
 	
 	public var buildRules: [PBXBuildRule]? {
-		get {buildRules_cd?.array as! [PBXBuildRule]?}
-		set {buildRules_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+		get {PBXObject.getOptionalToMany(buildRules_cd, buildRules_isSet)}
+		set {(buildRules_cd, buildRules_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
 	public var packageProductDependencies: [XCSwiftPackageProductDependency]? {
-		get {packageProductDependencies_cd?.array as! [XCSwiftPackageProductDependency]?}
-		set {packageProductDependencies_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+		get {PBXObject.getOptionalToMany(packageProductDependencies_cd, packageProductDependencies_isSet)}
+		set {(packageProductDependencies_cd, packageProductDependencies_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
