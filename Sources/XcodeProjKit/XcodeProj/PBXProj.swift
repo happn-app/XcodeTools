@@ -10,13 +10,16 @@ public struct PBXProj {
 	/** Should always be 1 (only version supported). */
 	public let archiveVersion: String
 	
-	/**
-	Usually 52 or 53 (starting w/ Xcode 11.4). We support these two versions
-	only. */
 	public let objectVersion: String
 	
 	/** The ID of the root object. */
 	public let rootObjectID: String
+	
+	/** The pbxproj file can contain a “classes” property (it usually does),
+	which is usually empty (I have never seen a file where it’s not). We keep the
+	information whether the property was present to be able to rewrite the
+	pbxproj. */
+	public let hasClassesProperty: Bool
 	
 	/**
 	All the objects in the project, keyed by their IDs. */
@@ -50,6 +53,7 @@ public struct PBXProj {
 		guard classes?.isEmpty ?? true else {
 			throw XcodeProjKitError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
+		hasClassesProperty = (classes != nil)
 		
 		let roid: String = try rawDecoded.get("rootObject")
 		let ro: [String: [String: Any]] = try rawDecoded.get("objects")
@@ -75,6 +79,76 @@ public struct PBXProj {
 			}
 			return ret
 		}
+	}
+	
+	public func stringSerialization() throws -> String {
+		guard let context = rootObject.managedObjectContext else {
+			throw XcodeProjKitError(message: "Cannot serialize PBXProj because the root object does not have a context")
+		}
+		
+		var ret = """
+			// !$*UTF8*$!
+			{
+				archiveVersion = \(archiveVersion);
+			"""
+		if hasClassesProperty {
+			ret += """
+				
+					classes = {
+					};
+				"""
+		}
+		ret += """
+			
+				objectVersion = \(objectVersion);
+				objects = {
+			"""
+		
+		try context.performAndWait{
+			let request: NSFetchRequest<PBXObject> = PBXObject.fetchRequest()
+			request.sortDescriptors = [
+				NSSortDescriptor(keyPath: \PBXObject.rawISA, ascending: true),
+				NSSortDescriptor(keyPath: \PBXObject.xcID, ascending: true)
+			]
+			
+			var previousISA: String?
+			func printEndSection() {
+				if let previousISA = previousISA {
+					ret += """
+							
+							/* End \(previousISA) section */
+							"""
+				}
+			}
+			
+			for object in try context.fetch(request) {
+				let id = try object.xcID.get()
+				let isa = try object.rawISA.get()
+				if isa != previousISA {
+					printEndSection()
+					ret += """
+						
+						
+						/* Begin \(isa) section */
+						"""
+				}
+				previousISA = isa
+				ret += """
+					
+							\(id)
+					"""
+			}
+			printEndSection()
+		}
+		
+		try ret += """
+			
+				};
+				rootObject = \(rootObject.xcID.get()) /* Project object */;
+			}
+			"""
+		
+		return ret
 	}
 	
 }

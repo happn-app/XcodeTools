@@ -81,3 +81,15 @@ extension Scanner {
 	}
 	
 }
+
+
+extension Optional {
+	
+	public func get(nilError: Error = XcodeProjKitError(message: "Trying to get value of nil optional")) throws -> Wrapped {
+		guard let v = self else {
+			throw nilError
+		}
+		return v
+	}
+	
+}
