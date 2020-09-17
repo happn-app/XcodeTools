@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "7B591CA4250CE0E800B6CA54"
-               BuildableName = "Target 2.appex"
-               BlueprintName = "Target 2"
+               BuildableName = "Target &quot;2&quot;.appex"
+               BlueprintName = "Target &quot;2&quot;"
                ReferencedContainer = "container:Project 1.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
