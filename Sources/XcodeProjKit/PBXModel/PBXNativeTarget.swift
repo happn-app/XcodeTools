@@ -44,4 +44,19 @@ public class PBXNativeTarget : PBXTarget {
 		set {packageProductDependencies_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let r = buildRules                 {mySerialization["buildRules"]                 = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
+		if let r = productReference           {mySerialization["productReference"]           = try r.xcIDAndComment(projectName: projectName).get()}
+		if let p = productInstallPath         {mySerialization["productInstallPath"]         = p}
+		if let r = packageProductDependencies {mySerialization["packageProductDependencies"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
+		mySerialization["productType"] = try productType.get()
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

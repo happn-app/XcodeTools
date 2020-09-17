@@ -34,4 +34,17 @@ public class XCVersionGroup : PBXFileElement {
 		set {children_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		mySerialization["versionGroupType"] = try versionGroupType.get()
+		mySerialization["currentVersion"] = try currentVersion.get().xcIDAndComment(projectName: projectName).get()
+		mySerialization["children"] = try children.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

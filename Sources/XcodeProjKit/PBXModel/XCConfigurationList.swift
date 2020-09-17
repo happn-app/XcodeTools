@@ -57,4 +57,17 @@ public class XCConfigurationList : PBXObject {
 		return "Build configuration list for \(usedByType) \"\(usedByName)\""
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let n = defaultConfigurationName                 {mySerialization["defaultConfigurationName"] = n}
+		if let v = defaultConfigurationIsVisible?.boolValue {mySerialization["defaultConfigurationIsVisible"] = v ? "1" : "0"}
+		mySerialization["buildConfigurations"] = try buildConfigurations.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

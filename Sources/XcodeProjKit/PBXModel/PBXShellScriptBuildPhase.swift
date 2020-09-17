@@ -33,4 +33,21 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		return "ShellScript" /* I guess… */
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let v = showEnvVarsInLog?.stringValue {mySerialization["showEnvVarsInLog"] = v}
+		mySerialization["inputPaths"]          = try inputPaths.get()
+		mySerialization["inputFileListPaths"]  = try inputFileListPaths.get()
+		mySerialization["outputPaths"]         = try outputPaths.get()
+		mySerialization["outputFileListPaths"] = try outputFileListPaths.get()
+		mySerialization["shellPath"]           = try shellPath.get()
+		mySerialization["shellScript"]         = try shellScript.get()
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

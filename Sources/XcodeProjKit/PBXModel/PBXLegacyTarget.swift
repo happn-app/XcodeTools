@@ -14,7 +14,8 @@ public class PBXLegacyTarget : PBXTarget {
 		buildArgumentsString = try rawObject.get("buildArgumentsString")
 		buildWorkingDirectory = try rawObject.get("buildWorkingDirectory")
 		
-		if let passBuildSettingsInEnvironmentStr: String = try rawObject.getIfExists("passBuildSettingsInEnvironment") {
+		do {
+		let passBuildSettingsInEnvironmentStr: String = try rawObject.get("passBuildSettingsInEnvironment")
 			guard let value = Int16(passBuildSettingsInEnvironmentStr) else {
 				throw XcodeProjKitError(message: "Unexpected pass build settings in environment value \(passBuildSettingsInEnvironmentStr)")
 			}
@@ -23,6 +24,20 @@ public class PBXLegacyTarget : PBXTarget {
 			}
 			passBuildSettingsInEnvironment = (value != 0)
 		}
+	}
+	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		mySerialization["buildToolPath"]                  = try buildToolPath.get()
+		mySerialization["buildArgumentsString"]           = try buildArgumentsString.get()
+		mySerialization["buildWorkingDirectory"]          = try buildWorkingDirectory.get()
+		mySerialization["passBuildSettingsInEnvironment"] = passBuildSettingsInEnvironment ? "1" : "0"
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
 	}
 	
 }

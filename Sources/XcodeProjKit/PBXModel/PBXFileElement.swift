@@ -88,6 +88,23 @@ public class PBXFileElement : PBXObject {
 		return name
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let n = rawName                  {mySerialization["name"] = n}
+		if let p = rawPath                  {mySerialization["path"] = p}
+		if let v = tabWidth?.stringValue    {mySerialization["tabWidth"] = v}
+		if let v = indentWidth?.stringValue {mySerialization["indentWidth"] = v}
+		if let b = usesTabs?.boolValue      {mySerialization["usesTabs"] = b ? "1" : "0"}
+		if let b = wrapsLines?.boolValue    {mySerialization["wrapsLines"] = b ? "1" : "0"}
+		mySerialization["sourceTree"] = try rawSourceTree.get()
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 	var name: String? {
 		rawName ?? rawPath
 	}

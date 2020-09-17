@@ -73,4 +73,27 @@ public class PBXProject : PBXObject {
 		set {packageReferences_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let a = attributes        {mySerialization["attributes"]        = a}
+		if let r = projectRoot       {mySerialization["projectRoot"]       = r}
+		if let r = packageReferences {mySerialization["packageReferences"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
+		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.xcIDAndComment(projectName: projectName).get() }
+		if let r = projectReferences {mySerialization["projectReferences"] = r }
+		mySerialization["compatibilityVersion"]   = try compatibilityVersion.get()
+		mySerialization["projectDirPath"]         = try projectDirPath.get()
+		mySerialization["knownRegions"]           = try knownRegions.get()
+		mySerialization["developmentRegion"]      = try developmentRegion.get()
+		mySerialization["hasScannedForEncodings"] = hasScannedForEncodings ? "1" : "0"
+		mySerialization["targets"]                = try targets.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		mySerialization["mainGroup"]              = try mainGroup.get().xcIDAndComment(projectName: projectName).get()
+		mySerialization["buildConfigurationList"] = try buildConfigurationList.get().xcIDAndComment(projectName: projectName).get()
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

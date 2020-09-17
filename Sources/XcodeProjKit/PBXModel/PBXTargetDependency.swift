@@ -21,4 +21,18 @@ public class PBXTargetDependency : PBXObject {
 		targetProxy = try targetProxyID.flatMap{ try PBXContainerItemProxy.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let n = name        {mySerialization["name"] = n}
+		if let r = productRef  {mySerialization["productRef"] = try r.xcIDAndComment(projectName: projectName).get()}
+		if let t = target      {mySerialization["target"] = try t.xcIDAndComment(projectName: projectName).get()}
+		if let t = targetProxy {mySerialization["targetProxy"] = try t.xcIDAndComment(projectName: projectName).get()}
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

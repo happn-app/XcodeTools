@@ -25,7 +25,8 @@ public class PBXContainerItemProxy : PBXObject {
 		remoteInfo = try rawObject.get("remoteInfo")
 		remoteGlobalIDString = try rawObject.get("remoteGlobalIDString")
 		
-		if let proxyTypeStr: String = try rawObject.getIfExists("proxyType") {
+		do {
+			let proxyTypeStr: String = try rawObject.get("proxyType")
 			guard let value = Int16(proxyTypeStr) else {
 				throw XcodeProjKitError(message: "Unexpected proxy type value \(proxyTypeStr)")
 			}
@@ -34,6 +35,20 @@ public class PBXContainerItemProxy : PBXObject {
 			}
 			proxyType = value
 		}
+	}
+	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		mySerialization["containerPortal"] = try containerPortalID.get()
+		mySerialization["remoteInfo"] = try remoteInfo.get()
+		mySerialization["remoteGlobalIDString"] = try remoteGlobalIDString.get()
+		mySerialization["proxyType"] = String(proxyType)
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
 	}
 	
 }

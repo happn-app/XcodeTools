@@ -51,4 +51,18 @@ public class PBXBuildPhase : PBXObject {
 		return "<Invalid, buildPhaseTypeAsString is abstract and should be overridden>"
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let n = name                                          {mySerialization["name"] = n}
+		if let m = buildActionMask                               {mySerialization["buildActionMask"] = m.stringValue}
+		if let b = runOnlyForDeploymentPostprocessing?.boolValue {mySerialization["runOnlyForDeploymentPostprocessing"] = b ? "1" : "0"}
+		mySerialization["files"] = try files.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

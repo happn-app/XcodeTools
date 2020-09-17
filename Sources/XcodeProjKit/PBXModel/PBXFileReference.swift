@@ -40,4 +40,21 @@ public class PBXFileReference : PBXFileElement {
 		return true
 	}
 	
+	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		var mySerialization = [String: Any]()
+		if let v = fileEncoding?.stringValue          {mySerialization["fileEncoding"] = v}
+		if let v = lineEnding?.stringValue            {mySerialization["lineEnding"] = v}
+		if let b = includeInIndex?.boolValue          {mySerialization["includeInIndex"] = b ? "1" : "0"}
+		if let v = explicitFileType                   {mySerialization["explicitFileType"] = v}
+		if let v = lastKnownFileType                  {mySerialization["lastKnownFileType"] = v}
+		if let v = xcLanguageSpecificationIdentifier  {mySerialization["xcLanguageSpecificationIdentifier"] = v}
+		if let v = plistStructureDefinitionIdentifier {mySerialization["plistStructureDefinitionIdentifier"] = v}
+		
+		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
+		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
+			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
+	}
+	
 }

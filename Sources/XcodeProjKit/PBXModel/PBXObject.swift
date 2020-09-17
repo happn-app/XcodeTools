@@ -107,8 +107,8 @@ public class PBXObject : NSManagedObject {
 		
 		let diffUnknownButExist = Set(nonNilRawObject.keys).subtracting(known.keys)
 		let diffKnownButDoNotExist = Set(known.keys).subtracting(nonNilRawObject.keys)
-		if !diffUnknownButExist.isEmpty {NSLog("%@", "Warning: Got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist)")}
-		if !diffKnownButDoNotExist.isEmpty {NSLog("%@", "Warning: Got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
+		if !diffUnknownButExist.isEmpty {NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist)")}
+		if !diffKnownButDoNotExist.isEmpty {NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
 		
 		return (rawObject ?? [:]).merging(known, uniquingKeysWith: { _, new in new })
 	}
