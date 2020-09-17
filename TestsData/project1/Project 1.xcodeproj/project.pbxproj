@@ -508,14 +508,20 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				GREEK = "𝛼";
 				INFOPLIST_FILE = target1/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.1;
+				NBSP = "a b";
+				NEWLINE = "hello\nworld";
 				PRODUCT_BUNDLE_IDENTIFIER = me.frizlab.project1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				QUOTES_IN_PROJECT = "\"hello\"";
+				QUOTES_IN_PROJECT_2 = "yoy'all";
+				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TEST_SPACES = "$(inherited)def";
 			};
@@ -531,14 +537,20 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				GREEK = "𝛼";
 				INFOPLIST_FILE = target1/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.1;
+				NBSP = "a b";
+				NEWLINE = "hello\nworld";
 				PRODUCT_BUNDLE_IDENTIFIER = me.frizlab.project1;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				QUOTES_IN_PROJECT = "\"hello\"";
+				QUOTES_IN_PROJECT_2 = "yoy'all";
+				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TEST_SPACES = "$(inherited)def";
 			};
