@@ -89,7 +89,7 @@ public struct PBXProj {
 		var ret = """
 			// !$*UTF8*$!
 			{
-				archiveVersion = \(archiveVersion);
+				archiveVersion = \(archiveVersion.escapedForPBXProjValue());
 			"""
 		if hasClassesProperty {
 			ret += """
@@ -100,7 +100,7 @@ public struct PBXProj {
 		}
 		ret += """
 			
-				objectVersion = \(objectVersion);
+				objectVersion = \(objectVersion.escapedForPBXProjValue());
 				objects = {
 			"""
 		
@@ -122,7 +122,6 @@ public struct PBXProj {
 			}
 			
 			for object in try context.fetch(request) {
-				let id = try object.xcID.get()
 				let isa = try object.rawISA.get()
 				if isa != previousISA {
 					printEndSection()
@@ -133,10 +132,7 @@ public struct PBXProj {
 						"""
 				}
 				previousISA = isa
-				ret += """
-					
-							\(id)
-					"""
+				ret += try object.stringSerialization(indentCount: 2)
 			}
 			printEndSection()
 		}
@@ -144,7 +140,7 @@ public struct PBXProj {
 		try ret += """
 			
 				};
-				rootObject = \(rootObject.xcID.get()) /* Project object */;
+				rootObject = \(rootObject.xcID.get().escapedForPBXProjValue()) /* Project object */;
 			}
 			"""
 		

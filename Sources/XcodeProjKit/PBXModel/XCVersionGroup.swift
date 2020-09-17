@@ -6,7 +6,7 @@ import Foundation
 @objc(XCVersionGroup)
 public class XCVersionGroup : PBXFileElement {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"children_cd": "children"
 		]

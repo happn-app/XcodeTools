@@ -29,4 +29,8 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		}
 	}
 	
+	open override var buildPhaseBaseTypeAsString: String {
+		return "ShellScript" /* I guess… */
+	}
+	
 }

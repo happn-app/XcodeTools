@@ -36,4 +36,8 @@ public class PBXFileReference : PBXFileElement {
 		plistStructureDefinitionIdentifier = try rawObject.getIfExists("plistStructureDefinitionIdentifier")
 	}
 	
+	open override var oneLineStringSerialization: Bool {
+		return true
+	}
+	
 }

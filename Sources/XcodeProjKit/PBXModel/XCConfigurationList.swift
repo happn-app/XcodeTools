@@ -6,7 +6,7 @@ import Foundation
 @objc(XCConfigurationList)
 public class XCConfigurationList : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"buildConfigurations_cd": "buildConfigurations",
 		]
@@ -39,6 +39,23 @@ public class XCConfigurationList : PBXObject {
 	public var buildConfigurations: [XCBuildConfiguration]? {
 		get {buildConfigurations_cd?.array as! [XCBuildConfiguration]?}
 		set {buildConfigurations_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+	}
+	
+	public override var stringSerializationName: String? {
+		let usedByType: String
+		let usedByName: String
+		if let p = project {
+			usedByType = p.rawISA ?? "<unknown project type>"
+			#warning("TODO")
+			usedByName = "TODO"
+		} else if let t = target {
+			usedByType = t.rawISA ?? "<unknown target type>"
+			usedByName = t.name ?? "<unknown targe name>"
+		} else {
+			NSLog("%@", "Warning: Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
+			return nil
+		}
+		return "Build configuration list for \(usedByType) \"\(usedByName)\""
 	}
 	
 }

@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXProject)
 public class PBXProject : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"targets_cd": "targets",
 			"packageReferences_cd": "packageReferences"

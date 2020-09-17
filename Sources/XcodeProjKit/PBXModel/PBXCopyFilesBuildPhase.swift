@@ -20,4 +20,8 @@ public class PBXCopyFilesBuildPhase : PBXBuildPhase {
 		}
 	}
 	
+	open override var buildPhaseBaseTypeAsString: String {
+		return "CopyFiles" /* I guess… */
+	}
+	
 }

@@ -6,7 +6,7 @@ import Foundation
 @objc(XCBuildConfiguration)
 public class XCBuildConfiguration : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"rawBuildSettings": "buildSettings"
 		]
@@ -26,6 +26,10 @@ public class XCBuildConfiguration : PBXObject {
 		
 		let baseConfigurationReferenceID: String? = try rawObject.getIfExists("baseConfigurationReference")
 		baseConfigurationReference = try baseConfigurationReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+	}
+	
+	open override var stringSerializationName: String? {
+		return name
 	}
 	
 }

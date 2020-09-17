@@ -87,4 +87,40 @@ public class PBXObject : NSManagedObject {
 		}
 	}
 	
+	open var oneLineStringSerialization: Bool {
+		return false
+	}
+	
+	open var stringSerializationName: String? {
+		return nil
+	}
+	
+	public var xcIDAndComment: String? {
+		return xcID.flatMap{ $0 + (stringSerializationName.flatMap{ " /* \($0) */" } ?? "") }
+	}
+	
+	public func stringSerialization(indentCount: Int = 0, indentBase: String = "\t") throws -> String {
+		let indent = String(repeating: indentBase, count: indentCount)
+		
+		var ret = ""
+		ret += try """
+			
+			\(indent)\(xcIDAndComment.get())
+			"""
+		
+		ret += " = {"
+		
+		if !oneLineStringSerialization {
+			ret += "\n\(indent)\(indentBase)"
+		}
+		ret += try "isa = \(rawISA.get().escapedForPBXProjValue());"
+		
+		if !oneLineStringSerialization {
+			ret += "\n\(indent)"
+		}
+		ret += "};"
+		
+		return ret
+	}
+	
 }

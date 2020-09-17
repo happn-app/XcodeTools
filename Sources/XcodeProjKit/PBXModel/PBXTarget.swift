@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXTarget)
 public class PBXTarget : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"buildPhases_cd": "buildPhases"
 		]

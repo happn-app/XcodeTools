@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXContainerItemProxy)
 public class PBXContainerItemProxy : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"containerPortalID": "containerPortal"
 		]

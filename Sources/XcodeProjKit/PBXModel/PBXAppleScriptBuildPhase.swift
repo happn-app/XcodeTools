@@ -11,4 +11,8 @@ public class PBXAppleScriptBuildPhase : PBXBuildPhase {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 	}
 	
+	open override var buildPhaseBaseTypeAsString: String {
+		return "AppleScript" /* I guess… */
+	}
+	
 }

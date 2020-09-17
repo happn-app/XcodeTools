@@ -31,7 +31,7 @@ public class PBXFileElement : PBXObject {
 		
 	}
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"rawName": "name",
 			"rawPath": "path",
@@ -82,6 +82,10 @@ public class PBXFileElement : PBXObject {
 			}
 			wrapsLines = NSNumber(value: value != 0)
 		}
+	}
+	
+	open override var stringSerializationName: String? {
+		return name
 	}
 	
 	var name: String? {

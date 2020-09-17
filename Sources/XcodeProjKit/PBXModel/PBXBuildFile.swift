@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXBuildFile)
 public class PBXBuildFile : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"rawSettings": "settings",
 		]
@@ -27,6 +27,16 @@ public class PBXBuildFile : PBXObject {
 		
 		let productRefID: String? = try rawObject.getIfExists("productRef")
 		productRef = try productRefID.flatMap{ try XCSwiftPackageProductDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+	}
+	
+	open override var oneLineStringSerialization: Bool {
+		return true
+	}
+	
+	open override var stringSerializationName: String? {
+		let fileName = fileRef?.name ?? ""
+		let buildPhaseName = buildPhase?.name ?? buildPhase?.buildPhaseBaseTypeAsString ?? ""
+		return fileName + " in " + buildPhaseName
 	}
 	
 }

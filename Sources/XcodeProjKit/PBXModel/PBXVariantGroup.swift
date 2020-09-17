@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXVariantGroup)
 public class PBXVariantGroup : PBXFileElement {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"children_cd": "children"
 		]

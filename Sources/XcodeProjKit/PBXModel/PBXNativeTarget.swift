@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXNativeTarget)
 public class PBXNativeTarget : PBXTarget {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"buildRules_cd": "buildRules",
 			"packageProductDependencies_cd": "packageProductDependencies"

@@ -6,7 +6,7 @@ import Foundation
 @objc(PBXBuildPhase)
 public class PBXBuildPhase : PBXObject {
 	
-	public override class func propertyRenamings() -> [String : String] {
+	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"files_cd": "files"
 		]
@@ -20,7 +20,7 @@ public class PBXBuildPhase : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		name = try rawObjects.getIfExists("name")
+		name = try rawObject.getIfExists("name")
 		
 		let filesIDs: [String] = try rawObject.get("files")
 		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
@@ -45,6 +45,10 @@ public class PBXBuildPhase : PBXObject {
 	public var files: [PBXBuildFile]? {
 		get {files_cd?.array as! [PBXBuildFile]?}
 		set {files_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+	}
+	
+	open var buildPhaseBaseTypeAsString: String {
+		return "<Invalid, buildPhaseTypeAsString is abstract and should be overridden>"
 	}
 	
 }
