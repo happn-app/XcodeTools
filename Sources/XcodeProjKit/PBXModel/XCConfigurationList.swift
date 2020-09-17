@@ -45,11 +45,11 @@ public class XCConfigurationList : PBXObject {
 		let usedByType: String
 		let usedByName: String
 		if let p = project {
-			usedByType = p.rawISA ?? "<unknown project type>"
+			usedByType = p.rawISA ?? "(null)"
 			usedByName = projectName
 		} else if let t = target {
-			usedByType = t.rawISA ?? "<unknown target type>"
-			usedByName = t.name ?? "<unknown targe name>"
+			usedByType = t.rawISA ?? "(null)"
+			usedByName = t.name ?? "(null)"
 		} else {
 			NSLog("%@", "Warning: Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
 			return nil

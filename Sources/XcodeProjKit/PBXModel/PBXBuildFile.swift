@@ -34,8 +34,8 @@ public class PBXBuildFile : PBXObject {
 	}
 	
 	open override func stringSerializationName(projectName: String) -> String? {
-		let fileName = fileRef?.name ?? ""
-		let buildPhaseName = buildPhase?.name ?? buildPhase?.buildPhaseBaseTypeAsString ?? ""
+		let fileName = fileRef?.name ?? productRef?.productName ?? "(null)"
+		let buildPhaseName = buildPhase?.name ?? buildPhase?.buildPhaseBaseTypeAsString ?? "(null)"
 		return fileName + " in " + buildPhaseName
 	}
 	

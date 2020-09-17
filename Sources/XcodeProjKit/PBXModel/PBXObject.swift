@@ -118,6 +118,8 @@ public class PBXObject : NSManagedObject {
 		
 		if !oneLineStringSerialization {
 			ret += "\n\(indent)"
+		} else {
+			ret += " "
 		}
 		ret += "};"
 		
