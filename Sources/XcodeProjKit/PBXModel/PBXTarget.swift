@@ -8,7 +8,8 @@ public class PBXTarget : PBXObject {
 	
 	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
-			"buildPhases_cd": "buildPhases"
+			"buildPhases_cd": "buildPhases",
+			"dependencies_cd": "dependencies"
 		]
 		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
 			precondition(current == new, "Incompatible property renamings")
@@ -23,6 +24,9 @@ public class PBXTarget : PBXObject {
 		name = try rawObject.get("name")
 		productName = try rawObject.get("productName")
 		
+		let dependenciesIDs: [String] = try rawObject.get("dependencies")
+		dependencies = try dependenciesIDs.map{ try PBXTargetDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		
 		let buildPhasesIDs: [String] = try rawObject.get("buildPhases")
 		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 		
@@ -35,10 +39,16 @@ public class PBXTarget : PBXObject {
 		set {buildPhases_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	public var dependencies: [PBXTargetDependency]? {
+		get {dependencies_cd?.array as! [PBXTargetDependency]?}
+		set {dependencies_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		mySerialization["name"]                   = try name.get()
 		mySerialization["productName"]            = try productName.get()
+		mySerialization["dependencies"]           = try dependencies.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
 		mySerialization["buildPhases"]            = try buildPhases.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
 		mySerialization["buildConfigurationList"] = try buildConfigurationList.get().xcIDAndComment(projectName: projectName).get()
 		

@@ -126,13 +126,13 @@
         <attribute name="productName" attributeType="String"/>
         <relationship name="buildConfigurationList" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="target" inverseEntity="XCConfigurationList"/>
         <relationship name="buildPhases_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXBuildPhase" inverseName="targets" inverseEntity="PBXBuildPhase"/>
-        <relationship name="dependencies" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="PBXTargetDependency" inverseName="target" inverseEntity="PBXTargetDependency"/>
+        <relationship name="dependencies_cd" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTargetDependency" inverseName="target" inverseEntity="PBXTargetDependency"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets_cd" inverseEntity="PBXProject"/>
     </entity>
     <entity name="PBXTargetDependency" representedClassName="PBXTargetDependency" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="name" optional="YES" attributeType="String"/>
         <relationship name="productRef" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCSwiftPackageProductDependency" inverseName="targetDependencies" inverseEntity="XCSwiftPackageProductDependency"/>
-        <relationship name="target" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXTarget" inverseName="dependencies" inverseEntity="PBXTarget"/>
+        <relationship name="target" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXTarget" inverseName="dependencies_cd" inverseEntity="PBXTarget"/>
         <relationship name="targetProxy" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXContainerItemProxy" inverseName="targetDependencies" inverseEntity="PBXContainerItemProxy"/>
     </entity>
     <entity name="PBXVariantGroup" representedClassName="PBXVariantGroup" parentEntity="PBXFileElement" syncable="YES" codeGenerationType="category">
