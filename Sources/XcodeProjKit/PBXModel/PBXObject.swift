@@ -95,35 +95,81 @@ public class PBXObject : NSManagedObject {
 		return nil
 	}
 	
-	public func xcIDAndComment(projectName: String) -> String? {
-		return xcID.flatMap{ $0 + (stringSerializationName(projectName: projectName).flatMap{ " /* \($0) */" } ?? "") }
+	open func serialized(projectName: String) throws -> [String: Any] {
+		return try ["isa": rawISA.get()]
+	}
+
+	func xcIDAndComment(projectName: String) -> ValueAndComment? {
+		return xcID.flatMap{ ValueAndComment(value: $0, comment: stringSerializationName(projectName: projectName)) }
 	}
 	
 	/* Sadly, we do need the project name here… */
 	public func stringSerialization(projectName: String, indentCount: Int = 0, indentBase: String = "\t") throws -> String {
 		let indent = String(repeating: indentBase, count: indentCount)
 		
-		var ret = ""
-		ret += try """
+		let key = try """
+		
+		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
+		"""
+		let value = try serializeAnyToString(serialized(projectName: projectName), isRoot: true, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
+		return key + " = " + value + ";"
 			
-			\(indent)\(xcIDAndComment(projectName: projectName).get())
-			"""
-		
-		ret += " = {"
-		
-		if !oneLineStringSerialization {
-			ret += "\n\(indent)\(indentBase)"
+	}
+	
+	private func serializeAnyToString(_ v: Any, isRoot: Bool, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {
+		func sortSerializationKeys(_ kv1: (String, Any), _ kv2: (String, Any), isaFirst: Bool) -> Bool {
+			let (k1, k2) = (kv1.0, kv2.0)
+			if isaFirst {
+				if k1 == "isa" {return true}
+				if k2 == "isa" {return false}
+			}
+			return k1 < k2
 		}
-		ret += try "isa = \(rawISA.get().escapedForPBXProjValue());"
 		
-		if !oneLineStringSerialization {
-			ret += "\n\(indent)"
-		} else {
-			ret += " "
+		var ret = ""
+		let indent = String(repeating: indentBase, count: indentCount)
+		switch v {
+			case let v as String:
+				ret = v.escapedForPBXProjValue()
+				
+			case let v as ValueAndComment:
+				ret = valueAndCommentAsString(v)
+				
+			case let a as [Any]:
+				ret += "("
+				for value in a {
+					if !oneLineStringSerialization {ret += "\n\(indent)\(indentBase)"}
+					ret += try serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
+					ret += ","
+					if oneLineStringSerialization {ret += " "}
+				}
+				if !oneLineStringSerialization {ret += "\n\(indent)"}
+				ret += ")"
+				
+			case let d as [String: Any]:
+				ret += "{"
+				
+				if !oneLineStringSerialization {
+					ret += "\n\(indent)\(indentBase)"
+				}
+				for (key, value) in d.sorted(by: { sortSerializationKeys($0, $1, isaFirst: isRoot) }) {
+					ret += try "\(key.escapedForPBXProjValue()) = \(serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization));"
+					if oneLineStringSerialization {ret += " "}
+				}
+				
+				if !oneLineStringSerialization {
+					ret += "\n\(indent)"
+				}
+				ret += "}"
+				
+			default:
+				throw XcodeProjKitError(message: "Unknown object type to serialize \(type(of: v)); \(v)")
 		}
-		ret += "};"
-		
 		return ret
+	}
+	
+	private func valueAndCommentAsString(_ valueAndComment: ValueAndComment) -> String {
+		return valueAndComment.value.escapedForPBXProjValue() + (valueAndComment.comment.flatMap{ " /* \($0) */" } ?? "")
 	}
 	
 }
