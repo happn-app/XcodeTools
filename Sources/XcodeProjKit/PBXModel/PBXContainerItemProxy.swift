@@ -37,9 +37,13 @@ public class PBXContainerItemProxy : PBXObject {
 		}
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return rawISA ?? "PBXContainerItemProxy"
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["containerPortal"] = try containerPortalID.get()
+		mySerialization["containerPortal"] = try ValueAndComment(value: containerPortalID.get(), comment: "Project object") /* Maybe there are other types of destination, but idk… */
 		mySerialization["remoteInfo"] = try remoteInfo.get()
 		mySerialization["remoteGlobalIDString"] = try remoteGlobalIDString.get()
 		mySerialization["proxyType"] = String(proxyType)

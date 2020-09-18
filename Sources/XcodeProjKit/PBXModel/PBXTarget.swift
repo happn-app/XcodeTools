@@ -44,6 +44,10 @@ public class PBXTarget : PBXObject {
 		set {dependencies_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return name
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		mySerialization["name"]                   = try name.get()

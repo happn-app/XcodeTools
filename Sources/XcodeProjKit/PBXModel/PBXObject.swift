@@ -136,7 +136,7 @@ public class PBXObject : NSManagedObject {
 		
 		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
 		"""
-		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization)
+		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
 			
 	}
@@ -144,6 +144,10 @@ public class PBXObject : NSManagedObject {
 	/** The xcID of the object and its associated comment. */
 	func xcIDAndComment(projectName: String) -> ValueAndComment? {
 		return xcID.flatMap{ ValueAndComment(value: $0, comment: stringSerializationName(projectName: projectName)) }
+	}
+	
+	func xcIDAndCommentString(projectName: String) -> String? {
+		return xcIDAndComment(projectName: projectName).flatMap{ valueAndCommentAsString($0) }
 	}
 	
 	private func serializeAnyToString(_ v: Any, isRoot: Bool, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {

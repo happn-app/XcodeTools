@@ -19,6 +19,10 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 		requirement = try rawObject.get("requirement")
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return "XCRemoteSwiftPackageReference" + (repositoryURL.flatMap{ " \"" + $0.deletingPathExtension().lastPathComponent + "\"" } ?? "")
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		mySerialization["repositoryURL"] = try repositoryURL.get().absoluteString

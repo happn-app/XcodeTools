@@ -47,6 +47,10 @@ public class PBXBuildPhase : PBXObject {
 		set {files_cd = newValue.flatMap{ NSOrderedSet(array: $0) }}
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return name ?? buildPhaseBaseTypeAsString
+	}
+	
 	open var buildPhaseBaseTypeAsString: String {
 		return "<Invalid, buildPhaseTypeAsString is abstract and should be overridden>"
 	}

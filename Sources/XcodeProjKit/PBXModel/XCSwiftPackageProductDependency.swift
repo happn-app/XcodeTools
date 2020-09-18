@@ -27,4 +27,8 @@ public class XCSwiftPackageProductDependency : PBXObject {
 		})
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return productName
+	}
+	
 }

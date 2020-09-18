@@ -73,6 +73,10 @@ public class PBXProject : PBXObject {
 		set {(packageReferences_cd, packageReferences_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return "Project object"
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let a = attributes        {mySerialization["attributes"]        = a}

@@ -21,6 +21,10 @@ public class PBXTargetDependency : PBXObject {
 		targetProxy = try targetProxyID.flatMap{ try PBXContainerItemProxy.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
 	}
 	
+	public override func stringSerializationName(projectName: String) -> String? {
+		return name ?? "PBXTargetDependency"
+	}
+	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let n = name        {mySerialization["name"] = n}

@@ -137,11 +137,13 @@ public struct PBXProj {
 			printEndSection()
 		}
 		
-		try ret += """
+		let idAndComment = try rootObject.xcIDAndCommentString(projectName: projectName).get()
+		ret += """
 			
 				};
-				rootObject = \(rootObject.xcID.get().escapedForPBXProjValue()) /* Project object */;
+				rootObject = \(idAndComment);
 			}
+			
 			"""
 		
 		return ret

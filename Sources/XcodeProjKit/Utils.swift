@@ -104,7 +104,12 @@ extension String {
 	 * 100% certain. We only tested different values, to infer this; we did not
 	 * test all possible characters. */
 	func escapedForPBXProjValue() -> String {
-		let validUnquotedStringChars = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$/:.-")
+		guard !isEmpty else {
+			return "\"\""
+		}
+		
+		/* The dash and colon should be there. They aren’t for Xcode apparently. */
+		let validUnquotedStringChars = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$/.")
 		if rangeOfCharacter(from: validUnquotedStringChars.inverted) == nil {
 			return self
 		}
