@@ -43,10 +43,13 @@ public class PBXContainerItemProxy : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["containerPortal"] = try ValueAndComment(value: containerPortalID.get(), comment: "Project object") /* Maybe there are other types of destination, but idk… */
 		mySerialization["remoteInfo"] = try remoteInfo.get()
 		mySerialization["remoteGlobalIDString"] = try remoteGlobalIDString.get()
 		mySerialization["proxyType"] = String(proxyType)
+		
+		let fRequest: NSFetchRequest<PBXObject> = PBXObject.fetchRequest()
+		fRequest.predicate = try NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), containerPortalID.get())
+		mySerialization["containerPortal"] = try managedObjectContext?.fetch(fRequest).onlyElement?.xcIDAndComment(projectName: projectName).get()
 		
 		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
 		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in

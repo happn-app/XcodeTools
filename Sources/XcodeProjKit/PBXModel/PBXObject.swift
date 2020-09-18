@@ -171,8 +171,8 @@ public class PBXObject : NSManagedObject {
 				
 			case let v as ProjectReference:
 				let dic = try [
-					"ProjectRef": v.projectRef?.xcIDAndCommentString(projectName: projectName).get(),
-					"ProductGroup": v.productGroup?.xcIDAndCommentString(projectName: projectName).get()
+					"ProjectRef": v.projectRef?.xcIDAndComment(projectName: projectName).get(),
+					"ProductGroup": v.productGroup?.xcIDAndComment(projectName: projectName).get()
 				]
 				ret += try serializeAnyToString(dic, isRoot: isRoot, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneline)
 				

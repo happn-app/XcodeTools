@@ -22,7 +22,7 @@ public class PBXTargetDependency : PBXObject {
 	}
 	
 	public override func stringSerializationName(projectName: String) -> String? {
-		return name ?? "PBXTargetDependency"
+		return "PBXTargetDependency"
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
