@@ -136,7 +136,7 @@ public class PBXObject : NSManagedObject {
 		
 		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
 		"""
-		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
+		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
 			
 	}
@@ -150,7 +150,7 @@ public class PBXObject : NSManagedObject {
 		return xcIDAndComment(projectName: projectName).flatMap{ valueAndCommentAsString($0) }
 	}
 	
-	private func serializeAnyToString(_ v: Any, isRoot: Bool, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {
+	private func serializeAnyToString(_ v: Any, isRoot: Bool, projectName: String, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {
 		func sortSerializationKeys(_ kv1: (String, Any), _ kv2: (String, Any), isaFirst: Bool) -> Bool {
 			let (k1, k2) = (kv1.0, kv2.0)
 			if isaFirst {
@@ -164,16 +164,23 @@ public class PBXObject : NSManagedObject {
 		let indent = String(repeating: indentBase, count: indentCount)
 		switch v {
 			case let v as String:
-				ret = v.escapedForPBXProjValue()
+				ret += v.escapedForPBXProjValue()
 				
 			case let v as ValueAndComment:
-				ret = valueAndCommentAsString(v)
+				ret += valueAndCommentAsString(v)
+				
+			case let v as ProjectReference:
+				let dic = try [
+					"ProjectRef": v.projectRef?.xcIDAndCommentString(projectName: projectName).get(),
+					"ProductGroup": v.productGroup?.xcIDAndCommentString(projectName: projectName).get()
+				]
+				ret += try serializeAnyToString(dic, isRoot: isRoot, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneline)
 				
 			case let a as [Any]:
 				ret += "("
 				for value in a {
 					if !oneLineStringSerialization {ret += "\n\(indent)\(indentBase)"}
-					ret += try serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization) + ","
+					ret += try serializeAnyToString(value, isRoot: false, projectName: projectName, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization) + ","
 					if oneLineStringSerialization {ret += " "}
 				}
 				if !oneLineStringSerialization {ret += "\n\(indent)"}
@@ -183,7 +190,7 @@ public class PBXObject : NSManagedObject {
 				ret += "{"
 				for (key, value) in d.sorted(by: { sortSerializationKeys($0, $1, isaFirst: isRoot) }) {
 					if !oneLineStringSerialization {ret += "\n\(indent)\(indentBase)"}
-					ret += try "\(key.escapedForPBXProjValue()) = \(serializeAnyToString(value, isRoot: false, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization));"
+					ret += try "\(key.escapedForPBXProjValue()) = \(serializeAnyToString(value, isRoot: false, projectName: projectName, indentCount: indentCount + 1, indentBase: indentBase, oneline: oneLineStringSerialization));"
 					if oneLineStringSerialization {ret += " "}
 				}
 				if !oneLineStringSerialization {ret += "\n\(indent)"}

@@ -43,7 +43,7 @@ public struct XcodeProj {
 		
 		/* *** Load CoreData model *** */
 		
-		guard let modelURL = Bundle.module.url(forResource: "PBXModel", withExtension: "momd"), let model = NSManagedObjectModel(contentsOf: modelURL) else {
+		guard let model = ModelSingleton.model else {
 			throw XcodeProjKitError(message: "Cannot load CoreData model")
 		}
 		managedObjectModel = model

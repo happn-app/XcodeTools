@@ -9,6 +9,7 @@ public class PBXProject : PBXObject {
 	open override class func propertyRenamings() -> [String : String] {
 		let mine = [
 			"targets_cd": "targets",
+			"projectReferences_cd": "projectReferences",
 			"packageReferences_cd": "packageReferences"
 		]
 		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
@@ -60,7 +61,21 @@ public class PBXProject : PBXObject {
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
 		
-		projectReferences = try rawObject.getIfExists("projectReferences")
+		if let rawProjectReferences: [[String: String]] = try rawObject.getIfExists("projectReferences") {
+			projectReferences = try rawProjectReferences.map{ rawProjectReference in
+				guard
+					let productGroupID = rawProjectReference["ProductGroup"],
+					let projectRefID = rawProjectReference["ProjectRef"],
+					rawProjectReference.count == 2
+				else {
+					throw XcodeProjKitError(message: "Invalid (or unknown) project reference")
+				}
+				let projectReference = ProjectReference(context: context)
+				projectReference.productGroup = try PBXFileElement.unsafeInstantiate(rawObjects: rawObjects, id: productGroupID, context: context, decodedObjects: &decodedObjects)
+				projectReference.projectRef = try PBXFileElement.unsafeInstantiate(rawObjects: rawObjects, id: projectRefID, context: context, decodedObjects: &decodedObjects)
+				return projectReference
+			}
+		}
 	}
 	
 	public var targets: [PBXTarget]? {
@@ -73,6 +88,11 @@ public class PBXProject : PBXObject {
 		set {(packageReferences_cd, packageReferences_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
 	}
 	
+	public var projectReferences: [ProjectReference]? {
+		get {PBXObject.getOptionalToMany(projectReferences_cd, projectReferences_isSet)}
+		set {(projectReferences_cd, projectReferences_isSet) = PBXObject.setOptionalToManyTuple(newValue)}
+	}
+	
 	public override func stringSerializationName(projectName: String) -> String? {
 		return "Project object"
 	}
@@ -82,8 +102,11 @@ public class PBXProject : PBXObject {
 		if let a = attributes        {mySerialization["attributes"]        = a}
 		if let r = projectRoot       {mySerialization["projectRoot"]       = r}
 		if let r = packageReferences {mySerialization["packageReferences"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
-		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.xcIDAndComment(projectName: projectName).get() }
-		if let r = projectReferences {mySerialization["projectReferences"] = r }
+		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.xcIDAndComment(projectName: projectName).get()}
+		if let r = projectReferences {
+			mySerialization["projectReferences"] = r
+			
+		}
 		mySerialization["compatibilityVersion"]   = try compatibilityVersion.get()
 		mySerialization["projectDirPath"]         = try projectDirPath.get()
 		mySerialization["knownRegions"]           = try knownRegions.get()
