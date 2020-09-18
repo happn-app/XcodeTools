@@ -36,10 +36,10 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let v = showEnvVarsInLog?.stringValue {mySerialization["showEnvVarsInLog"] = v}
+		if let v = inputFileListPaths            {mySerialization["inputFileListPaths"] = v}
+		if let v = outputFileListPaths           {mySerialization["outputFileListPaths"] = v}
 		mySerialization["inputPaths"]          = try inputPaths.get()
-		mySerialization["inputFileListPaths"]  = try inputFileListPaths.get()
 		mySerialization["outputPaths"]         = try outputPaths.get()
-		mySerialization["outputFileListPaths"] = try outputFileListPaths.get()
 		mySerialization["shellPath"]           = try shellPath.get()
 		mySerialization["shellScript"]         = try shellScript.get()
 		
