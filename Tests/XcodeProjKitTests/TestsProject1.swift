@@ -5,12 +5,18 @@ import XCTest
 
 
 
-class TestsWithXcodeProject : XCTestCase {
+class TestsProject1 : XCTestCase {
 	
 	let xcodeprojURL = URL(fileURLWithPath: #file, isDirectory: false).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("TestsData").appendingPathComponent("project1").appendingPathComponent("Project 1.xcodeproj")
 	
-	func testXcodeproj() throws {
-		let xcodeproj = try XcodeProj(path: xcodeprojURL.path)
+	func testReserialization() throws {
+		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
+		let originalContents = try Data(contentsOf: xcodeproj.pbxprojURL)
+		try XCTAssertEqual(originalContents, Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8))
+	}
+	
+	func testXcodeprojAndPlist() throws {
+		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configurationName, combinedBuildSettings in
 			guard targetName == "Target 1" && configurationName == "Debug" else {
 				return
