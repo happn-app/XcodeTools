@@ -1,0 +1,310 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		7B54F6551D941D3000C8C40D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B54F6541D941D3000C8C40D /* AppDelegate.swift */; };
+		7B54F6571D941D3000C8C40D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B54F6561D941D3000C8C40D /* ViewController.swift */; };
+		7B54F6591D941D3000C8C40D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B54F6581D941D3000C8C40D /* Assets.xcassets */; };
+		7B54F65C1D941D3000C8C40D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B54F65A1D941D3000C8C40D /* Main.storyboard */; };
+		7B54F6721D9427D200C8C40D /* MailActions.m in Sources */ = {isa = PBXBuildFile; fileRef = 7B54F6711D9427D200C8C40D /* MailActions.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		7B54F6511D941D3000C8C40D /* Fix Mail’s Mailboxes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fix Mail’s Mailboxes.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B54F6541D941D3000C8C40D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7B54F6561D941D3000C8C40D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		7B54F6581D941D3000C8C40D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7B54F65B1D941D3000C8C40D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		7B54F65D1D941D3000C8C40D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7B54F66D1D9426EC00C8C40D /* Mail.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Mail.h; sourceTree = SOURCE_ROOT; };
+		7B54F66F1D9427D100C8C40D /* Fix Mail’s Mailboxes-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Fix Mail’s Mailboxes-Bridging-Header.h"; sourceTree = "<group>"; };
+		7B54F6701D9427D200C8C40D /* MailActions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MailActions.h; sourceTree = "<group>"; };
+		7B54F6711D9427D200C8C40D /* MailActions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MailActions.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7B54F64E1D941D2F00C8C40D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		7B54F6481D941D2F00C8C40D = {
+			isa = PBXGroup;
+			children = (
+				7B54F6531D941D3000C8C40D /* Fix Mail’s Mailboxes */,
+				7B54F6521D941D3000C8C40D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		7B54F6521D941D3000C8C40D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7B54F6511D941D3000C8C40D /* Fix Mail’s Mailboxes.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7B54F6531D941D3000C8C40D /* Fix Mail’s Mailboxes */ = {
+			isa = PBXGroup;
+			children = (
+				7B54F66D1D9426EC00C8C40D /* Mail.h */,
+				7B54F6701D9427D200C8C40D /* MailActions.h */,
+				7B54F6711D9427D200C8C40D /* MailActions.m */,
+				7B54F6541D941D3000C8C40D /* AppDelegate.swift */,
+				7B54F6561D941D3000C8C40D /* ViewController.swift */,
+				7B54F6581D941D3000C8C40D /* Assets.xcassets */,
+				7B54F65A1D941D3000C8C40D /* Main.storyboard */,
+				7B54F65D1D941D3000C8C40D /* Info.plist */,
+				7B54F66F1D9427D100C8C40D /* Fix Mail’s Mailboxes-Bridging-Header.h */,
+			);
+			path = "Fix Mail’s Mailboxes";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7B54F6501D941D2F00C8C40D /* Fix Mail’s Mailboxes */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7B54F6601D941D3000C8C40D /* Build configuration list for PBXNativeTarget "Fix Mail’s Mailboxes" */;
+			buildPhases = (
+				7B54F64D1D941D2F00C8C40D /* Sources */,
+				7B54F64E1D941D2F00C8C40D /* Frameworks */,
+				7B54F64F1D941D2F00C8C40D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Fix Mail’s Mailboxes";
+			productName = "Fix Mail’s Mailboxes";
+			productReference = 7B54F6511D941D3000C8C40D /* Fix Mail’s Mailboxes.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		7B54F6491D941D2F00C8C40D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0800;
+				LastUpgradeCheck = 0800;
+				ORGANIZATIONNAME = happn;
+				TargetAttributes = {
+					7B54F6501D941D2F00C8C40D = {
+						CreatedOnToolsVersion = 8.0;
+						LastSwiftMigration = 0800;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 7B54F64C1D941D2F00C8C40D /* Build configuration list for PBXProject "Fix Mail’s Mailboxes" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7B54F6481D941D2F00C8C40D;
+			productRefGroup = 7B54F6521D941D3000C8C40D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				7B54F6501D941D2F00C8C40D /* Fix Mail’s Mailboxes */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7B54F64F1D941D2F00C8C40D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B54F6591D941D3000C8C40D /* Assets.xcassets in Resources */,
+				7B54F65C1D941D3000C8C40D /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7B54F64D1D941D2F00C8C40D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B54F6571D941D3000C8C40D /* ViewController.swift in Sources */,
+				7B54F6721D9427D200C8C40D /* MailActions.m in Sources */,
+				7B54F6551D941D3000C8C40D /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		7B54F65A1D941D3000C8C40D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7B54F65B1D941D3000C8C40D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		7B54F65E1D941D3000C8C40D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		7B54F65F1D941D3000C8C40D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+		7B54F6611D941D3000C8C40D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Fix Mail’s Mailboxes/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.ftw-and-co.Fix-Mail-s-Mailboxes";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Fix Mail’s Mailboxes/Fix Mail’s Mailboxes-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Debug;
+		};
+		7B54F6621D941D3000C8C40D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Fix Mail’s Mailboxes/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "fr.ftw-and-co.Fix-Mail-s-Mailboxes";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "Fix Mail’s Mailboxes/Fix Mail’s Mailboxes-Bridging-Header.h";
+				SWIFT_VERSION = 3.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7B54F64C1D941D2F00C8C40D /* Build configuration list for PBXProject "Fix Mail’s Mailboxes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B54F65E1D941D3000C8C40D /* Debug */,
+				7B54F65F1D941D3000C8C40D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7B54F6601D941D3000C8C40D /* Build configuration list for PBXNativeTarget "Fix Mail’s Mailboxes" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B54F6611D941D3000C8C40D /* Debug */,
+				7B54F6621D941D3000C8C40D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 7B54F6491D941D2F00C8C40D /* Project object */;
+}
