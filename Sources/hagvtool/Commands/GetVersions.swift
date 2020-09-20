@@ -19,9 +19,6 @@ struct GetVersions : ParsableCommand {
 	@Flag(help: #"An alias for "--fail-on-multiple-build-versions --fail-on-multiple-marketing-versions""#)
 	var failOnMultipleVersions = false
 	
-	@Option
-	var outputFormat = OutputFormat.text
-	
 	func run() throws {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		let versions = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings -> [Output.Version] in
@@ -63,25 +60,7 @@ struct GetVersions : ParsableCommand {
 		}.flatMap{ $0 }
 		
 		let output = Output(versions: versions)
-		switch outputFormat {
-			case .none:
-				(/*nop*/)
-			
-			case .text:
-				print(output)
-				
-			case .json, .jsonPrettyPrinted:
-				let encoder = JSONEncoder()
-				encoder.keyEncodingStrategy = .convertToSnakeCase
-				encoder.outputFormatting = [.withoutEscapingSlashes]
-				if outputFormat == .jsonPrettyPrinted {
-					encoder.outputFormatting = encoder.outputFormatting.union([.prettyPrinted, .sortedKeys])
-				}
-				guard let jsonStr = try String(data: encoder.encode(output), encoding: .utf8) else {
-					throw HagvtoolError(message: "Cannot convert JSON data to string")
-				}
-				print(jsonStr)
-		}
+		try Hagvtool.printOutput(output, format: hagvtoolOptions.outputFormat)
 		
 		if failOnMultipleBuildVersions || failOnMultipleVersions {
 			guard output.reducedBuildVersionForAll != nil else {

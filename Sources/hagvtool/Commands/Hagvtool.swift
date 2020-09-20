@@ -18,6 +18,15 @@ struct Hagvtool : ParsableCommand {
 	
 	struct Options : ParsableArguments {
 		
+		enum OutputFormat : String, ExpressibleByArgument {
+			
+			case none
+			case text
+			case json
+			case jsonPrettyPrinted = "json-pretty-printed"
+			
+		}
+		
 		@Option
 		var pathToXcodeproj: String?
 		
@@ -26,6 +35,9 @@ struct Hagvtool : ParsableCommand {
 		
 		@Option
 		var configurationNames = [String]()
+		
+		@Option
+		var outputFormat = OutputFormat.text
 		
 		func targetMatches(_ targetName: String) -> Bool {
 			guard !targets.isEmpty else {return true}
@@ -37,6 +49,28 @@ struct Hagvtool : ParsableCommand {
 			return configurationNames.contains(configurationName)
 		}
 		
+	}
+	
+	static func printOutput<OutputType>(_ output: OutputType, format: Options.OutputFormat) throws where OutputType : Encodable, OutputType : CustomStringConvertible {
+		switch format {
+			case .none:
+				(/*nop*/)
+				
+			case .text:
+				print(output)
+				
+			case .json, .jsonPrettyPrinted:
+				let encoder = JSONEncoder()
+				encoder.keyEncodingStrategy = .convertToSnakeCase
+				encoder.outputFormatting = [.withoutEscapingSlashes]
+				if format == .jsonPrettyPrinted {
+					encoder.outputFormatting = encoder.outputFormatting.union([.prettyPrinted, .sortedKeys])
+				}
+				guard let jsonStr = try String(data: encoder.encode(output), encoding: .utf8) else {
+					throw HagvtoolError(message: "Cannot convert JSON data to string")
+				}
+				print(jsonStr)
+		}
 	}
 	
 	@OptionGroup

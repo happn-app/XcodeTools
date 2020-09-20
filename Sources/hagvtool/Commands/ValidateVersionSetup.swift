@@ -34,7 +34,7 @@ struct ValidateVersionSetup : ParsableCommand {
 				print("The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.")
 			}
 		}
-			
+		
 		do {
 			var ok = true
 			print("")

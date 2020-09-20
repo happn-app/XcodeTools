@@ -232,7 +232,7 @@ public struct CombinedBuildSettings {
 	Example: $(VAR1_${VAR2}), when parser is called first, the value will be an
 	empty string, then “`)`” then “`}`”.
 	
-	The inheritedVariableName is given to resolve the “inherited” variable name. */
+	`inheritedVariableName` is given to resolve the “inherited” variable name. */
 	private func resolveVariables(scanner: Scanner, currentlyResolvedValues: inout [String: String], inheritedVariableName: String? = nil, varEndChars: String = "") -> String {
 		var result = ""
 		
