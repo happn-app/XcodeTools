@@ -45,13 +45,14 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let v = showEnvVarsInLog?.stringValue {mySerialization["showEnvVarsInLog"] = v}
-		if let v = inputFileListPaths            {mySerialization["inputFileListPaths"] = v}
-		if let v = outputFileListPaths           {mySerialization["outputFileListPaths"] = v}
-		mySerialization["inputPaths"]          = try inputPaths.get()
-		mySerialization["outputPaths"]         = try outputPaths.get()
-		mySerialization["shellPath"]           = try shellPath.get()
-		mySerialization["shellScript"]         = try shellScript.get()
+		if let v = showEnvVarsInLog?.boolValue {mySerialization["showEnvVarsInLog"] = v ? "1" : "0"}
+		if let v = alwaysOutOfDate?.boolValue  {mySerialization["alwaysOutOfDate"] = v ? "1" : "0"}
+		if let v = inputFileListPaths          {mySerialization["inputFileListPaths"] = v}
+		if let v = outputFileListPaths         {mySerialization["outputFileListPaths"] = v}
+		mySerialization["inputPaths"]  = try inputPaths.get()
+		mySerialization["outputPaths"] = try outputPaths.get()
+		mySerialization["shellPath"]   = try shellPath.get()
+		mySerialization["shellScript"] = try shellScript.get()
 		
 		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
 		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
