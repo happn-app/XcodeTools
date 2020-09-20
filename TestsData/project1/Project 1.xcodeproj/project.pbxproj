@@ -349,7 +349,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /usr/bin/true;
-			shellScript = "# 	\\
+			shellScript = "#	
+#
 ";
 		};
 		7B80916A2517B5F600F2E787 /* ShellScript */ = {
@@ -368,8 +369,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /usr/bin/true;
-			shellScript = "$
-";
+			shellScript = "#\t\\\n#\n";
 		};
 		7B8091A72517BA0200F2E787 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -590,6 +590,7 @@
 				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TAB = "	";
+				TAB2 = "aa\taa.";
 				TEST_SPACES = "$(inherited)def";
 			};
 			name = Debug;
@@ -622,6 +623,7 @@
 				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TAB = "	";
+				TAB2 = "aa\taa.";
 				TEST_SPACES = "$(inherited)def";
 			};
 			name = Release;
