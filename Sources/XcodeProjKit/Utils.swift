@@ -115,7 +115,7 @@ extension String {
 		}
 		
 		/* We found this… */
-		let escapeTabsAndNewlines = (count > 5)
+		let escapeTabsAndNewlines = (utf16.count > 5)
 		
 		var escaped = self
 			.replacingOccurrences(of: "\\", with: "\\\\", options: .literal)
