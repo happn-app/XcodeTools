@@ -590,7 +590,8 @@
 				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TAB = "	";
-				TAB2 = "aa\taa.";
+				TAB2 = "	👍🏼";
+				TAB3 = "a\t👍🏼";
 				TEST_SPACES = "$(inherited)def";
 			};
 			name = Debug;
@@ -623,7 +624,8 @@
 				SEMICOLON = "hel;lo";
 				SWIFT_VERSION = 5.0;
 				TAB = "	";
-				TAB2 = "aa\taa.";
+				TAB2 = "	👍🏼";
+				TAB3 = "a\t👍🏼";
 				TEST_SPACES = "$(inherited)def";
 			};
 			name = Release;
