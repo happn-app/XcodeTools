@@ -100,9 +100,9 @@ extension String {
 	/* From https://opensource.apple.com/source/CF/CF-1153.18/CFOldStylePList.c
 	 *    #define isValidUnquotedStringCharacter(x) (((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z') || ((x) >= '0' && (x) <= '9') || (x) == '_' || (x) == '$' || (x) == '/' || (x) == ':' || (x) == '.' || (x) == '-')
 	 *
-	 * We _infer_ that escaped chars are \n, ", \ and that’s all, but we’re not
-	 * 100% certain. We only tested different values, to infer this; we did not
-	 * test all possible characters. */
+	 * We _infer_ that escaped chars are \n, \t, ", \ and that’s all, but we’re
+	 * not 100% certain. We only tested different values to infer this; we did
+	 * not test all possible characters. */
 	func escapedForPBXProjValue() -> String {
 		guard !isEmpty else {
 			return "\"\""
@@ -110,14 +110,21 @@ extension String {
 		
 		/* The dash and colon should be there. They aren’t for Xcode apparently. */
 		let validUnquotedStringChars = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$/.")
-		if rangeOfCharacter(from: validUnquotedStringChars.inverted) == nil {
+		if rangeOfCharacter(from: validUnquotedStringChars.inverted) == nil && !hasPrefix("___") {
 			return self
 		}
 		
-		let escaped = self
+		/* We found this… */
+		let escapeTabsAndNewlines = (count > 5)
+		
+		var escaped = self
 			.replacingOccurrences(of: "\\", with: "\\\\", options: .literal)
-			.replacingOccurrences(of: "\n", with: "\\n", options: .literal)
 			.replacingOccurrences(of: "\"", with: "\\\"", options: .literal)
+		if escapeTabsAndNewlines {
+			escaped = escaped
+				.replacingOccurrences(of: "\n", with: "\\n",  options: .literal)
+				.replacingOccurrences(of: "\t", with: "\\t",  options: .literal)
+		}
 		return "\"" + escaped + "\""
 	}
 	
