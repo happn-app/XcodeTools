@@ -13,6 +13,9 @@ class TestsProject1 : XCTestCase {
 		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
 		let originalContents = try Data(contentsOf: xcodeproj.pbxprojURL)
 		try XCTAssertEqual(originalContents, Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8))
+		
+		/* Uncomment to see the diff using git. */
+//		try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
 	}
 	
 	func testXcodeprojAndPlist() throws {
