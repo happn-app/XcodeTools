@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -239,6 +239,9 @@
 				7B591C83250B515200B6CA54 /* Frameworks */,
 				7B591C84250B515200B6CA54 /* Resources */,
 				7B591CB8250CE0E800B6CA54 /* Embed App Extensions */,
+				7B8091672517B5DF00F2E787 /* ShellScript */,
+				7B80916A2517B5F600F2E787 /* ShellScript */,
+				7B8091A72517BA0200F2E787 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -329,6 +332,63 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		7B8091672517B5DF00F2E787 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /usr/bin/true;
+			shellScript = "# 	\\
+";
+		};
+		7B80916A2517B5F600F2E787 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 12;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /usr/bin/true;
+			shellScript = "$
+";
+		};
+		7B8091A72517BA0200F2E787 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /usr/bin/true;
+			shellScript = "# ### Script for Setting Things Up for the happn Project. ### #\n# This script is in a separate target than directly as a build phase of happn\n# because, for less than obvious reasons, the compilation failed on first try\n# when it was. (Some files were not found.)\n# Anyway currently the target has to be separate as it is also used by other\n# targets than only happn!\nset -e\n\nif [ -z \"$PROJECT_NAME\" -o -z \"$PROJECT_DIR\" ]; then\n   echo \"error: PROJECT_NAME or PROJECT_DIR is undefined.\" >/dev/stderr\n   exit 42\nfi\n\n\n\n###############################################\n### COPYING DEFAULT LOGGER CONFIG IF NEEDED ###\n###############################################\n\nBASE_PATH=\"$PROJECT_DIR/$PROJECT_NAME\"\nLOGGER_CONFIG=\"$BASE_PATH/LoggerConfig.swift\"\nDEFAULT_LOGGER_CONFIG=\"$BASE_PATH/LoggerConfig.default.swift\"\n\nif [ ! -e \"$LOGGER_CONFIG\" ]; then\n   echo \"Copying default logger config:\"\n   cp -v \"$DEFAULT_LOGGER_CONFIG\" \"$LOGGER_CONFIG\"\nfi\n\n\n\n#########################################\n### PROCESSING FRAMEWORKS & LIBRARIES ###\n#########################################\n\n# Running the “Precompiled Dependencies” repo script (strip dynamic libraries, etc.)\n# We could run the script separately for the iOS and watchOS OSes, but it doesn't cost\n# much to run both at the same time.\n\"$PROJECT_DIR/Dependencies/_PrecompiledDependencies/Scripts/process_installed.sh\" \"iOS\" \"watchOS\"\n\n\n\n##########################\n### RUN LOCMAPPER LINT ###\n##########################\n\nif [ \"${CONFIGURATION}\" != \"Debug\" ]; then\n   \"$PROJECT_DIR/Scripts/zz_bin/locmapper\" lint --detect-unused-refloc=true \"Localization Map.lcm\"\nfi\n\n\n\n# ### That’s all, folks! ### #\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		7B591C82250B515200B6CA54 /* Sources */ = {
