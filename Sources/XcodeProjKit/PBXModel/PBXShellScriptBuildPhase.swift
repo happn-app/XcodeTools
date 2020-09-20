@@ -27,6 +27,16 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 			}
 			showEnvVarsInLog = NSNumber(value: value != 0)
 		}
+		
+		if let alwaysOutOfDateStr: String = try rawObject.getIfExists("alwaysOutOfDate") {
+			guard let value = Int(alwaysOutOfDateStr) else {
+				throw XcodeProjKitError(message: "Unexpected always out of date value \(alwaysOutOfDateStr)")
+			}
+			if value != 0 && value != 1 {
+				NSLog("%@", "Warning: Suspicious value for alwaysOutOfDate \(alwaysOutOfDateStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+			}
+			alwaysOutOfDate = NSNumber(value: value != 0)
+		}
 	}
 	
 	open override var buildPhaseBaseTypeAsString: String {

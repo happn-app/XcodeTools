@@ -119,6 +119,7 @@
     </entity>
     <entity name="PBXResourcesBuildPhase" representedClassName="PBXResourcesBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXShellScriptBuildPhase" representedClassName="PBXShellScriptBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category">
+        <attribute name="alwaysOutOfDate" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <attribute name="inputFileListPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="inputPaths" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="outputFileListPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
@@ -203,7 +204,7 @@
         <element name="PBXProject" positionX="169.17578125" positionY="-67.10546875" width="147.30078125" height="268"/>
         <element name="PBXReferenceProxy" positionX="-752.46875" positionY="-400.33984375" width="128" height="73"/>
         <element name="PBXResourcesBuildPhase" positionX="-830.046875" positionY="-98" width="161.390625" height="43"/>
-        <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="148"/>
+        <element name="PBXShellScriptBuildPhase" positionX="-944.33203125" positionY="119.234375" width="167.34765625" height="163"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
         <element name="PBXTarget" positionX="-82.859375" positionY="124.27734375" width="128" height="148"/>
         <element name="PBXTargetDependency" positionX="-364.64453125" positionY="265.9609375" width="148.2578125" height="118"/>

@@ -44,7 +44,7 @@ public struct PBXProj {
 		}
 		
 		let ov: String = try rawDecoded.get("objectVersion")
-		guard ov == "46" || ov == "48" || ov == "50" || ov == "52" || ov == "53" else {
+		guard ov == "46" || ov == "48" || ov == "50" || ov == "52" || ov == "53" || ov == "54" else {
 			throw XcodeProjKitError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
