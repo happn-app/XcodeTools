@@ -85,7 +85,7 @@ struct GetVersions : ParsableCommand {
 				
 			}
 			
-			enum VersionSourse : String, Encodable {
+			enum VersionSource : String, Encodable {
 				
 				case buildConfiguration = "config"
 				case plist
@@ -96,7 +96,7 @@ struct GetVersions : ParsableCommand {
 			
 			var targetName: String
 			var configurationName: String
-			var versionSource: VersionSourse
+			var versionSource: VersionSource
 			
 			var value: String
 			
