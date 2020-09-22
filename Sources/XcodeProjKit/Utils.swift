@@ -110,7 +110,9 @@ extension String {
 		
 		/* The dash and colon should be there. They aren’t for Xcode apparently. */
 		let validUnquotedStringChars = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_$/.")
-		if rangeOfCharacter(from: validUnquotedStringChars.inverted) == nil && !hasPrefix("___") {
+		/* The triple underscore, I only got the prefix rule, the double slash, I
+		 * didn’t get at all. Corrections from https://github.com/tuist/XcodeProj/blob/master/Sources/XcodeProj/Utils/CommentedString.swift */
+		if rangeOfCharacter(from: validUnquotedStringChars.inverted) == nil && !contains("___") && !contains("//") {
 			return self
 		}
 		
