@@ -571,6 +571,7 @@
 				CODE_SIGN_ENTITLEMENTS = target1/target1.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				COMMENT = "This_is_//shit";
 				CURRENT_PROJECT_VERSION = 2;
 				EMOJI = "👍🏼";
 				GREEK = "𝛼";
@@ -593,6 +594,7 @@
 				TAB2 = "	👍🏼";
 				TAB3 = "a\t👍🏼";
 				TEST_SPACES = "$(inherited)def";
+				TRIPLE_UNDERSCORE = "hello___world";
 			};
 			name = Debug;
 		};
@@ -605,6 +607,7 @@
 				CODE_SIGN_ENTITLEMENTS = target1/target1.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				COMMENT = "This_is_//shit";
 				CURRENT_PROJECT_VERSION = 2;
 				EMOJI = "👍🏼";
 				GREEK = "𝛼";
@@ -627,6 +630,7 @@
 				TAB2 = "	👍🏼";
 				TAB3 = "a\t👍🏼";
 				TEST_SPACES = "$(inherited)def";
+				TRIPLE_UNDERSCORE = "hello___world";
 			};
 			name = Release;
 		};
