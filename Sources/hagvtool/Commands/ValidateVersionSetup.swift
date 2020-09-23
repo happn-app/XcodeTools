@@ -83,31 +83,45 @@ struct ValidateVersionSetup : ParsableCommand {
 		
 		var description: String {
 			/* ***** */
-			let versioningSystemFailExplanation = "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much."
+			let versioningSystemFailExplanation = "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.\n"
 			let versioningSystemMessages = messages.filter{ $0.messageType == .invalidVersioningSystem }
-			let versioningSystemStrMessage = versioningSystemMessages.reduce("🔸 Versioning system check...\n", { result, diagnostic in
-				result + "   -> Unexpected versioning system “\(diagnostic.value ?? "<not set>")” for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
-			}) + (versioningSystemMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + versioningSystemFailExplanation) + "\n"
+			let versioningSystemEmoji = (versioningSystemMessages.isEmpty ? "✅" : "❌")
+			let versioningSystemStrMessage = versioningSystemMessages.reduce(
+				"Versioning system: \(versioningSystemEmoji)\n" + (!versioningSystemMessages.isEmpty ? versioningSystemFailExplanation : ""),
+				{ result, diagnostic in
+					result + "   - Unexpected versioning system “\(diagnostic.value ?? "<not set>")” for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+				}
+			)
 			
 			/* ***** */
 			let cfBundleVersionFailExplanation = """
 				The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
 				Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+				
 				"""
 			let cfBundleVersionMessages = messages.filter{ $0.messageType == .invalidCFBundleVersionInPlist  }
-			let cfBundleVersionStrMessage = cfBundleVersionMessages.reduce("🔸 CFBundleVersion value check (plist)...\n", { result, diagnostic in
-				result + "   -> Unexpected CFBundleVersion value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
-			}) + (cfBundleVersionMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + cfBundleVersionFailExplanation) + "\n"
+			let cfBundleVersionEmoji = (cfBundleVersionMessages.isEmpty ? "✅" : "❌")
+			let cfBundleVersionStrMessage = cfBundleVersionMessages.reduce(
+				"CFBundleVersion value check (plist): \(cfBundleVersionEmoji)\n" + (!cfBundleVersionMessages.isEmpty ? cfBundleVersionFailExplanation : ""),
+				{ result, diagnostic in
+					result + "   - Unexpected CFBundleVersion value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+				}
+			)
 			
 			/* ***** */
 			let cfBundleShortVersionStringFailExplanation = """
 				The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
 				Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+				
 				"""
 			let cfBundleShortVersionStringMessages = messages.filter{ $0.messageType == .invalidCFBundleShortVersionStringInPlist  }
-			let cfBundleShortVersionStringStrMessage = cfBundleShortVersionStringMessages.reduce("🔸 CFBundleShortVersionString value check (plist)...\n", { result, diagnostic in
-				result + "   -> Unexpected CFBundleShortVersionString value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
-			}) + (cfBundleShortVersionStringMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + cfBundleShortVersionStringFailExplanation) + "\n"
+			let cfBundleShortVersionStringEmoji = (cfBundleShortVersionStringMessages.isEmpty ? "✅" : "❌")
+			let cfBundleShortVersionStringStrMessage = cfBundleShortVersionStringMessages.reduce(
+				"CFBundleShortVersionString value check (plist): \(cfBundleShortVersionStringEmoji)\n" + (!cfBundleShortVersionStringMessages.isEmpty ? cfBundleShortVersionStringFailExplanation : ""),
+				{ result, diagnostic in
+					result + "   - Unexpected CFBundleShortVersionString value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+				}
+			)
 			
 			return [versioningSystemStrMessage, cfBundleVersionStrMessage, cfBundleShortVersionStringStrMessage].joined(separator: "\n")
 		}
