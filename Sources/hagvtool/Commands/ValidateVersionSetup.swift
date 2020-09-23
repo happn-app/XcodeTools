@@ -92,7 +92,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			/* ***** */
 			let cfBundleVersionFailExplanation = """
 				The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
-				Of course, the actual version should be set in the build settings (either directly in the project or using an xcconfig file).
+				Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 				"""
 			let cfBundleVersionMessages = messages.filter{ $0.messageType == .invalidCFBundleVersionInPlist  }
 			let cfBundleVersionStrMessage = cfBundleVersionMessages.reduce("🔸 CFBundleVersion value check (plist)...\n", { result, diagnostic in
@@ -102,7 +102,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			/* ***** */
 			let cfBundleShortVersionStringFailExplanation = """
 				The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
-				Of course, the actual versions should be set in the build settings (either directly in the project or using an xcconfig file).
+				Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 				"""
 			let cfBundleShortVersionStringMessages = messages.filter{ $0.messageType == .invalidCFBundleShortVersionStringInPlist  }
 			let cfBundleShortVersionStringStrMessage = cfBundleShortVersionStringMessages.reduce("🔸 CFBundleShortVersionString value check (plist)...\n", { result, diagnostic in
