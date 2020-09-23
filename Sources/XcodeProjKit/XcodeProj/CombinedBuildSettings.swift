@@ -185,11 +185,11 @@ public struct CombinedBuildSettings {
 		guard let path = resolvedValue(for: BuildSettingKey(key: "INFOPLIST_FILE")) else {
 			return nil
 		}
-		return URL(fileURLWithPath: path, isDirectory: false, relativeTo: xcodeprojURL)
+		return URL(fileURLWithPath: path, isDirectory: false, relativeTo: xcodeprojURL.deletingLastPathComponent())
 	}
 	
 	public func infoPlistRaw(xcodeprojURL: URL) throws -> [String: Any]? {
-		guard let plistURL = infoPlistURL(xcodeprojURL: xcodeprojURL.deletingLastPathComponent()) else {
+		guard let plistURL = infoPlistURL(xcodeprojURL: xcodeprojURL) else {
 			return nil
 		}
 		let plistData = try Data(contentsOf: plistURL)
