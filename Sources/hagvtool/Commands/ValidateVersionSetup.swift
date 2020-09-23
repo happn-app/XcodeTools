@@ -82,26 +82,34 @@ struct ValidateVersionSetup : ParsableCommand {
 		var messages: [DiagnosticMessage]
 		
 		var description: String {
-//			print("*** Verifying versioning system")
-//			print("   -> Unexpected versioning system “\(versioningSystem)” for target “\(targetName)” and configuration “\(configurationName)”")
-//			if ok {
-//				print("-> OK")
-//			} else {
-//				print("-> FAIL")
-//				print("The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.")
-//			}
-//
-//			print("*** Verifying sanity of current project version and marketing version in Info.plist")
-//			print("   -> Unexpected CFBundleVersion value “\(versionString ?? "<no value>")” in plist file for target “\(targetName)” and configuration “\(configurationName)”")
-//			print("   -> Unexpected CFBundleShortVersionString value “\(shortVersionString ?? "<no value>")” in plist file for target “\(targetName)” and configuration “\(configurationName)”")
-//			if ok {
-//				print("-> OK")
-//			} else {
-//				print("-> FAIL")
-//				print("The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)” and the CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.")
-//				print("Of course, the actual versions should be set in the build settings (either directly in the project or using an xcconfig file).")
-//			}
-			return ""
+			/* ***** */
+			let versioningSystemFailExplanation = "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much."
+			let versioningSystemMessages = messages.filter{ $0.messageType == .invalidVersioningSystem }
+			let versioningSystemStrMessage = versioningSystemMessages.reduce("🔸 Versioning system check...\n", { result, diagnostic in
+				result + "   -> Unexpected versioning system “\(diagnostic.value ?? "<not set>")” for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+			}) + (versioningSystemMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + versioningSystemFailExplanation) + "\n"
+			
+			/* ***** */
+			let cfBundleVersionFailExplanation = """
+				The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
+				Of course, the actual version should be set in the build settings (either directly in the project or using an xcconfig file).
+				"""
+			let cfBundleVersionMessages = messages.filter{ $0.messageType == .invalidCFBundleVersionInPlist  }
+			let cfBundleVersionStrMessage = cfBundleVersionMessages.reduce("🔸 CFBundleVersion value check (plist)...\n", { result, diagnostic in
+				result + "   -> Unexpected CFBundleVersion value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+			}) + (cfBundleVersionMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + cfBundleVersionFailExplanation) + "\n"
+			
+			/* ***** */
+			let cfBundleShortVersionStringFailExplanation = """
+				The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
+				Of course, the actual versions should be set in the build settings (either directly in the project or using an xcconfig file).
+				"""
+			let cfBundleShortVersionStringMessages = messages.filter{ $0.messageType == .invalidCFBundleShortVersionStringInPlist  }
+			let cfBundleShortVersionStringStrMessage = cfBundleShortVersionStringMessages.reduce("🔸 CFBundleShortVersionString value check (plist)...\n", { result, diagnostic in
+				result + "   -> Unexpected CFBundleShortVersionString value “\(diagnostic.value ?? "<not set>")” in plist file for target “\(diagnostic.targetName)” and configuration “\(diagnostic.configurationName)”\n"
+			}) + (cfBundleShortVersionStringMessages.count == 0 ? "✅ OK" : "❌ FAIL\n" + cfBundleShortVersionStringFailExplanation) + "\n"
+			
+			return [versioningSystemStrMessage, cfBundleVersionStrMessage, cfBundleShortVersionStringStrMessage].joined(separator: "\n")
 		}
 		
 		init(messages m: [DiagnosticMessage]) {
