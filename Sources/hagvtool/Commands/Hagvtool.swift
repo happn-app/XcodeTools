@@ -12,7 +12,8 @@ struct Hagvtool : ParsableCommand {
 		subcommands: [
 			ValidateVersionSetup.self,
 			GetVersions.self,
-			SetVersions.self
+			SetBuildVersion.self,
+			SetMarketingVersion.self
 		]
 	)
 	
