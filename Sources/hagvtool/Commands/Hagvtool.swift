@@ -57,7 +57,7 @@ struct Hagvtool : ParsableCommand {
 				(/*nop*/)
 				
 			case .text:
-				print(output)
+				print(output, terminator: "")
 				
 			case .json, .jsonPrettyPrinted:
 				let encoder = JSONEncoder()

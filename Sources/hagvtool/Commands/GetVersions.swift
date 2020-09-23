@@ -141,7 +141,7 @@ struct GetVersions : ParsableCommand {
 				lines.append(Version.VersionType.marketingVersion.rawValue.bracketEscaped() + " = \"" + v.quoteEscaped() + "\"")
 			}
 			
-			return lines.joined(separator: "\n")
+			return lines.joined(separator: "\n") + "\n"
 		}
 		
 		init(versions vs: [Version]) {

@@ -82,36 +82,42 @@ struct ValidateVersionSetup : ParsableCommand {
 		var messages: [DiagnosticMessage]
 		
 		var description: String {
-			let versioningSystemMessage = descriptionForMessages(
+			let (versioningSystemMessage, versioningSystemIsFailure) = descriptionForMessages(
 				ofType: .invalidVersioningSystem,
 				checkDescription: "Versioning system",
 				failureExplanation: "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.",
-				failureToStringHandler: { "Unexpected versioning system “\($0.value ?? "<not set>")” for target “\($0.targetName)” and configuration “\($0.configurationName)”" }
+				failureToStringHandler: { "Unexpected versioning system “\($0.value ?? "<not set>")” for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+				previousWasSuccess: false,
+				isLast: false
 			)
 			
 			/* ***** */
-			let cfBundleVersionMessage = descriptionForMessages(
+			let (cfBundleVersionMessage, cfBundleVersionIsFailure) = descriptionForMessages(
 				ofType: .invalidCFBundleVersionInPlist,
 				checkDescription: "CFBundleVersion value check (plist)",
 				failureExplanation: """
 					The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
 					Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 					""",
-				failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" }
+				failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+				previousWasSuccess: !versioningSystemIsFailure,
+				isLast: false
 			)
 			
 			/* ***** */
-			let cfBundleShortVersionStringMessage = descriptionForMessages(
+			let (cfBundleShortVersionStringMessage, _/*cfBundleShortVersionStringIsFailure*/) = descriptionForMessages(
 				ofType: .invalidCFBundleShortVersionStringInPlist,
 				checkDescription: "CFBundleShortVersionString value check (plist)",
 				failureExplanation: """
 					The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
 					Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 					""",
-				failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" }
+				failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+				previousWasSuccess: !cfBundleVersionIsFailure,
+				isLast: true
 			)
 			
-			return [versioningSystemMessage, cfBundleVersionMessage, cfBundleShortVersionStringMessage].joined(separator: "\n")
+			return [versioningSystemMessage, cfBundleVersionMessage, cfBundleShortVersionStringMessage].joined()
 		}
 		
 		init(messages m: [DiagnosticMessage]) {
@@ -129,12 +135,21 @@ struct ValidateVersionSetup : ParsableCommand {
 			}
 		}
 		
-		private func descriptionForMessages(ofType type: DiagnosticMessage.MessageType, checkDescription: String, failureExplanation: String, failureToStringHandler: (DiagnosticMessage) -> String) -> String {
+		private func descriptionForMessages(
+			ofType type: DiagnosticMessage.MessageType,
+			checkDescription: String,
+			failureExplanation: String,
+			failureToStringHandler: (DiagnosticMessage) -> String,
+			previousWasSuccess: Bool,
+			isLast: Bool
+		) -> (description: String, isFailure: Bool) {
 			let filteredMessages = messages.filter{ $0.messageType == type }
-			let emoji = (filteredMessages.isEmpty ? "✅" : "❌")
-			return filteredMessages.reduce("\(checkDescription): \(emoji)\n" + (!filteredMessages.isEmpty ? failureExplanation + "\n" : ""), { result, diagnostic in
+			let isFailure = !filteredMessages.isEmpty
+			let emoji = (!isFailure ? "✅" : "❌")
+			let descriptionBase = filteredMessages.reduce("\(checkDescription): \(emoji)\n" + (isFailure ? failureExplanation + "\n" : ""), { result, diagnostic in
 				result + "   - " + failureToStringHandler(diagnostic) + "\n"
 			})
+			return ((previousWasSuccess && isFailure ? "\n" : "") + descriptionBase + (isFailure && !isLast ? "\n" : ""), isFailure)
 		}
 		
 	}
