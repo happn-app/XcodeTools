@@ -110,7 +110,7 @@ extension String {
 	/** Not optimized! Returns the suffix. */
 	mutating func removeSuffix(from characterSet: CharacterSet) -> String {
 		var ret = ""
-		while let suffixRange = rangeOfCharacter(from: characterSet, options: [.literal, .anchored]) {
+		while let suffixRange = rangeOfCharacter(from: characterSet, options: [.literal, .anchored, .backwards]) {
 			ret = self[suffixRange] + ret
 			removeSubrange(suffixRange)
 		}
