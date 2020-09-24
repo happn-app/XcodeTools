@@ -33,7 +33,8 @@ TEST_IMPORTED_DEV_DIR = NO
 TEST_COMMENT_IMPORT = NO
 
 #include "test.xcconfig"
-  #	 include 	"test2.xcconfig" // This works?
+//  #	 include 	"test2.xcconfig" // This works? No… Well kinda. It works when compiling, but Xcode GUI does not see it.
+  #include 	"test2.xcconfig" // This works? Yes
 #include "test3.xcconfig"
 
 TEST_INCLUDE_QUOTES = NO

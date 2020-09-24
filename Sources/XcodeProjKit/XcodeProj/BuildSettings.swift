@@ -66,8 +66,33 @@ public struct BuildSettings {
 		settings = rawBuildSettings.map{ BuildSetting(laxSerializedKey: $0.key, value: $0.value, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters) }
 	}
 	
-	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false) throws {
-		throw XcodeProjKitError(message: "TODO")
+	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false) throws {
+		try self.init(xcconfigURL: url, failIfFileDoesNotExist: failIfFileDoesNotExist, seenFiles: [], allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp)
+	}
+	
+	private init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool, seenFiles: Set<URL>, allowCommaSeparatorForParameters: Bool, allowSpacesAfterSharp: Bool) throws {
+		let xcconfig = try XCConfig(url: url, failIfFileDoesNotExist: failIfFileDoesNotExist, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp)
+		let seenFiles = seenFiles.union([url.absoluteURL])
+		
+		settings = try xcconfig.lines.flatMap{ line -> [BuildSetting] in
+			switch line {
+				case .void:
+					return []
+					
+				case .include(path: let path, isOptional: let isOptional, prefix: _, postSharp: _, postDirective: _, suffix: _):
+					let urlToImport = try xcconfig.urlFor(importPath: path)
+					if !seenFiles.contains(urlToImport.absoluteURL) {
+						let importedConfig = try BuildSettings(xcconfigURL: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp)
+						return importedConfig.settings
+					} else {
+						NSLog("%@", "Warning: Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.path).")
+						return []
+					}
+					
+				case .value(key: let key, value: let value, prefix: _, equalSign: _, suffix: _):
+					return [BuildSetting(key: key, value: value)]
+			}
+		}
 	}
 	
 	static let charactersValidForFirstVariableCharacter = CharacterSet(charactersIn: "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")

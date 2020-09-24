@@ -77,13 +77,6 @@ public struct XCConfig {
 						}
 						
 						self = .include(path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
-//						if !seenFiles.contains(urlToImport.absoluteURL) {
-//							#warning("TODO")
-//							let importedConfig = try XCConfig(url: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters)
-//							result.append(contentsOf: importedSettings.settings)
-//						} else {
-//							NSLog("%@", "Warning: Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.path).")
-//						}
 						
 					default:
 						throw LineParsingError.unknownDirective(directive)
@@ -157,10 +150,6 @@ public struct XCConfig {
 	public var lines: [Line]
 	
 	public init(url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false) throws {
-		try self.init(url: url, failIfFileDoesNotExist: failIfFileDoesNotExist, seenFiles: [], allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp)
-	}
-	
-	private init(url: URL, failIfFileDoesNotExist: Bool, seenFiles: Set<URL>, allowCommaSeparatorForParameters: Bool, allowSpacesAfterSharp: Bool) throws {
 //		NSLog("%@", "Trying to parse xcconfig file \(url.absoluteString)")
 		sourceURL = url
 		
@@ -181,7 +170,6 @@ public struct XCConfig {
 			return
 		}
 		
-		let seenFiles = seenFiles.union([url.absoluteURL])
 		let fileContents = try String(contentsOf: url)
 		
 		var error: Error?
