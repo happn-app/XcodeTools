@@ -33,17 +33,27 @@ TEST_IMPORTED_DEV_DIR = NO
 TEST_COMMENT_IMPORT = NO
 
 #include "test.xcconfig"
-//  #	 include 	"test2.xcconfig" // This works? No… Well kinda. It works when compiling, but Xcode GUI does not see it.
+//  #	 include 	"test2.xcconfig" // This works? No! Well… kinda. AFAICT, it works when compiling, but Xcode GUI does not see it.
   #include 	"test2.xcconfig" // This works? Yes
 #include "test3.xcconfig"
+// This only works in the GUI (Xcode 12.0.1 (12A7300))
+//#include"test3.xcconfig"
+
+// Including an empty string does not fail apparently
+#include ""
+
+TEST_EMOJI_IMPORT = NO
+#include "emoji!😁	.xcconfig"
 
 TEST_INCLUDE_QUOTES = NO
-// Does not work. Parses include "test\\", then fails with unexpected char.
+// Does not work. Parses include “test\”, then fails with unexpected char.
 // “#include "test\"” would work if the “test\” file existed.
 //#include "test\"4.xcconfig"
 
 // See the Readme for informations about the different possible values for the
 // preprocessing macros (build configuration options for Swift).
+
+TEST_DOUBLE_SEMICOLON = ;;
 
 A = hello
 B =

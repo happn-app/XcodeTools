@@ -117,5 +117,9 @@
 	<string>$(TEST_COMMENT_IMPORT)</string>
 	<key>TEST_INCLUDE_QUOTES</key>
 	<string>$(TEST_INCLUDE_QUOTES)</string>
+	<key>TEST_EMOJI_IMPORT</key>
+	<string>$(TEST_EMOJI_IMPORT)</string>
+	<key>TEST_DOUBLE_SEMICOLON</key>
+	<string>$(TEST_DOUBLE_SEMICOLON)</string>
 </dict>
 </plist>

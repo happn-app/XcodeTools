@@ -51,6 +51,7 @@
 		7B22A584251CB0E100FAC6F2 /* import1.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = import1.xcconfig; sourceTree = "<group>"; };
 		7B22A585251CB0F600FAC6F2 /* import2.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = import2.xcconfig; sourceTree = "<group>"; };
 		7B22A58B251CBA3500FAC6F2 /* test"4.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "test\"4.xcconfig"; sourceTree = "<group>"; };
+		7B22A590251D420400FAC6F2 /* emoji!😁	.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "emoji!😁\t.xcconfig"; sourceTree = "<group>"; };
 		7B591C86250B515200B6CA54 /* Target 1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Target 1.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B591C89250B515200B6CA54 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7B591C8B250B515200B6CA54 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -148,6 +149,7 @@
 				7B591C9D250B59AB00B6CA54 /* test2.xcconfig */,
 				7B591C9F250B5C7100B6CA54 /* test3.xcconfig */,
 				7B22A58B251CBA3500FAC6F2 /* test"4.xcconfig */,
+				7B22A590251D420400FAC6F2 /* emoji!😁	.xcconfig */,
 				7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */,
 				7BF8434F25136BC1001EDEBF /* Localizable.strings */,
 			);
