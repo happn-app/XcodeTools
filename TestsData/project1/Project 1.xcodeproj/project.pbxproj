@@ -48,6 +48,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7B22A584251CB0E100FAC6F2 /* import1.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = import1.xcconfig; sourceTree = "<group>"; };
+		7B22A585251CB0F600FAC6F2 /* import2.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = import2.xcconfig; sourceTree = "<group>"; };
+		7B22A58B251CBA3500FAC6F2 /* test"4.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = "test\"4.xcconfig"; sourceTree = "<group>"; };
 		7B591C86250B515200B6CA54 /* Target 1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Target 1.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B591C89250B515200B6CA54 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7B591C8B250B515200B6CA54 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -92,6 +95,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7B22A583251CB0C000FAC6F2 /* auto-xcconfigimports */ = {
+			isa = PBXGroup;
+			children = (
+				7B22A588251CB17800FAC6F2 /* sub-folder */,
+				7B22A584251CB0E100FAC6F2 /* import1.xcconfig */,
+			);
+			path = "auto-xcconfigimports";
+			sourceTree = "<group>";
+		};
+		7B22A588251CB17800FAC6F2 /* sub-folder */ = {
+			isa = PBXGroup;
+			children = (
+				7B22A585251CB0F600FAC6F2 /* import2.xcconfig */,
+			);
+			path = "sub-folder";
+			sourceTree = "<group>";
+		};
 		7B591C7D250B515200B6CA54 = {
 			isa = PBXGroup;
 			children = (
@@ -123,9 +143,11 @@
 				7BF7E4A9250D30A700A678A5 /* <SRCROOT> */,
 				7B591CBB250D2ECD00B6CA54 /* <DEVELOPER_DIR> */,
 				7B591CBD250D2F4D00B6CA54 /* Applications */,
+				7B22A583251CB0C000FAC6F2 /* auto-xcconfigimports */,
 				7B591C99250B51B400B6CA54 /* test.xcconfig */,
 				7B591C9D250B59AB00B6CA54 /* test2.xcconfig */,
 				7B591C9F250B5C7100B6CA54 /* test3.xcconfig */,
+				7B22A58B251CBA3500FAC6F2 /* test"4.xcconfig */,
 				7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */,
 				7BF8434F25136BC1001EDEBF /* Localizable.strings */,
 			);

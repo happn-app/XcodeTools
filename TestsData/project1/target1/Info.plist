@@ -109,5 +109,13 @@
 		<key>KEY</key>
 		<string>${PRODUCT_BUNDLE_IDENTIFIER}</string>
 	</dict>
+	<key>TEST_HAS_IMPORTED_1</key>
+	<string>$(TEST_HAS_IMPORTED_1)</string>
+	<key>TEST_HAS_IMPORTED_2</key>
+	<string>$(TEST_HAS_IMPORTED_2)</string>
+	<key>TEST_COMMENT_IMPORT</key>
+	<string>$(TEST_COMMENT_IMPORT)</string>
+	<key>TEST_INCLUDE_QUOTES</key>
+	<string>$(TEST_INCLUDE_QUOTES)</string>
 </dict>
 </plist>

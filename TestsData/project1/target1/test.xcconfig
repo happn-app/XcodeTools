@@ -8,6 +8,14 @@
 #include "Utils.xcconfigimport"
 #include? "happn-Debug-Custom.xcconfigimport"
 
+TEST_HAS_IMPORTED_1 = NO
+TEST_HAS_IMPORTED_2 = NO
+
+// Does not do anything AFAICT
+#include "./auto-xcconfigimports/"
+// Does not work haha
+//#include "./auto-xcconfigimports/*"
+
 TEST_IMPORTED_SRCROOT = NO
 TEST_IMPORTED_DEV_DIR = NO
 // The three includes below show that “<DEVELOPER_DIR>” is replaced by the
@@ -22,9 +30,16 @@ TEST_IMPORTED_DEV_DIR = NO
 // have been warned!
 //#include "<DEVELOPER_DIR>"
 
+TEST_COMMENT_IMPORT = NO
+
 #include "test.xcconfig"
-#include "test2.xcconfig"
+  #	 include 	"test2.xcconfig" // This works?
 #include "test3.xcconfig"
+
+TEST_INCLUDE_QUOTES = NO
+// Does not work. Parses include "test\\", then fails with unexpected char.
+// “#include "test\"” would work if the “test\” file existed.
+//#include "test\"4.xcconfig"
 
 // See the Readme for informations about the different possible values for the
 // preprocessing macros (build configuration options for Swift).
