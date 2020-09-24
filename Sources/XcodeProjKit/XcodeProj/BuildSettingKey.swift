@@ -21,17 +21,34 @@ public struct BuildSettingKey : Hashable {
 		public var key: String
 		public var value: String
 		
+		var nextParamSeparatedByComma: Bool
+		
+		public func hash(into hasher: inout Hasher) {
+			hasher.combine(key)
+			hasher.combine(value)
+		}
+		
+		public static func ==(_ lhs: BuildSettingKeyParam, _ rhs: BuildSettingKeyParam) -> Bool {
+			return (
+				lhs.key == rhs.key &&
+				lhs.value == rhs.value
+			)
+		}
+		
 	}
 	
 	public var key: String
 	public var parameters: [BuildSettingKeyParam]
 	
+	var garbage: String
+	
 	public init(laxSerializedKey serializedKey: String, allowCommaSeparatorForParameters: Bool = false) {
 		let scanner = Scanner(forParsing: serializedKey)
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
-		if !scanner.isAtEnd {
-			NSLog("%@", "Warning: Got build setting key which seems invalid (scanner not at end after parsing parameters). Raw key is: “\(serializedKey)”.")
+		garbage = scanner.scanUpToCharacters(from: CharacterSet()) ?? ""
+		if !garbage.isEmpty {
+			NSLog("%@", "Warning: Got build setting key which seems invalid. Got garbage: “\(garbage)”. Raw key is: “\(serializedKey)”.")
 		}
 	}
 	
@@ -39,14 +56,49 @@ public struct BuildSettingKey : Hashable {
 		let scanner = Scanner(forParsing: serializedKey)
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
-		if !scanner.isAtEnd {
-			throw XcodeProjKitError(message: "Got build setting which seems invalid (scanner not at end after parsing parameters). Raw key is: “\(serializedKey)”.")
+		garbage = scanner.scanUpToCharacters(from: CharacterSet()) ?? ""
+		if !garbage.isEmpty {
+			throw XcodeProjKitError(message: "Got build setting key which seems invalid. Got garbage: “\(garbage)”. Raw key is: “\(serializedKey)”.")
 		}
 	}
 	
 	public init(key: String, parameters: [BuildSettingKeyParam] = []) {
 		self.key = key
 		self.parameters = parameters
+		self.garbage = ""
+	}
+	
+	public var serialized: String {
+		var isFirst = true
+		var sepIsComma = false
+		
+		let paramString = parameters.reduce("", { curResult, curParam in
+			let ret = (
+				curResult +
+				(!isFirst && !sepIsComma ? "]" : "") +
+				(sepIsComma ? "," : "[") +
+				curParam.key +
+				"=" +
+				curParam.value
+			)
+			isFirst = false
+			sepIsComma = curParam.nextParamSeparatedByComma
+			return ret
+		}) + "]"
+		
+		return key + paramString + garbage
+	}
+		
+	public func hash(into hasher: inout Hasher) {
+		hasher.combine(key)
+		hasher.combine(parameters)
+	}
+	
+	public static func ==(_ lhs: BuildSettingKey, _ rhs: BuildSettingKey) -> Bool {
+		return (
+			lhs.key == rhs.key &&
+			lhs.parameters == rhs.parameters
+		)
 	}
 	
 	/**
@@ -83,7 +135,7 @@ public struct BuildSettingKey : Hashable {
 	- parameter allowCommaSeparator:
 	https://pewpewthespells.com/blog/xcconfig_guide.html says the settings
 	parameters can be separated by a comma, like so: `PARAMETER[sdk=*,arch=*]`,
-	however my tests told me it does not work! (Xcode 12.0 beta 6 (12A8189n))
+	however my tests told me it does not work! (12.0 (12A7209))
 	You can reactivate parsing w/ the comma for tests if needed w/ this param. */
 	static func parseSettingParams(scanner: Scanner, allowCommaSeparator: Bool) -> [BuildSettingKeyParam] {
 		var first = true
@@ -102,7 +154,7 @@ public struct BuildSettingKey : Hashable {
 			let variantValue = scanner.scanUpToCharacters(from: CharacterSet(charactersIn: allowCommaSeparator ? ",]" : "]")) ?? ""
 			if scanner.scanString("]") != nil {
 				parameters.append(contentsOf: pendingParameters)
-				parameters.append(BuildSettingKeyParam(key: variantName, value: variantValue))
+				parameters.append(BuildSettingKeyParam(key: variantName, value: variantValue, nextParamSeparatedByComma: false))
 				lastSuccessParseIdx = scanner.currentIndex
 				pendingParameters.removeAll()
 				success = true
@@ -111,7 +163,7 @@ public struct BuildSettingKey : Hashable {
 				 * of the string. If at the end of the string, this is an error,
 				 * which will be caugth when we exit the loop and success is not
 				 * true. If we’re on the comma separator, we continue the parsing. */
-				pendingParameters.append(BuildSettingKeyParam(key: variantName, value: variantValue))
+				pendingParameters.append(BuildSettingKeyParam(key: variantName, value: variantValue, nextParamSeparatedByComma: true))
 				success = false
 			}
 			

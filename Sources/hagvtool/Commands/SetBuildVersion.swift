@@ -54,8 +54,9 @@ struct SetBuildVersion : ParsableCommand {
 						let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
 						try reserializedData.write(to: plistURL)
 				}
-				
 			}
+			
+			
 		}
 	}
 	
