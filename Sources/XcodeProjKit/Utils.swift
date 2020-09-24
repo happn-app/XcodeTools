@@ -97,6 +97,26 @@ extension Optional {
 
 extension String {
 	
+	/** Not optimized! Returns the prefix. */
+	mutating func removePrefix(from characterSet: CharacterSet) -> String {
+		var ret = ""
+		while let prefixRange = rangeOfCharacter(from: characterSet, options: [.literal, .anchored]) {
+			ret += self[prefixRange]
+			removeSubrange(prefixRange)
+		}
+		return ret
+	}
+	
+	/** Not optimized! Returns the suffix. */
+	mutating func removeSuffix(from characterSet: CharacterSet) -> String {
+		var ret = ""
+		while let suffixRange = rangeOfCharacter(from: characterSet, options: [.literal, .anchored]) {
+			ret = self[suffixRange] + ret
+			removeSubrange(suffixRange)
+		}
+		return ret
+	}
+	
 	/* From https://opensource.apple.com/source/CF/CF-1153.18/CFOldStylePList.c
 	 *    #define isValidUnquotedStringCharacter(x) (((x) >= 'a' && (x) <= 'z') || ((x) >= 'A' && (x) <= 'Z') || ((x) >= '0' && (x) <= '9') || (x) == '_' || (x) == '$' || (x) == '/' || (x) == ':' || (x) == '.' || (x) == '-')
 	 *

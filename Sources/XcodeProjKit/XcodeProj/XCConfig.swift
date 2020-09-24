@@ -38,20 +38,9 @@ public struct XCConfig {
 				if !lineCommentComponents.isEmpty {lineComment = "//" + lineCommentComponents.joined(separator: "//")}
 				else                              {lineComment = ""}
 				
-				if let prefixRange = lineContentBuilding.rangeOfCharacter(from: xcconfigWhitespace, options: [.literal, .anchored]) {
-					linePrefix = String(lineContentBuilding[prefixRange])
-					lineContentBuilding.removeSubrange(prefixRange)
-				} else {
-					linePrefix = ""
-				}
+				linePrefix = lineContentBuilding.removePrefix(from: xcconfigWhitespace)
+				let preCommentLineSuffix = lineContentBuilding.removeSuffix(from: xcconfigWhitespace)
 				
-				let preCommentLineSuffix: Substring
-				if let suffixRange = lineContentBuilding.rangeOfCharacter(from: xcconfigWhitespace, options: [.literal, .anchored, .backwards]) {
-					preCommentLineSuffix = lineContentBuilding[suffixRange]
-					lineContentBuilding.removeSubrange(suffixRange)
-				} else {
-					preCommentLineSuffix = ""
-				}
 				lineContent = lineContentBuilding
 				lineSuffix = preCommentLineSuffix + lineComment
 			}
@@ -126,22 +115,12 @@ public struct XCConfig {
 					var valueBuilding = scanner.scanUpToCharacters(from: CharacterSet()) ?? "" /* Scan to the end of string. */
 					
 					/* Find and trim the value prefix (whitespaces) */
-					if let prefixRange = valueBuilding.rangeOfCharacter(from: xcconfigWhitespace, options: [.literal, .anchored]) {
-						afterEqualSign = String(valueBuilding[prefixRange])
-						valueBuilding.removeSubrange(prefixRange)
-					} else {
-						afterEqualSign = ""
-					}
+					afterEqualSign = valueBuilding.removePrefix(from: xcconfigWhitespace)
 					
 					/* Find and trim the value suffix (whitespaces + ";") */
 					if valueBuilding.last == ";" {
 						valueBuilding = String(valueBuilding[valueBuilding.startIndex..<valueBuilding.index(before: valueBuilding.endIndex)])
-						if let suffixRange = valueBuilding.rangeOfCharacter(from: xcconfigWhitespace, options: [.literal, .anchored, .backwards]) {
-							postVarSuffix = String(valueBuilding[suffixRange]) + ";"
-							valueBuilding.removeSubrange(suffixRange)
-						} else {
-							postVarSuffix = ";"
-						}
+						postVarSuffix = valueBuilding.removeSuffix(from: xcconfigWhitespace) + ";"
 					} else {
 						postVarSuffix = ""
 					}

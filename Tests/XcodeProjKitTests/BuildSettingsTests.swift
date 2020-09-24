@@ -7,6 +7,10 @@ import XCTest
 
 class BuildSettingsTests : XCTestCase {
 	
+	func testNoParameters() throws {
+		XCTAssertEqual(try BuildSettingKey(serializedKey: "SETTING = VALUE").serialized, "SETTING = VALUE")
+	}
+	
 	func testParameterParsingWithComma() throws {
 		let actual = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*,arch=*][variant=debug]": ""], allowCommaSeparatorForParameters: true)
 		let expected1 = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*][arch=*][variant=debug]": ""], allowCommaSeparatorForParameters: true)

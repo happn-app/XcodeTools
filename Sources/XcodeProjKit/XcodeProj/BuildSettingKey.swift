@@ -84,7 +84,7 @@ public struct BuildSettingKey : Hashable {
 			isFirst = false
 			sepIsComma = curParam.nextParamSeparatedByComma
 			return ret
-		}) + "]"
+		}) + (parameters.isEmpty ? "" : "]")
 		
 		return key + paramString + garbage
 	}
