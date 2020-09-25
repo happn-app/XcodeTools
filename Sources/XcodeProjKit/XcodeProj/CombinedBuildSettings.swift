@@ -115,7 +115,7 @@ public struct CombinedBuildSettings {
 			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
-		let buildSettings = BuildSettings(rawBuildSettings: rawBuildSettings)
+		let buildSettings = BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(configuration))
 		buildSettingsLevelsBuilding.append(buildSettings)
 		
 		buildSettingsLevels = buildSettingsLevelsBuilding

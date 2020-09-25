@@ -4,8 +4,19 @@ import Foundation
 
 public struct BuildSetting {
 	
+	public enum Location {
+		
+		/** For settings you don’t want written back anywhere. */
+		case none
+		case xcconfiguration(XCBuildConfiguration)
+		case xcconfigFile(XCConfigRef, lineID: XCConfig.LineID)
+		
+	}
+	
 	public var key: BuildSettingKey
 	public var value: Any
+	
+	public var location: Location
 	
 	public var stringValue: String {
 		switch value {
@@ -17,14 +28,16 @@ public struct BuildSetting {
 		}
 	}
 	
-	public init(laxSerializedKey serializedKey: String, value v: Any, allowCommaSeparatorForParameters: Bool = false) {
+	public init(laxSerializedKey serializedKey: String, value v: Any, location l: Location, allowCommaSeparatorForParameters: Bool = false) {
 		key = BuildSettingKey(laxSerializedKey: serializedKey, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters)
 		value = v
+		location = l
 	}
 	
-	public init(key: BuildSettingKey, value: Any) {
+	public init(key: BuildSettingKey, value: Any, location: Location) {
 		self.key = key
 		self.value = value
+		self.location = location
 	}
 	
 }

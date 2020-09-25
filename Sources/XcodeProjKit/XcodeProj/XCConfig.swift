@@ -290,3 +290,14 @@ public struct XCConfig {
 	}
 	
 }
+
+
+public class XCConfigRef {
+	
+	public var xcconfig: XCConfig
+	
+	public init(xcconfig c: XCConfig) {
+		xcconfig = c
+	}
+	
+}
