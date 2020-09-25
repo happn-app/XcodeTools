@@ -292,12 +292,4 @@ public struct XCConfig {
 }
 
 
-public class XCConfigRef {
-	
-	public var xcconfig: XCConfig
-	
-	public init(xcconfig c: XCConfig) {
-		xcconfig = c
-	}
-	
-}
+public typealias XCConfigRef = Ref<XCConfig>

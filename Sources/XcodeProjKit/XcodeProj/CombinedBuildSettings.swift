@@ -6,6 +6,44 @@ import Foundation
 /** Represents multiple build settings levels combined. */
 public struct CombinedBuildSettings {
 	
+	public static func convenienceSort(_ s1: CombinedBuildSettings, _ s2: CombinedBuildSettings) -> Bool {
+		let targetName1 = s1.targetName ?? ""
+		let targetName2 = s2.targetName ?? ""
+		let configName1 = s1.configurationName
+		let configName2 = s2.configurationName
+		if targetName1 < targetName2 {return true}
+		if targetName1 > targetName2 {return false}
+		return configName1 < configName2
+	}
+	
+	public struct ResolvedValue {
+		
+		public var value: String
+		/**
+		The build settings that were used to resolve the value.
+		
+		The _last_ setting will be the most significant. Changing the value of
+		this setting to something that does not contain any variable will
+		effectively change the resolved value of the setting to that. The new
+		resolved value will then only have one source: the setting.
+		
+		The sources can be empty if the resolved value was not resolved using any
+		setting. This can happen if you resolve a string without a setting context
+		or if you try and resolve a setting key which does not have a value. */
+		public var sources: [BuildSettingRef]
+		
+		internal init() {
+			self.value = ""
+			self.sources = []
+		}
+		
+		internal init(value: String, sources: [BuildSettingRef]) {
+			self.value = value
+			self.sources = sources
+		}
+		
+	}
+	
 	/** `nil` if representing build settings of the project. */
 	public var targetName: String?
 	public var configurationName: String
@@ -20,24 +58,14 @@ public struct CombinedBuildSettings {
 	
 	- Note: The array should maybe also contain the source of the build settings.
 	Especially if we want to implement modifying a build setting later. */
-	public var buildSettingsLevels: [BuildSettings]
-	
-	public static func convenienceSort(_ s1: CombinedBuildSettings, _ s2: CombinedBuildSettings) -> Bool {
-		let targetName1 = s1.targetName ?? ""
-		let targetName2 = s2.targetName ?? ""
-		let configName1 = s1.configurationName
-		let configName2 = s2.configurationName
-		if targetName1 < targetName2 {return true}
-		if targetName1 > targetName2 {return false}
-		return configName1 < configName2
-	}
+	public var buildSettingsLevels: [BuildSettingsRef]
 	
 	/**
 	Returns all the combined build settings for all the targets in the project.
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
-	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [CombinedBuildSettings] {
+	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
 		guard let targets = project.targets else {
 			throw XcodeProjKitError(message: "targets property is not set in project \(project)")
 		}
@@ -56,7 +84,7 @@ public struct CombinedBuildSettings {
 	
 	- Note: The xcodeproj URL is required because some paths can be relative to
 	the xcodeproj path. */
-	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettings]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws -> [String: CombinedBuildSettings] {
+	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettingsRef]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [String: CombinedBuildSettings] {
 		guard let configurations = configurations else {
 			throw XcodeProjKitError(message: "configurations property not set")
 		}
@@ -65,7 +93,7 @@ public struct CombinedBuildSettings {
 			guard let name = configuration.name else {
 				throw XcodeProjKitError(message: "Got configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 			}
-			let targetAndProjectSettings: (PBXTarget, [BuildSettings])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
+			let targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
 				let (target, projectSettingsPerConfigName) = targetAndProjectSettingsPerConfigName
 				guard let projectSettings = projectSettingsPerConfigName[name] else {
 					throw XcodeProjKitError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
@@ -79,7 +107,7 @@ public struct CombinedBuildSettings {
 		})
 	}
 	
-	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettings])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettings) throws {
+	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws {
 		guard let configName = configuration.name else {
 			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 		}
@@ -107,7 +135,7 @@ public struct CombinedBuildSettings {
 				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
-			let config = try BuildSettings(xcconfigURL: url)
+			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url))
 			buildSettingsLevelsBuilding.append(config)
 		}
 		
@@ -115,13 +143,13 @@ public struct CombinedBuildSettings {
 			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
-		let buildSettings = BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(configuration))
+		let buildSettings = BuildSettingsRef(BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(configuration)))
 		buildSettingsLevelsBuilding.append(buildSettings)
 		
 		buildSettingsLevels = buildSettingsLevelsBuilding
 	}
 	
-	public init(targetName: String? = nil, configurationName: String, buildSettingsLevels: [BuildSettings]) {
+	public init(targetName: String? = nil, configurationName: String, buildSettingsLevels: [BuildSettingsRef]) {
 		self.targetName = targetName
 		self.configurationName = configurationName
 		self.buildSettingsLevels = buildSettingsLevels
@@ -132,8 +160,7 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns the value that matches the given settings key. For now, no variable
-	substitution is done.
+	Returns the value that matches the given settings key.
 	
 	This method cannot fail and returns a non-optional because if a variable does
 	not have a value (does not exist), its value is set to "".
@@ -148,11 +175,16 @@ public struct CombinedBuildSettings {
 	If a build setting have an unknown type (neither a String nor an array of
 	Strings), we return en empty String for this value. */
 	public subscript(_ key: BuildSettingKey) -> String {
-		return resolvedValue(for: key) ?? ""
+		return resolvedValue(for: key)?.value ?? ""
 	}
 	
-	/** Returns `nil` if the key does not exist in the settings. */
-	public func resolvedValue(for key: BuildSettingKey) -> String? {
+	/**
+	Try and resolve the value for the given key. Returns `nil` if the key does
+	not exist in the settings.
+	
+	If any, the resolved value you get from this method will always contain at
+	least one source. */
+	public func resolvedValue(for key: BuildSettingKey) -> ResolvedValue? {
 		/* We want to retrieve an array of (Int, BuildSetting), where the Int
 		 * represents the level from which the build setting is from.
 		 * I did this because I though I’d need this, but I actually won’t.
@@ -162,27 +194,29 @@ public struct CombinedBuildSettings {
 		 * structure in Xcode held its settings as a dictionary instead of an
 		 * array of BuildSetting, which prevented it from doing the smarter
 		 * resolution it now has. */
-		let searchedSettings = buildSettingsLevels.enumerated().flatMap{ elementAndOffset in elementAndOffset.element.settings.map{ (level: elementAndOffset.offset, setting: $0) } }
+		let searchedSettings = buildSettingsLevels.enumerated().flatMap{ elementAndOffset in elementAndOffset.element.value.settings.map{ (level: elementAndOffset.offset, setting: $0) } }
 		#warning("TODO: Implement variable conditionals…")
-		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.setting.key.key == key.key }
+		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.setting.value.key.key == key.key }
 		
 		guard !settingsWhoseKeyMatch.isEmpty else {
 			return nil
 		}
 		
-		var resolvedValue = ""
+		var resolvedValue = ResolvedValue()
 		var currentlyResolvedValues = [key.key: resolvedValue]
-		for rawValue in settingsWhoseKeyMatch.map({ $0.setting.stringValue }) {
-			let scanner = Scanner(forParsing: rawValue)
+		for settingRef in settingsWhoseKeyMatch.map({ $0.setting }) {
+			let scanner = Scanner(forParsing: settingRef.value.stringValue)
 			resolvedValue = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, inheritedVariableName: key.key)
+			resolvedValue.sources.append(settingRef)
 			currentlyResolvedValues[key.key] = resolvedValue
 		}
 		
+		assert(!resolvedValue.sources.isEmpty)
 		return resolvedValue
 	}
 	
 	public func infoPlistURL(xcodeprojURL: URL) -> URL? {
-		guard let path = resolvedValue(for: BuildSettingKey(key: "INFOPLIST_FILE")) else {
+		guard let path = resolvedValue(for: BuildSettingKey(key: "INFOPLIST_FILE"))?.value else {
 			return nil
 		}
 		return URL(fileURLWithPath: path, isDirectory: false, relativeTo: xcodeprojURL.deletingLastPathComponent())
@@ -207,7 +241,7 @@ public struct CombinedBuildSettings {
 	public func infoPlistResolved(xcodeprojURL: URL) throws -> [String: Any]? {
 		func resolveVariablesGeneric<T>(_ object: T) -> T {
 			switch object {
-				case let string as String:            return resolveVariables(in: string) as! T
+				case let string as String:            return resolveVariables(in: string).value as! T
 				case let array as [Any]:              return array.map(resolveVariablesGeneric) as! T
 				case let dictionary as [String: Any]: return dictionary.mapValues(resolveVariablesGeneric) as! T
 				default:                              return object
@@ -216,9 +250,9 @@ public struct CombinedBuildSettings {
 		return try infoPlistRaw(xcodeprojURL: xcodeprojURL).flatMap(resolveVariablesGeneric)
 	}
 	
-	public func resolveVariables(in string: String) -> String {
+	public func resolveVariables(in string: String) -> ResolvedValue {
 		let scanner = Scanner(forParsing: string)
-		var currentlyResolvedValues = [String: String]()
+		var currentlyResolvedValues = [String: ResolvedValue]()
 		return resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues)
 	}
 	
@@ -233,8 +267,9 @@ public struct CombinedBuildSettings {
 	empty string, then “`)`” then “`}`”.
 	
 	`inheritedVariableName` is given to resolve the “inherited” variable name. */
-	private func resolveVariables(scanner: Scanner, currentlyResolvedValues: inout [String: String], inheritedVariableName: String? = nil, varEndChars: String = "") -> String {
+	private func resolveVariables(scanner: Scanner, currentlyResolvedValues: inout [String: ResolvedValue], inheritedVariableName: String? = nil, varEndChars: String = "") -> ResolvedValue {
 		var result = ""
+		var sources = [BuildSettingRef]()
 		
 		/** Returns `true` if a potential variable start has been found. */
 		func parseUpToStartOfVariableIncludingDollar() -> Bool {
@@ -269,14 +304,18 @@ public struct CombinedBuildSettings {
 			let mustExist: Bool
 			let rawVariableName: String
 			if scanner.scanString("(") != nil {
+				let resolved = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: ")")
+				sources.append(contentsOf: resolved.sources)
+				rawVariableName = resolved.value
 				mustExist = false
-				rawVariableName = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: ")")
 			} else if scanner.scanString("{") != nil {
+				let resolved = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: "}")
+				sources.append(contentsOf: resolved.sources)
+				rawVariableName = resolved.value
 				mustExist = false
-				rawVariableName = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: "}")
 			} else {
-				mustExist = true
 				rawVariableName = scanner.scanCharacters(from: BuildSettingKey.charactersValidInVariableName) ?? ""
+				mustExist = true
 			}
 			
 			let variableName: String
@@ -284,16 +323,17 @@ public struct CombinedBuildSettings {
 			else                              {variableName = rawVariableName}
 			
 			let resolvedOptional = currentlyResolvedValues[variableName] ?? resolvedValue(for: BuildSettingKey(key: variableName, parameters: []))
-			let resolved: String
+			let resolved: ResolvedValue
 			if let r = resolvedOptional {resolved = r}
-			else if mustExist           {resolved = "$" + variableName}
-			else                        {resolved = ""}
+			else if mustExist           {resolved = ResolvedValue(value: "$" + variableName, sources: [])}
+			else                        {resolved = ResolvedValue(value: "", sources: [])}
 			
 			currentlyResolvedValues[variableName] = resolved
-			result.append(resolved)
+			sources.append(contentsOf: resolved.sources)
+			result.append(resolved.value)
 		}
 		
-		return result
+		return ResolvedValue(value: result, sources: sources)
 	}
 	
 }

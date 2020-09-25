@@ -18,9 +18,9 @@ class BuildSettingsTests : XCTestCase {
 		compareBuildSettings(expected1, actual)
 		compareBuildSettings(expected2, actual)
 		
-		XCTAssertEqual(actual.settings.first?.key.serialized, "MY_BUILD_SETTING[skd=*,arch=*][variant=debug]")
-		XCTAssertEqual(expected1.settings.first?.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*][variant=debug]")
-		XCTAssertEqual(expected2.settings.first?.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*][variant=debug]")
+		XCTAssertEqual(actual.settings.first?.value.key.serialized, "MY_BUILD_SETTING[skd=*,arch=*][variant=debug]")
+		XCTAssertEqual(expected1.settings.first?.value.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*][variant=debug]")
+		XCTAssertEqual(expected2.settings.first?.value.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*][variant=debug]")
 	}
 	
 	func testParameterParsingFailWithoutComma() throws {
@@ -31,23 +31,23 @@ class BuildSettingsTests : XCTestCase {
 		 * This is debatable; we could say we parse as much as we can, but that
 		 * not what we decided. */
 		let actual = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*][arch=*,this_is_junk": ""], allowCommaSeparatorForParameters: false)
-		XCTAssertEqual(actual.settings.first?.key.garbage, "[arch=*,this_is_junk")
+		XCTAssertEqual(actual.settings.first?.value.key.garbage, "[arch=*,this_is_junk")
 		compareBuildSettings(expected, actual)
 		
-		XCTAssertEqual(actual.settings.first?.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*,this_is_junk")
+		XCTAssertEqual(actual.settings.first?.value.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*,this_is_junk")
 	}
 	
 	func testParameterParsingFailWithComma() throws {
 		let expected = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*]": ""], allowCommaSeparatorForParameters: true)
 		let actual = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*][arch=*,this_is_junk": ""], allowCommaSeparatorForParameters: true)
-		XCTAssertEqual(actual.settings.first?.key.garbage, "[arch=*,this_is_junk")
+		XCTAssertEqual(actual.settings.first?.value.key.garbage, "[arch=*,this_is_junk")
 		compareBuildSettings(expected, actual)
 		
-		XCTAssertEqual(actual.settings.first?.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*,this_is_junk")
+		XCTAssertEqual(actual.settings.first?.value.key.serialized, "MY_BUILD_SETTING[skd=*][arch=*,this_is_junk")
 	}
 	
 	private func compareBuildSettings(_ s1: BuildSettings, _ s2: BuildSettings) {
-		XCTAssertEqual(s1.settings.map{ $0.key }, s2.settings.map{ $0.key })
+		XCTAssertEqual(s1.settings.map{ $0.value.key }, s2.settings.map{ $0.value.key })
 	}
 	
 }

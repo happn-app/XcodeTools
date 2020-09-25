@@ -41,3 +41,6 @@ public struct BuildSetting {
 	}
 	
 }
+
+
+public typealias BuildSettingRef = Ref<BuildSetting>

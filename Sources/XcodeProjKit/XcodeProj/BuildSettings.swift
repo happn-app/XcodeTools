@@ -56,14 +56,14 @@ public struct BuildSettings {
 		])
 	}
 	
-	public var settings: [BuildSetting]
+	public var settings: [BuildSettingRef]
 	
 	public init() {
 		settings = []
 	}
 	
 	public init(rawBuildSettings: [String: Any], location: BuildSetting.Location = .none, allowCommaSeparatorForParameters: Bool = false) {
-		settings = rawBuildSettings.map{ BuildSetting(laxSerializedKey: $0.key, value: $0.value, location: location, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters) }
+		settings = rawBuildSettings.map{ BuildSettingRef(BuildSetting(laxSerializedKey: $0.key, value: $0.value, location: location, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters)) }
 	}
 	
 	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
@@ -73,9 +73,9 @@ public struct BuildSettings {
 	private init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool, seenFiles: Set<URL>, allowCommaSeparatorForParameters: Bool, allowSpacesAfterSharp: Bool, allowNoSpacesAfterInclude: Bool) throws {
 		let xcconfig = try XCConfig(url: url, failIfFileDoesNotExist: failIfFileDoesNotExist, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 		let seenFiles = seenFiles.union([url.absoluteURL])
-		let xcconfigRef = XCConfigRef(xcconfig: xcconfig)
+		let xcconfigRef = XCConfigRef(xcconfig)
 		
-		settings = try xcconfig.sortedLines.flatMap{ lineAndID -> [BuildSetting] in
+		settings = try xcconfig.sortedLines.flatMap{ lineAndID -> [BuildSettingRef] in
 			let (lineID, line) = lineAndID
 			switch line {
 				case .void:
@@ -99,9 +99,12 @@ public struct BuildSettings {
 					}
 					
 				case .value(key: let key, value: let value, prefix: _, equalSign: _, suffix: _):
-					return [BuildSetting(key: key, value: value, location: .xcconfigFile(xcconfigRef, lineID: lineID))]
+					return [BuildSettingRef(BuildSetting(key: key, value: value, location: .xcconfigFile(xcconfigRef, lineID: lineID)))]
 			}
 		}
 	}
 	
 }
+
+
+public typealias BuildSettingsRef = Ref<BuildSettings>
