@@ -13,7 +13,8 @@ For example, for the following config: “`MY_CONFIG[sdk=*][arch=*]`”, the
 ```
 
 - Important:
-No validation is done on the parameters, nor the key. */
+No validation is done on the parameters, nor the key, but you can validate
+whether the resulting object is valid later. */
 public struct BuildSettingKey : Hashable {
 	
 	public struct BuildSettingKeyParam : Hashable {
@@ -66,6 +67,39 @@ public struct BuildSettingKey : Hashable {
 		self.key = key
 		self.parameters = parameters
 		self.garbage = ""
+	}
+	
+	public func isValid(allowGarbage: Bool) -> Bool {
+		guard allowGarbage || garbage.isEmpty else {
+			return false
+		}
+		
+		guard !key.isEmpty else {
+			return false
+		}
+		guard key.rangeOfCharacter(from: BuildSettingKey.charactersValidInVariableName.inverted, options: .literal) == nil else {
+			return false
+		}
+		guard String(key[key.startIndex]).rangeOfCharacter(from: BuildSettingKey.charactersValidForFirstVariableCharacter.inverted, options: .literal) == nil else {
+			return false
+		}
+		
+		for parameter in parameters {
+			/* An opening bracket and non-alnum chars seems to be valid at compile
+			 * time but not in the GUI (Xcode 12.0.1 (12A7300)).
+			 * We’ll validate only alphanums in the keys. In theory the parameter
+			 * keys should only be known keys from Xcode anyway. */
+			guard !parameter.key.isEmpty && parameter.key.rangeOfCharacter(from: CharacterSet.asciiAlphanum.inverted, options: .literal) == nil else {
+				return false
+			}
+			/* An empty value seems to parse correctly, but the meaning is unclear.
+			 * We’ll only validate alphanums and stars. Here also, the values
+			 * should only be known values from Xcode. */
+			guard parameter.value.rangeOfCharacter(from: CharacterSet.asciiAlphanum.union(CharacterSet(charactersIn: "*")).inverted, options: .literal) == nil else {
+				return false
+			}
+		}
+		return true
 	}
 	
 	public var serialized: String {
@@ -174,5 +208,8 @@ public struct BuildSettingKey : Hashable {
 		}
 		return parameters
 	}
+	
+	static let charactersValidForFirstVariableCharacter = CharacterSet(charactersIn: "_").union(CharacterSet.asciiAlpha)
+	static let charactersValidInVariableName = charactersValidForFirstVariableCharacter.union(CharacterSet.asciiNum)
 	
 }

@@ -10,8 +10,9 @@ public struct XCConfig {
 			
 			case unknownDirective(String)
 			case gotSpaceAfterSharpInDirective
+			case noSpaceAfterIncludeDirective
 			case expectedDoubleQuoteAfterIncludeDirective
-			case cannotParseIncludePath
+			case unterminatedIncludeFileName
 			case unexpectedCharAfterInclude
 			
 			case invalidFirstCharInVar(Character)
@@ -19,15 +20,11 @@ public struct XCConfig {
 			
 		}
 		
-		case void(String)
-		case include(path: String, isOptional: Bool, prefix: String, postSharp: String, postDirective: String, suffix: String)
-		case value(key: BuildSettingKey, value: String, prefix: String, equalSign: String, suffix: String)
+		case void(lineNumber: Int, String)
+		case include(lineNumber: Int, path: String, isOptional: Bool, prefix: String, postSharp: String, postDirective: String, suffix: String)
+		case value(lineNumber: Int, key: BuildSettingKey, value: String, prefix: String, equalSign: String, suffix: String)
 		
-		init(lineString line: String, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false) throws {
-			/* We specifically want space and tabs; other unicode whitespaces are
-			 * not valid for our use case. */
-			let xcconfigWhitespace = CharacterSet(charactersIn: " \t")
-			
+		init(lineString line: String, lineNumber: Int, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
 			let lineContent, linePrefix, lineSuffix: String
 			do {
 				let components = line.components(separatedBy: "//")
@@ -38,45 +35,51 @@ public struct XCConfig {
 				if !lineCommentComponents.isEmpty {lineComment = "//" + lineCommentComponents.joined(separator: "//")}
 				else                              {lineComment = ""}
 				
-				linePrefix = lineContentBuilding.removePrefix(from: xcconfigWhitespace)
-				let preCommentLineSuffix = lineContentBuilding.removeSuffix(from: xcconfigWhitespace)
+				linePrefix = lineContentBuilding.removePrefix(from: Line.xcconfigWhitespace)
+				let preCommentLineSuffix = lineContentBuilding.removeSuffix(from: Line.xcconfigWhitespace)
 				
 				lineContent = lineContentBuilding
 				lineSuffix = preCommentLineSuffix + lineComment
 			}
 			assert(line == linePrefix + lineContent + lineSuffix)
 			guard !lineContent.isEmpty else {
-				self = .void(line)
+				self = .void(lineNumber: lineNumber, line)
 				return
 			}
 			
 			let scanner = Scanner(forParsing: lineContent)
 			if scanner.scanString("#") != nil {
 				/* We have a preprocessor directive line. */
-				let postSharp = scanner.scanCharacters(from: xcconfigWhitespace) ?? ""
+				let postSharp = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
 				/* It seems the xcconfig parser is not the same when compiling and
 				 * in Xcode build settings UI.
 				 * In the UI, the spaces after the sharp seem to break the xcconfig
 				 * file fully; in code, the directive seems to work ok w/ spaces! */
 				guard postSharp.isEmpty || allowSpacesAfterSharp else {throw LineParsingError.gotSpaceAfterSharpInDirective}
 				
-				let directive = scanner.scanUpToCharacters(from: xcconfigWhitespace.union(CharacterSet(charactersIn: "?"))) ?? ""
+				let directive = scanner.scanUpToCharacters(from: Line.xcconfigWhitespace.union(CharacterSet(charactersIn: "?"))) ?? ""
 				let isOptional = (scanner.scanString("?") != nil)
-				let postDirective = scanner.scanCharacters(from: xcconfigWhitespace) ?? ""
+				let postDirective = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
 				switch directive {
 					case "include":
+						/* An empty post directive only works in the GUI of Xcode, not
+						 * when building (Xcode 12.0.1 (12A7300)). */
+						guard allowNoSpacesAfterInclude || !postDirective.isEmpty else {
+							throw LineParsingError.noSpaceAfterIncludeDirective
+						}
 						guard scanner.scanString("\"") != nil else {
 							throw LineParsingError.expectedDoubleQuoteAfterIncludeDirective
 						}
-						guard let path = scanner.scanUpToString("\"") else {
-							throw LineParsingError.cannotParseIncludePath
+						/* An empty path is valid… */
+						let path = scanner.scanUpToString("\"") ?? ""
+						guard scanner.scanString("\"") != nil else {
+							throw LineParsingError.unterminatedIncludeFileName
 						}
-						_ = scanner.scanString("\"")
 						guard scanner.isAtEnd else {
 							throw LineParsingError.unexpectedCharAfterInclude
 						}
 						
-						self = .include(path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
+						self = .include(lineNumber: lineNumber, path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
 						
 					default:
 						throw LineParsingError.unknownDirective(directive)
@@ -88,16 +91,16 @@ public struct XCConfig {
 					guard let firstChar = scanner.scanCharacter() else {
 						throw XcodeProjKitError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
 					}
-					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettings.charactersValidForFirstVariableCharacter.contains(scalar) else {
+					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettingKey.charactersValidForFirstVariableCharacter.contains(scalar) else {
 						throw LineParsingError.invalidFirstCharInVar(firstChar)
 					}
-					let restOfVariableName = scanner.scanCharacters(from: BuildSettings.charactersValidInVariableName) ?? ""
+					let restOfVariableName = scanner.scanCharacters(from: BuildSettingKey.charactersValidInVariableName) ?? ""
 					variableName = String(firstChar) + restOfVariableName
 				}
 				
 				let parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 				
-				let beforeEqualSign = scanner.scanCharacters(from: xcconfigWhitespace) ?? ""
+				let beforeEqualSign = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
 				guard scanner.scanString("=") != nil else {
 					throw LineParsingError.unexpectedCharAfterVarName
 				}
@@ -108,12 +111,12 @@ public struct XCConfig {
 					var valueBuilding = scanner.scanUpToCharacters(from: CharacterSet()) ?? "" /* Scan to the end of string. */
 					
 					/* Find and trim the value prefix (whitespaces) */
-					afterEqualSign = valueBuilding.removePrefix(from: xcconfigWhitespace)
+					afterEqualSign = valueBuilding.removePrefix(from: Line.xcconfigWhitespace)
 					
 					/* Find and trim the value suffix (whitespaces + ";") */
 					if valueBuilding.last == ";" {
 						valueBuilding = String(valueBuilding[valueBuilding.startIndex..<valueBuilding.index(before: valueBuilding.endIndex)])
-						postVarSuffix = valueBuilding.removeSuffix(from: xcconfigWhitespace) + ";"
+						postVarSuffix = valueBuilding.removeSuffix(from: Line.xcconfigWhitespace) + ";"
 					} else {
 						postVarSuffix = ""
 					}
@@ -122,6 +125,7 @@ public struct XCConfig {
 				}
 				
 				self = .value(
+					lineNumber: lineNumber,
 					key: BuildSettingKey(key: variableName, parameters: parameters),
 					value: value,
 					prefix: linePrefix,
@@ -131,25 +135,71 @@ public struct XCConfig {
 			}
 		}
 		
-		var lineString: String {
+		var lineNumber: Int {
 			switch self {
-				case .void(let str):
+				case .void(lineNumber: let n, _):                                                                               return n
+				case .include(lineNumber: let n, path: _, isOptional: _, prefix: _, postSharp: _, postDirective: _, suffix: _): return n
+				case .value(lineNumber: let n, key: _, value: _, prefix: _, equalSign: _, suffix: _):                           return n
+			}
+		}
+		
+		var isValid: Bool {
+			switch self {
+				case .void(_, let str):
+					let strTrimmed = str.trimmingCharacters(in: Line.xcconfigWhitespace)
+					return strTrimmed.isEmpty || strTrimmed.hasPrefix("//")
+					
+				case .include(_, path: let path, isOptional: _, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
+					let suffixTrimmed = suffix.trimmingCharacters(in: Line.xcconfigWhitespace)
+					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
+					let pathOK = (path.rangeOfCharacter(from: CharacterSet(charactersIn: "\n\""), options: .literal) == nil)
+					let whitesOK = [prefix, postSharp, postDirective].first(where: { $0.rangeOfCharacter(from: Line.xcconfigWhitespace.inverted, options: .literal) != nil }) == nil
+					/* An empty post directive only works in the GUI of Xcode, not
+					 * when building (Xcode 12.0.1 (12A7300)). */
+					let postDirectiveNotEmpty = !postDirective.isEmpty
+					return whitesOK && pathOK && suffixOK && postDirectiveNotEmpty
+					
+				case .value(_, key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
+					let suffixTrimmed = suffix.trimmingCharacters(in: Line.xcconfigWhitespace)
+					let prefixOK = prefix.rangeOfCharacter(from: Line.xcconfigWhitespace.inverted, options: .literal) == nil
+					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
+					let keyOK = key.isValid(allowGarbage: true) /* We allow garbage because the garbage is correctly parsed and restituted */
+					let valueOK = (value.range(of: "\n") == nil)
+					let equalSignOK = (
+						equalSign.rangeOfCharacter(from: Line.xcconfigWhitespace.union(CharacterSet(charactersIn: "=")).inverted, options: .literal) == nil &&
+						equalSign.filter{ $0 == "=" }.count == 1
+					)
+					return prefixOK && suffixOK && keyOK && valueOK && equalSignOK
+			}
+		}
+		
+		func lineString() throws -> String {
+			guard isValid else {
+				throw XcodeProjKitError(message: "Trying to get line string representation of invalid line \(self)")
+			}
+			
+			switch self {
+				case .void(_, let str):
 					return str
 					
-				case .include(path: let path, isOptional: let optional, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
+				case .include(_, path: let path, isOptional: let optional, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
 					return prefix + "#" + postSharp + "include" + (optional ? "?" : "") + postDirective + "\"" + path + "\"" + suffix
 					
-				case .value(key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
+				case .value(_, key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
 					return prefix + key.serialized + equalSign + value + suffix
 			}
 		}
+		
+		/* We specifically want space and tabs; other unicode whitespaces are not
+		 * valid for our use case. */
+		static let xcconfigWhitespace = CharacterSet(charactersIn: " \t")
 		
 	}
 	
 	public var sourceURL: URL
 	public var lines: [Line]
 	
-	public init(url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false) throws {
+	public init(url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
 //		NSLog("%@", "Trying to parse xcconfig file \(url.absoluteString)")
 		sourceURL = url
 		
@@ -172,20 +222,23 @@ public struct XCConfig {
 		
 		let fileContents = try String(contentsOf: url)
 		
+		var lineN = 0
 		var error: Error?
 		var result = [Line]()
 		fileContents.enumerateLines{ lineStr, stop in
 			do {
-				let line = try Line(lineString: lineStr, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp)
+				let line = try Line(lineString: lineStr, lineNumber: lineN, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 				result.append(line)
+				lineN += 1
 				
 			} catch let e as Line.LineParsingError {
 				stop = true
 				switch e {
 					case .unknownDirective(let directive):          error = XcodeProjKitError(message: "Unknown directive “\(directive)” in xcconfig file \(url.path).")
 					case .gotSpaceAfterSharpInDirective:            error = XcodeProjKitError(message: "Got a space after # (directive start) in xcconfig file \(url.path).")
+					case .noSpaceAfterIncludeDirective:             error = XcodeProjKitError(message: "No a space after #include in xcconfig file \(url.path). (This worked fine in previous versious versions of Xcode, but does not work anymore.)")
 					case .expectedDoubleQuoteAfterIncludeDirective: error = XcodeProjKitError(message: "Expected a double-quote after include directive in xcconfig file \(url.path).")
-					case .cannotParseIncludePath:                   error = XcodeProjKitError(message: "Cannot parse include directive path in xcconfig file \(url.path).")
+					case .unterminatedIncludeFileName:              error = XcodeProjKitError(message: "Unterminated include file name in xcconfig file \(url.path).")
 					case .unexpectedCharAfterInclude:               error = XcodeProjKitError(message: "Unexpected characters after include directive in xcconfig file \(url.path).")
 					case .invalidFirstCharInVar:                    error = XcodeProjKitError(message: "Invalid first char for a variable in xcconfig \(url.path).")
 					case .unexpectedCharAfterVarName:               error = XcodeProjKitError(message: "Unexpected character after variable name in xcconfig \(url.path).")

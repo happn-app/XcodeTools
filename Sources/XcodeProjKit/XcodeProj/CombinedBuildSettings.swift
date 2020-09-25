@@ -276,7 +276,7 @@ public struct CombinedBuildSettings {
 				rawVariableName = resolveVariables(scanner: scanner, currentlyResolvedValues: &currentlyResolvedValues, varEndChars: "}")
 			} else {
 				mustExist = true
-				rawVariableName = scanner.scanCharacters(from: BuildSettings.charactersValidInVariableName) ?? ""
+				rawVariableName = scanner.scanCharacters(from: BuildSettingKey.charactersValidInVariableName) ?? ""
 			}
 			
 			let variableName: String
