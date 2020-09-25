@@ -80,6 +80,13 @@ public struct BuildSettings {
 					return []
 					
 				case .include(lineNumber: let lineNumber, path: let path, isOptional: let isOptional, prefix: _, postSharp: _, postDirective: _, suffix: _):
+					guard !path.isEmpty else {
+						/* An empty path is ignored by Xcode with a warning AFAICT
+						 * (Xcode 12.0.1 (12A7300)) */
+						NSLog("%@", "Warning: Trying to import empty file path from \(url.path).")
+						return []
+					}
+					
 					let urlToImport = try xcconfig.urlFor(importPath: path)
 					if !seenFiles.contains(urlToImport.absoluteURL) {
 						let importedConfig = try BuildSettings(xcconfigURL: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
