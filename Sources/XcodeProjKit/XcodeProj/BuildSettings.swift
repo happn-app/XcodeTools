@@ -74,12 +74,13 @@ public struct BuildSettings {
 		let xcconfig = try XCConfig(url: url, failIfFileDoesNotExist: failIfFileDoesNotExist, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 		let seenFiles = seenFiles.union([url.absoluteURL])
 		
-		settings = try xcconfig.lines.flatMap{ line -> [BuildSetting] in
+		settings = try xcconfig.sortedLines.flatMap{ lineAndID -> [BuildSetting] in
+			let (lineID, line) = lineAndID
 			switch line {
 				case .void:
 					return []
 					
-				case .include(lineNumber: let lineNumber, path: let path, isOptional: let isOptional, prefix: _, postSharp: _, postDirective: _, suffix: _):
+				case .include(path: let path, isOptional: let isOptional, prefix: _, postSharp: _, postDirective: _, suffix: _):
 					guard !path.isEmpty else {
 						/* An empty path is ignored by Xcode with a warning AFAICT
 						 * (Xcode 12.0.1 (12A7300)) */
@@ -96,7 +97,7 @@ public struct BuildSettings {
 						return []
 					}
 					
-				case .value(lineNumber: let lineNumber, key: let key, value: let value, prefix: _, equalSign: _, suffix: _):
+				case .value(key: let key, value: let value, prefix: _, equalSign: _, suffix: _):
 					return [BuildSetting(key: key, value: value)]
 			}
 		}

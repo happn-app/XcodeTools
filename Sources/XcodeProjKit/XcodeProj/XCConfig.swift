@@ -20,11 +20,11 @@ public struct XCConfig {
 			
 		}
 		
-		case void(lineNumber: Int, String)
-		case include(lineNumber: Int, path: String, isOptional: Bool, prefix: String, postSharp: String, postDirective: String, suffix: String)
-		case value(lineNumber: Int, key: BuildSettingKey, value: String, prefix: String, equalSign: String, suffix: String)
+		case void(String)
+		case include(path: String, isOptional: Bool, prefix: String, postSharp: String, postDirective: String, suffix: String)
+		case value(key: BuildSettingKey, value: String, prefix: String, equalSign: String, suffix: String)
 		
-		init(lineString line: String, lineNumber: Int, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
+		init(lineString line: String, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
 			let lineContent, linePrefix, lineSuffix: String
 			do {
 				let components = line.components(separatedBy: "//")
@@ -43,7 +43,7 @@ public struct XCConfig {
 			}
 			assert(line == linePrefix + lineContent + lineSuffix)
 			guard !lineContent.isEmpty else {
-				self = .void(lineNumber: lineNumber, line)
+				self = .void(line)
 				return
 			}
 			
@@ -79,7 +79,7 @@ public struct XCConfig {
 							throw LineParsingError.unexpectedCharAfterInclude
 						}
 						
-						self = .include(lineNumber: lineNumber, path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
+						self = .include(path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
 						
 					default:
 						throw LineParsingError.unknownDirective(directive)
@@ -125,7 +125,6 @@ public struct XCConfig {
 				}
 				
 				self = .value(
-					lineNumber: lineNumber,
 					key: BuildSettingKey(key: variableName, parameters: parameters),
 					value: value,
 					prefix: linePrefix,
@@ -135,21 +134,13 @@ public struct XCConfig {
 			}
 		}
 		
-		var lineNumber: Int {
-			switch self {
-				case .void(lineNumber: let n, _):                                                                               return n
-				case .include(lineNumber: let n, path: _, isOptional: _, prefix: _, postSharp: _, postDirective: _, suffix: _): return n
-				case .value(lineNumber: let n, key: _, value: _, prefix: _, equalSign: _, suffix: _):                           return n
-			}
-		}
-		
 		var isValid: Bool {
 			switch self {
-				case .void(_, let str):
+				case .void(let str):
 					let strTrimmed = str.trimmingCharacters(in: Line.xcconfigWhitespace)
 					return strTrimmed.isEmpty || strTrimmed.hasPrefix("//")
 					
-				case .include(_, path: let path, isOptional: _, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
+				case .include(path: let path, isOptional: _, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
 					let suffixTrimmed = suffix.trimmingCharacters(in: Line.xcconfigWhitespace)
 					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
 					let pathOK = (path.rangeOfCharacter(from: CharacterSet(charactersIn: "\n\""), options: .literal) == nil)
@@ -159,7 +150,7 @@ public struct XCConfig {
 					let postDirectiveNotEmpty = !postDirective.isEmpty
 					return whitesOK && pathOK && suffixOK && postDirectiveNotEmpty
 					
-				case .value(_, key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
+				case .value(key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
 					let suffixTrimmed = suffix.trimmingCharacters(in: Line.xcconfigWhitespace)
 					let prefixOK = prefix.rangeOfCharacter(from: Line.xcconfigWhitespace.inverted, options: .literal) == nil
 					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
@@ -179,13 +170,13 @@ public struct XCConfig {
 			}
 			
 			switch self {
-				case .void(_, let str):
+				case .void(let str):
 					return str
 					
-				case .include(_, path: let path, isOptional: let optional, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
+				case .include(path: let path, isOptional: let optional, prefix: let prefix, postSharp: let postSharp, postDirective: let postDirective, suffix: let suffix):
 					return prefix + "#" + postSharp + "include" + (optional ? "?" : "") + postDirective + "\"" + path + "\"" + suffix
 					
-				case .value(_, key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
+				case .value(key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
 					return prefix + key.serialized + equalSign + value + suffix
 			}
 		}
@@ -196,8 +187,25 @@ public struct XCConfig {
 		
 	}
 	
+	public struct LineID : Hashable, Comparable {
+		
+		public var lineNumber: Int
+		public var precedence: Int = 0
+		
+		public static func < (lhs: XCConfig.LineID, rhs: XCConfig.LineID) -> Bool {
+			if lhs.lineNumber < rhs.lineNumber {return true}
+			if lhs.lineNumber > rhs.lineNumber {return false}
+			return lhs.precedence < rhs.precedence
+		}
+		
+	}
+	
 	public var sourceURL: URL
-	public var lines: [Line]
+	public var lines: [LineID: Line]
+	
+	public var sortedLines: [(LineID, Line)] {
+		return lines.sorted{ $0.key < $1.key }
+	}
 	
 	public init(url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
 //		NSLog("%@", "Trying to parse xcconfig file \(url.absoluteString)")
@@ -208,7 +216,7 @@ public struct XCConfig {
 			if failIfFileDoesNotExist {
 				throw XcodeProjKitError(message: "Cannot find xcconfig file at URL \(url.absoluteString)")
 			} else {
-				lines = []
+				lines = [:]
 				return
 			}
 		}
@@ -216,7 +224,7 @@ public struct XCConfig {
 			/* We do not fail if the xcconfig file is a directory! This is the
 			 * observed behaviour in Xcode. It simply gives a warning. */
 			NSLog("%@", "Warning: Tried to import directory \(url.path) in an xcconfig file.")
-			lines = []
+			lines = [:]
 			return
 		}
 		
@@ -224,11 +232,11 @@ public struct XCConfig {
 		
 		var lineN = 0
 		var error: Error?
-		var result = [Line]()
+		var result = [LineID: Line]()
 		fileContents.enumerateLines{ lineStr, stop in
 			do {
-				let line = try Line(lineString: lineStr, lineNumber: lineN, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
-				result.append(line)
+				let line = try Line(lineString: lineStr, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
+				result[LineID(lineNumber: lineN)] = line
 				lineN += 1
 				
 			} catch let e as Line.LineParsingError {
