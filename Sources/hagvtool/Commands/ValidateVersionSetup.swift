@@ -14,7 +14,17 @@ struct ValidateVersionSetup : ParsableCommand {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		let xcodeprojURL = xcodeproj.xcodeprojURL
 		
-		let messages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
+		let projectMessages = try xcodeproj.iterateCombinedBuildSettingsOfProject{ configurationName, combinedBuildSetting -> [Output.DiagnosticMessage] in
+			let currentProjectVersionMessage = combinedBuildSetting.resolvedValue(for: BuildSettingKey(key: "CURRENT_PROJECT_VERSION")).flatMap{ v in
+				Output.DiagnosticMessage(messageType: .projectBuildVersionSet, value: v.value, targetName: "", configurationName: configurationName)
+			}
+			let marketingVersionMessage = combinedBuildSetting.resolvedValue(for: BuildSettingKey(key: "MARKETING_VERSION")).flatMap{ v in
+				Output.DiagnosticMessage(messageType: .projectMarketingVersionSet, value: v.value, targetName: "", configurationName: configurationName)
+			}
+			return [currentProjectVersionMessage, marketingVersionMessage].compactMap{ $0 }
+		}.flatMap{ $0 }
+		
+		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
 			let plistMessages: [Output.DiagnosticMessage?]
 			if let plist = try combinedBuildSettings.infoPlistRaw(xcodeprojURL: xcodeprojURL) {
 				let bundleVersion = plist["CFBundleVersion"] as? String
@@ -41,7 +51,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			return (nonPlistMessages + plistMessages).compactMap{ $0 }
 		}.flatMap{ $0 }
 		
-		let output = Output(messages: messages)
+		let output = Output(messages: projectMessages + targetMessages)
 		try Hagvtool.printOutput(output, format: hagvtoolOptions.outputFormat)
 		
 		if !output.messages.isEmpty {
@@ -65,6 +75,9 @@ struct ValidateVersionSetup : ParsableCommand {
 			
 			enum MessageType : String, Encodable {
 				
+				case projectBuildVersionSet = "build-version-set-project-wide"
+				case projectMarketingVersionSet = "marketing-version-set-project-wide"
+				
 				case invalidVersioningSystem = "invalid-versioning-system"
 				case invalidCFBundleVersionInPlist = "invalid-CFBundleVersion-in-plist"
 				case invalidCFBundleShortVersionStringInPlist = "invalid-CFBundleShortVersionString-in-plist"
@@ -82,42 +95,65 @@ struct ValidateVersionSetup : ParsableCommand {
 		var messages: [DiagnosticMessage]
 		
 		var description: String {
-			let (versioningSystemMessage, versioningSystemIsFailure) = descriptionForMessages(
-				ofType: .invalidVersioningSystem,
-				checkDescription: "Versioning system",
-				failureExplanation: "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.",
-				failureToStringHandler: { "Unexpected versioning system “\($0.value ?? "<not set>")” for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
-				previousWasSuccess: false,
-				isLast: false
-			)
+			var previousWasSuccess = false
 			
-			/* ***** */
-			let (cfBundleVersionMessage, cfBundleVersionIsFailure) = descriptionForMessages(
-				ofType: .invalidCFBundleVersionInPlist,
-				checkDescription: "CFBundleVersion value check (plist)",
-				failureExplanation: """
+			return [
+				/* ***** */
+				descriptionForMessages(
+					ofType: .projectBuildVersionSet,
+					checkDescription: "Build version not set project-wide",
+					failureExplanation: "The CURRENT_PROJECT_VERSION build setting should be set on a target per target basis, not project-wide.",
+					failureToStringHandler: { "CURRENT_PROJECT_VERSION is set to “\($0.value ?? "<not set>")” at the project level for configuration “\($0.configurationName)”" },
+					previousWasSuccess: &previousWasSuccess,
+					isLast: false
+				),
+				
+				/* ***** */
+				descriptionForMessages(
+					ofType: .projectMarketingVersionSet,
+					checkDescription: "Marketing version not set project-wide",
+					failureExplanation: "The MARKETING_VERSION build setting should be set on a target per target basis, not project-wide.",
+					failureToStringHandler: { "MARKETING_VERSION is set to “\($0.value ?? "<not set>")” at the project level for configuration “\($0.configurationName)”" },
+					previousWasSuccess: &previousWasSuccess,
+					isLast: false
+				),
+				
+				/* ***** */
+				descriptionForMessages(
+					ofType: .invalidVersioningSystem,
+					checkDescription: "Versioning system",
+					failureExplanation: "The versioning system should be set to “apple-generic” for all targets, though in practice not setting this build setting will not change much.",
+					failureToStringHandler: { "Unexpected versioning system “\($0.value ?? "<not set>")” for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+					previousWasSuccess: &previousWasSuccess,
+					isLast: false
+				),
+				
+				/* ***** */
+				descriptionForMessages(
+					ofType: .invalidCFBundleVersionInPlist,
+					checkDescription: "CFBundleVersion value check (plist)",
+					failureExplanation: """
 					The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
 					Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 					""",
-				failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
-				previousWasSuccess: !versioningSystemIsFailure,
-				isLast: false
-			)
-			
-			/* ***** */
-			let (cfBundleShortVersionStringMessage, _/*cfBundleShortVersionStringIsFailure*/) = descriptionForMessages(
-				ofType: .invalidCFBundleShortVersionStringInPlist,
-				checkDescription: "CFBundleShortVersionString value check (plist)",
-				failureExplanation: """
+					failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+					previousWasSuccess: &previousWasSuccess,
+					isLast: false
+				),
+				
+				/* ***** */
+				descriptionForMessages(
+					ofType: .invalidCFBundleShortVersionStringInPlist,
+					checkDescription: "CFBundleShortVersionString value check (plist)",
+					failureExplanation: """
 					The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
 					Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
 					""",
-				failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
-				previousWasSuccess: !cfBundleVersionIsFailure,
-				isLast: true
-			)
-			
-			return [versioningSystemMessage, cfBundleVersionMessage, cfBundleShortVersionStringMessage].joined()
+					failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+					previousWasSuccess: &previousWasSuccess,
+					isLast: true
+				)
+			].joined()
 		}
 		
 		init(messages m: [DiagnosticMessage]) {
@@ -140,16 +176,20 @@ struct ValidateVersionSetup : ParsableCommand {
 			checkDescription: String,
 			failureExplanation: String,
 			failureToStringHandler: (DiagnosticMessage) -> String,
-			previousWasSuccess: Bool,
+			previousWasSuccess: inout Bool,
 			isLast: Bool
-		) -> (description: String, isFailure: Bool) {
+		) -> String {
 			let filteredMessages = messages.filter{ $0.messageType == type }
 			let isFailure = !filteredMessages.isEmpty
 			let emoji = (!isFailure ? "✅" : "❌")
 			let descriptionBase = filteredMessages.reduce("\(checkDescription): \(emoji)\n" + (isFailure ? failureExplanation + "\n" : ""), { result, diagnostic in
 				result + "   - " + failureToStringHandler(diagnostic) + "\n"
 			})
-			return ((previousWasSuccess && isFailure ? "\n" : "") + descriptionBase + (isFailure && !isLast ? "\n" : ""), isFailure)
+			
+			let previousWasSuccessLocal = previousWasSuccess
+			previousWasSuccess = !isFailure
+			
+			return (previousWasSuccessLocal && isFailure ? "\n" : "") + descriptionBase + (isFailure && !isLast ? "\n" : "")
 		}
 		
 	}
