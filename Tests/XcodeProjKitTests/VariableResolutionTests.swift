@@ -7,7 +7,7 @@ import XCTest
 
 class VariableResolutionTests : XCTestCase {
 	
-	let refSettings = CombinedBuildSettings(targetName: nil, configurationName: "Test", buildSettingsLevels: [
+	let refSettings = CombinedBuildSettings(targetName: nil, configuration: XCBuildConfiguration() /* Hacky! But don’t know better… */, configurationName: "Test", buildSettingsLevels: [
 		BuildSettingsRef(BuildSettings(rawBuildSettings: ["VALUE_1": "Value 1"])),
 		BuildSettingsRef(BuildSettings(rawBuildSettings: ["VALUE_2": "Value 2"])),
 		BuildSettingsRef(BuildSettings(rawBuildSettings: ["VALUE_12": "Value 12"])),

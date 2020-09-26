@@ -62,19 +62,19 @@ public struct XcodeProj {
 	}
 	
 	@discardableResult
-	public func iterateCombinedBuildSettingsOfProject<T>(_ handler: (_ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
+	public func iterateCombinedBuildSettingsOfProject<T>(_ handler: (_ configuration: XCBuildConfiguration, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
 		let defaultBuildSettings = BuildSettings.standardDefaultSettings(xcodprojURL: xcodeprojURL)
 		return try iterateCombinedBuildSettingsOfProject(defaultBuildSettings: BuildSettingsRef(defaultBuildSettings), handler)
 	}
 	
 	@discardableResult
-	public func iterateCombinedBuildSettingsOfTargets<T>(_ handler: (_ target: PBXTarget, _ targetName: String, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
+	public func iterateCombinedBuildSettingsOfTargets<T>(_ handler: (_ target: PBXTarget, _ targetName: String, _ configuration: XCBuildConfiguration, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
 		let defaultBuildSettings = BuildSettings.standardDefaultSettings(xcodprojURL: xcodeprojURL)
 		return try iterateCombinedBuildSettingsOfTargets(defaultBuildSettings: BuildSettingsRef(defaultBuildSettings), handler)
 	}
 	
 	@discardableResult
-	public func iterateCombinedBuildSettingsOfProject<T>(defaultBuildSettings: BuildSettingsRef, _ handler: (_ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
+	public func iterateCombinedBuildSettingsOfProject<T>(defaultBuildSettings: BuildSettingsRef, _ handler: (_ configuration: XCBuildConfiguration, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
 		return try managedObjectContext.performAndWait{
 			let pbxProject = pbxproj.rootObject
 			let allCombinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForProject(pbxProject, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
@@ -83,13 +83,13 @@ public struct XcodeProj {
 				guard combinedBuildSettings.targetName == nil else {
 					throw XcodeProjKitError(message: "Internal error: Got combined build settings for project which has a target name.")
 				}
-				return try handler(combinedBuildSettings.configurationName, combinedBuildSettings)
+				return try handler(combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}
 		}
 	}
 	
 	@discardableResult
-	public func iterateCombinedBuildSettingsOfTargets<T>(defaultBuildSettings: BuildSettingsRef, _ handler: (_ target: PBXTarget, _ targetName: String, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
+	public func iterateCombinedBuildSettingsOfTargets<T>(defaultBuildSettings: BuildSettingsRef, _ handler: (_ target: PBXTarget, _ targetName: String, _ configuration: XCBuildConfiguration, _ configurationName: String, _ combinedBuildSettings: CombinedBuildSettings) throws -> T) throws -> [T] {
 		return try managedObjectContext.performAndWait{
 			let pbxProject = pbxproj.rootObject
 			let allCombinedBuildSettings = try CombinedBuildSettings.allCombinedBuildSettingsForTargets(of: pbxProject, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
@@ -101,7 +101,7 @@ public struct XcodeProj {
 				guard let target = combinedBuildSettings.target else {
 					throw XcodeProjKitError(message: "Internal error: Got combined build settings for target which does not have a target.")
 				}
-				return try handler(target, targetName, combinedBuildSettings.configurationName, combinedBuildSettings)
+				return try handler(target, targetName, combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}
 		}
 	}

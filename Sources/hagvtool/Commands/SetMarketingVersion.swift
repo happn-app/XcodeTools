@@ -34,7 +34,7 @@ struct SetMarketingVersion : ParsableCommand {
 	
 	private func runPrivate(xcodeproj: XcodeProj) throws {
 		let xcodeprojURL = xcodeproj.xcodeprojURL
-		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
+		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings in
 			if let plistURL = combinedBuildSettings.infoPlistURL(xcodeprojURL: xcodeprojURL) {
 				let plistData = try Data(contentsOf: plistURL)
 				let deserializedPlist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil)

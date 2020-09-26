@@ -34,7 +34,10 @@ struct SetBuildVersion : ParsableCommand {
 	
 	private func runPrivate(xcodeproj: XcodeProj) throws {
 		let xcodeprojURL = xcodeproj.xcodeprojURL
-		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings in
+		try xcodeproj.iterateCombinedBuildSettingsOfProject{ configuration, configurationName, combinedBuildSettings in
+			print(combinedBuildSettings["CURRENT_PROJECT_VERSION"])
+		}
+		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings in
 			if let plistURL = combinedBuildSettings.infoPlistURL(xcodeprojURL: xcodeprojURL) {
 				let plistData = try Data(contentsOf: plistURL)
 				let deserializedPlist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil)
@@ -42,21 +45,29 @@ struct SetBuildVersion : ParsableCommand {
 					throw HagvtoolError(message: "Cannot deserialize plist file at URL \(plistURL) as a [String: Any].")
 				}
 				
-				switch setVersionOptions.invalidSetupBehaviour {
-					case .fail:
-						guard deserializedPlistObject["CFBundleVersion"] as? String == "$(CURRENT_PROJECT_VERSION)" else {
+				if deserializedPlistObject["CFBundleVersion"] as? String != "$(CURRENT_PROJECT_VERSION)" {
+					switch setVersionOptions.invalidSetupBehaviour {
+						case .fail:
 							throw NonDestructiveErrorWrapper(wrapped: HagvtoolError(message: "Invalid CFBundleVersion value in plist at path \(plistURL.path). Expected “$(CURRENT_PROJECT_VERSION)”."))
-						}
-						
-					case .fix:
-						var deserializedPlistObject = deserializedPlistObject
-						deserializedPlistObject["CFBundleVersion"] = "$(CURRENT_PROJECT_VERSION)"
-						let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
-						try reserializedData.write(to: plistURL)
+							
+						case .fix:
+							var deserializedPlistObject = deserializedPlistObject
+							deserializedPlistObject["CFBundleVersion"] = "$(CURRENT_PROJECT_VERSION)"
+							let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
+							try reserializedData.write(to: plistURL)
+					}
 				}
 			}
 			
-			
+			let resolvedCurrentBuildVersion = combinedBuildSettings.resolvedValue(for: BuildSettingKey(key: "CURRENT_PROJECT_VERSION"))
+			print(resolvedCurrentBuildVersion?.sources.map{ $0.value.location.target?.xcID })
+			target.buildConfigurationList?.buildConfigurations?.filter{ $0.name == configurationName }.onlyElement?.rawBuildSettings?["CURRENT_PROJECT_VERSION"] = newVersion
+			try xcodeproj.managedObjectContext.save()
+			try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
+//			guard resolvedCurrentBuildVersion?.sources.count ?? 1 == 1 else {
+//				throw HagvtoolError(message: "The CURRENT_PROJECT_VERSION value is not .")
+//			}
+//			print(resolvedCurrentBuildVersion?.sources)
 		}
 	}
 	

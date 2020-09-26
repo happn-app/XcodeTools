@@ -20,7 +20,7 @@ class TestsProject1 : XCTestCase {
 	
 	func testXcodeprojAndPlist() throws {
 		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
-		try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configurationName, combinedBuildSettings in
+		try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configuration, configurationName, combinedBuildSettings in
 			guard targetName == "Target 1" && configurationName == "Debug" else {
 				return
 			}

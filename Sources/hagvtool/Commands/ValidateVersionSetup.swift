@@ -14,7 +14,7 @@ struct ValidateVersionSetup : ParsableCommand {
 		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		let xcodeprojURL = xcodeproj.xcodeprojURL
 		
-		let projectMessages = try xcodeproj.iterateCombinedBuildSettingsOfProject{ configurationName, combinedBuildSetting -> [Output.DiagnosticMessage] in
+		let projectMessages = try xcodeproj.iterateCombinedBuildSettingsOfProject{ configuration, configurationName, combinedBuildSetting -> [Output.DiagnosticMessage] in
 			let currentProjectVersionMessage = combinedBuildSetting.resolvedValue(for: BuildSettingKey(key: "CURRENT_PROJECT_VERSION")).flatMap{ v in
 				Output.DiagnosticMessage(messageType: .projectBuildVersionSet, value: v.value, targetName: "", configurationName: configurationName)
 			}
@@ -24,7 +24,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			return [currentProjectVersionMessage, marketingVersionMessage].compactMap{ $0 }
 		}.flatMap{ $0 }
 		
-		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
+		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
 			let plistMessages: [Output.DiagnosticMessage?]
 			if let plist = try combinedBuildSettings.infoPlistRaw(xcodeprojURL: xcodeprojURL) {
 				let bundleVersion = plist["CFBundleVersion"] as? String

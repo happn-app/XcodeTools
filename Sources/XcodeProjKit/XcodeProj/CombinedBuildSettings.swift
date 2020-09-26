@@ -54,6 +54,12 @@ public struct CombinedBuildSettings {
 	public var target: PBXTarget?
 	
 	/**
+	The main build configuration for the combined build settings. Changing this
+	configuration for a given key will change the most significant source of the
+	resolved value for this key. */
+	public var configuration: XCBuildConfiguration
+	
+	/**
 	The first level is the deepest (xcconfig project level if it exists).
 	
 	- Note: The array should maybe also contain the source of the build settings.
@@ -112,10 +118,11 @@ public struct CombinedBuildSettings {
 		})
 	}
 	
-	init(configuration: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws {
-		guard let configName = configuration.name else {
-			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
+	init(configuration config: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws {
+		guard let configName = config.name else {
+			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have a name")
 		}
+		configuration = config
 		configurationName = configName
 		
 		var buildSettingsLevelsBuilding = [defaultBuildSettings]
@@ -132,27 +139,29 @@ public struct CombinedBuildSettings {
 			targetName = nil
 		}
 		
-		if let baseConfigurationReference = configuration.baseConfigurationReference {
+		if let baseConfigurationReference = config.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
 				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
-			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: configuration))
+			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: config))
 			buildSettingsLevelsBuilding.append(config)
 		}
 		
 		guard let rawBuildSettings = configuration.rawBuildSettings else {
-			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(configuration.xcID ?? "<unknown>") which does not have build settings")
+			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
-		let buildSettings = BuildSettingsRef(BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(configuration)))
+		let buildSettings = BuildSettingsRef(BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(config)))
 		buildSettingsLevelsBuilding.append(buildSettings)
 		
 		buildSettingsLevels = buildSettingsLevelsBuilding
 	}
 	
-	public init(targetName: String? = nil, configurationName: String, buildSettingsLevels: [BuildSettingsRef]) {
+	public init(target: PBXTarget? = nil, targetName: String? = nil, configuration: XCBuildConfiguration, configurationName: String, buildSettingsLevels: [BuildSettingsRef]) {
+		self.target = target
 		self.targetName = targetName
+		self.configuration = configuration
 		self.configurationName = configurationName
 		self.buildSettingsLevels = buildSettingsLevels
 	}
