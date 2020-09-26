@@ -10,6 +10,24 @@ public struct BuildSetting {
 		case xcconfiguration(XCBuildConfiguration)
 		case xcconfigFile(XCConfigRef, lineID: XCConfig.LineID, for: XCBuildConfiguration?)
 		
+		public var isXCBuildConfig: Bool {
+			switch self {
+				case .xcconfiguration:     return true
+				case .none, .xcconfigFile: return false
+			}
+		}
+		
+		public var isXCConfigFile: Bool {
+			return (xcconfigFileURL != nil)
+		}
+		
+		public var xcconfigFileURL: URL? {
+			switch self {
+				case .xcconfigFile(let ref, _, _): return ref.value.sourceURL
+				case .none, .xcconfiguration:      return nil
+			}
+		}
+		
 		public var target: PBXTarget? {
 			switch self {
 				case .none, .xcconfigFile(_, lineID: _, for: .none):
