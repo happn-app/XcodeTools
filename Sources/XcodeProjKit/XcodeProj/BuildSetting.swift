@@ -6,10 +6,19 @@ public struct BuildSetting {
 	
 	public enum Location {
 		
-		/** For settings you don’t want written back anywhere. */
 		case none
 		case xcconfiguration(XCBuildConfiguration)
-		case xcconfigFile(XCConfigRef, lineID: XCConfig.LineID)
+		case xcconfigFile(XCConfigRef, lineID: XCConfig.LineID, for: XCBuildConfiguration?)
+		
+		public var target: PBXTarget? {
+			switch self {
+				case .none, .xcconfigFile(_, lineID: _, for: .none):
+					return nil
+					
+				case .xcconfiguration(let config), .xcconfigFile(_, lineID: _, for: let config?):
+					return config.list_?.target_
+			}
+		}
 		
 	}
 	

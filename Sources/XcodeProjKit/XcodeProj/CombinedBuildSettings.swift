@@ -49,9 +49,9 @@ public struct CombinedBuildSettings {
 	public var configurationName: String
 	
 	/**
-	Represents the ID of the PBXTarget for which the build settings are. `nil` if
-	representing the build settings of the project. */
-	public var targetID: NSManagedObjectID?
+	The PBXTarget for which the build settings are. `nil` if representing the
+	build settings of the project. */
+	public var target: PBXTarget?
 	
 	/**
 	The first level is the deepest (xcconfig project level if it exists).
@@ -76,6 +76,11 @@ public struct CombinedBuildSettings {
 		return try targets.flatMap{ target -> [CombinedBuildSettings] in
 			return try Array(allCombinedBuildSettings(for: target.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings).values)
 		}
+	}
+	
+	public static func allCombinedBuildSettingsForProject(_ project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
+		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
+		return Array(projectSettingsPerConfigName.values)
 	}
 	
 	/**
@@ -115,18 +120,15 @@ public struct CombinedBuildSettings {
 		
 		var buildSettingsLevelsBuilding = [defaultBuildSettings]
 		
-		if let (target, projectSettings) = targetAndProjectSettings {
-			guard let name = target.name else {
-				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") which does not have a name")
+		if let (lTarget, projectSettings) = targetAndProjectSettings {
+			guard let name = lTarget.name else {
+				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(lTarget.xcID ?? "<unknown>") which does not have a name")
 			}
-			guard !target.objectID.isTemporaryID else {
-				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(target.xcID ?? "<unknown>") whose object ID is temporary")
-			}
-			targetID = target.objectID
+			target = lTarget
 			targetName = name
 			buildSettingsLevelsBuilding.append(contentsOf: projectSettings)
 		} else {
-			targetID = nil
+			target = nil
 			targetName = nil
 		}
 		
@@ -135,7 +137,7 @@ public struct CombinedBuildSettings {
 				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
-			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url))
+			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: configuration))
 			buildSettingsLevelsBuilding.append(config)
 		}
 		

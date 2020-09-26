@@ -66,11 +66,11 @@ public struct BuildSettings {
 		settings = rawBuildSettings.map{ BuildSettingRef(BuildSetting(laxSerializedKey: $0.key, value: $0.value, location: location, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters)) }
 	}
 	
-	public init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
-		try self.init(xcconfigURL: url, failIfFileDoesNotExist: failIfFileDoesNotExist, seenFiles: [], allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
+	public init(xcconfigURL url: URL, sourceConfig: XCBuildConfiguration?, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
+		try self.init(xcconfigURL: url, sourceConfig: sourceConfig, failIfFileDoesNotExist: failIfFileDoesNotExist, seenFiles: [], allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 	}
 	
-	private init(xcconfigURL url: URL, failIfFileDoesNotExist: Bool, seenFiles: Set<URL>, allowCommaSeparatorForParameters: Bool, allowSpacesAfterSharp: Bool, allowNoSpacesAfterInclude: Bool) throws {
+	private init(xcconfigURL url: URL, sourceConfig: XCBuildConfiguration?, failIfFileDoesNotExist: Bool, seenFiles: Set<URL>, allowCommaSeparatorForParameters: Bool, allowSpacesAfterSharp: Bool, allowNoSpacesAfterInclude: Bool) throws {
 		let xcconfig = try XCConfig(url: url, failIfFileDoesNotExist: failIfFileDoesNotExist, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 		let seenFiles = seenFiles.union([url.absoluteURL])
 		let xcconfigRef = XCConfigRef(xcconfig)
@@ -91,7 +91,7 @@ public struct BuildSettings {
 					
 					let urlToImport = try xcconfig.urlFor(importPath: path)
 					if !seenFiles.contains(urlToImport.absoluteURL) {
-						let importedConfig = try BuildSettings(xcconfigURL: urlToImport, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
+						let importedConfig = try BuildSettings(xcconfigURL: urlToImport, sourceConfig: sourceConfig, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 						return importedConfig.settings
 					} else {
 						NSLog("%@", "Warning: Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.path).")
@@ -99,7 +99,7 @@ public struct BuildSettings {
 					}
 					
 				case .value(key: let key, value: let value, prefix: _, equalSign: _, suffix: _):
-					return [BuildSettingRef(BuildSetting(key: key, value: value, location: .xcconfigFile(xcconfigRef, lineID: lineID)))]
+					return [BuildSettingRef(BuildSetting(key: key, value: value, location: .xcconfigFile(xcconfigRef, lineID: lineID, for: sourceConfig)))]
 			}
 		}
 	}
