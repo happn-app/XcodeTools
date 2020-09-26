@@ -121,5 +121,7 @@
 	<string>$(TEST_EMOJI_IMPORT)</string>
 	<key>TEST_DOUBLE_SEMICOLON</key>
 	<string>$(TEST_DOUBLE_SEMICOLON)</string>
+	<key>TEST_SEMICOLON</key>
+	<string>$(TEST_SEMICOLON)</string>
 </dict>
 </plist>

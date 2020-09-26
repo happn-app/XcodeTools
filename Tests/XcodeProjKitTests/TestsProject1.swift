@@ -50,6 +50,8 @@ class TestsProject1 : XCTestCase {
 			XCTAssertEqual(combinedBuildSettings["TEST_RESOLUTION_OF_VARIANT"], #"prefix  suffix"#)
 			XCTAssertEqual(combinedBuildSettings["TEST_SINGLE_DOLLAR"], #"prefix $ suffix"#)
 			XCTAssertEqual(combinedBuildSettings["TEST_SPACES"], #""a b"  'a b c'\#t def"#)
+			XCTAssertEqual(combinedBuildSettings["TEST_SEMICOLON"], #";2"#)
+			XCTAssertEqual(combinedBuildSettings["TEST_DOUBLE_SEMICOLON"], #";"#)
 			XCTAssertEqual(combinedBuildSettings["TEST_VARIABLE_1"], #"$(VALUE_1"#)
 			XCTAssertEqual(combinedBuildSettings["TEST_VARIABLE_2"], #"//"#)
 			/* Variant resolution is not supported yet. */

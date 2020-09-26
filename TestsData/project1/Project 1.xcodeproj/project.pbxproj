@@ -678,6 +678,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "";
 			};
 			name = Debug;
 		};
@@ -699,6 +700,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
+				VERSIONING_SYSTEM = "";
 			};
 			name = Release;
 		};

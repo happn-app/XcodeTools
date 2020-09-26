@@ -50,9 +50,7 @@ TEST_INCLUDE_QUOTES = NO
 // “#include "test\"” would work if the “test\” file existed.
 //#include "test\"4.xcconfig"
 
-// See the Readme for informations about the different possible values for the
-// preprocessing macros (build configuration options for Swift).
-
+TEST_SEMICOLON= ;2 //yo
 TEST_DOUBLE_SEMICOLON = ;;
 
 A = hello
