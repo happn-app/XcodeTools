@@ -93,9 +93,12 @@ public struct BuildSettingKey : Hashable {
 				return false
 			}
 			/* An empty value seems to parse correctly, but the meaning is unclear.
-			 * We’ll only validate alphanums and stars. Here also, the values
-			 * should only be known values from Xcode. */
-			guard parameter.value.rangeOfCharacter(from: CharacterSet.asciiAlphanum.union(CharacterSet(charactersIn: "*")).inverted, options: .literal) == nil else {
+			 * We’ll only validate alphanums, stars, commas and equal signs. We
+			 * allow the commas and equal signs not to fail validation of xcconfig
+			 * files written w/ the comma paramter style, that were parsed w/o the
+			 * comma allowed.
+			 * Here also, the values should only be known values from Xcode. */
+			guard parameter.value.rangeOfCharacter(from: CharacterSet.asciiAlphanum.union(CharacterSet(charactersIn: "*,=")).inverted, options: .literal) == nil else {
 				return false
 			}
 		}

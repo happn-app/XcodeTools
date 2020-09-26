@@ -66,6 +66,10 @@ public struct CombinedBuildSettings {
 	Especially if we want to implement modifying a build setting later. */
 	public var buildSettingsLevels: [BuildSettingsRef]
 	
+	public var buildSettings: [BuildSettingRef] {
+		return buildSettingsLevels.flatMap{ $0.value.settings }
+	}
+	
 	/**
 	Returns all the combined build settings for all the targets in the project.
 	

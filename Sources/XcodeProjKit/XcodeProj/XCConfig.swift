@@ -152,15 +152,17 @@ public struct XCConfig {
 					
 				case .value(key: let key, value: let value, prefix: let prefix, equalSign: let equalSign, suffix: let suffix):
 					let suffixTrimmed = suffix.trimmingCharacters(in: Line.xcconfigWhitespace)
+					let suffixNoSemicolonTrimmed = (suffixTrimmed.hasPrefix(";") ? suffixTrimmed.dropFirst().trimmingCharacters(in: Line.xcconfigWhitespace) : suffixTrimmed)
 					let prefixOK = prefix.rangeOfCharacter(from: Line.xcconfigWhitespace.inverted, options: .literal) == nil
-					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
+					let suffixOK = suffixNoSemicolonTrimmed.isEmpty || suffixNoSemicolonTrimmed.hasPrefix("//")
 					let keyOK = key.isValid(allowGarbage: true) /* We allow garbage because the garbage is correctly parsed and restituted */
 					let valueOK = (value.range(of: "\n") == nil)
 					let equalSignOK = (
 						equalSign.rangeOfCharacter(from: Line.xcconfigWhitespace.union(CharacterSet(charactersIn: "=")).inverted, options: .literal) == nil &&
 						equalSign.filter{ $0 == "=" }.count == 1
 					)
-					return prefixOK && suffixOK && keyOK && valueOK && equalSignOK
+					let valueAndSuffixOK = (value.hasSuffix(";") ? suffixTrimmed.hasPrefix(";") : true)
+					return prefixOK && suffixOK && keyOK && valueOK && equalSignOK && valueAndSuffixOK
 			}
 		}
 		
@@ -287,6 +289,10 @@ public struct XCConfig {
 		}
 		
 		return URL(fileURLWithPath: path, isDirectory: false, relativeTo: sourceURL)
+	}
+	
+	public func stringSerialization() throws -> String {
+		return try sortedLines.map{ try $0.1.lineString() }.joined(separator: "\n")
 	}
 	
 }

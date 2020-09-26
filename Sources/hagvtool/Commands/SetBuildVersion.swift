@@ -34,9 +34,8 @@ struct SetBuildVersion : ParsableCommand {
 	
 	private func runPrivate(xcodeproj: XcodeProj) throws {
 		let xcodeprojURL = xcodeproj.xcodeprojURL
-		try xcodeproj.iterateCombinedBuildSettingsOfProject{ configuration, configurationName, combinedBuildSettings in
-			print(combinedBuildSettings["CURRENT_PROJECT_VERSION"])
-		}
+		
+		var xcconfigsToRewrite = [XCConfigRef]()
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings in
 			if let plistURL = combinedBuildSettings.infoPlistURL(xcodeprojURL: xcodeprojURL) {
 				let plistData = try Data(contentsOf: plistURL)
@@ -59,15 +58,42 @@ struct SetBuildVersion : ParsableCommand {
 				}
 			}
 			
+			let buildSettingsMatchingBuildVersion = combinedBuildSettings.buildSettings.filter{ $0.value.key.key == "CURRENT_PROJECT_VERSION" }
+			if setVersionOptions.invalidSetupBehaviour == .fail && buildSettingsMatchingBuildVersion.count > 1 {
+				throw HagvtoolError(message: "CURRENT_PROJECT_VERSION is set in more than one place for target \(targetName).")
+			}
+			
 			let resolvedCurrentBuildVersion = combinedBuildSettings.resolvedValue(for: BuildSettingKey(key: "CURRENT_PROJECT_VERSION"))
-			print(resolvedCurrentBuildVersion?.sources.map{ $0.value.location.target?.xcID })
-			target.buildConfigurationList?.buildConfigurations?.filter{ $0.name == configurationName }.onlyElement?.rawBuildSettings?["CURRENT_PROJECT_VERSION"] = newVersion
+			if setVersionOptions.invalidSetupBehaviour == .fail && resolvedCurrentBuildVersion?.sources.count ?? 0 > 1 {
+				throw HagvtoolError(message: "CURRENT_PROJECT_VERSION uses variables for target \(targetName).")
+			}
+			
+			/* First let’s remove all references to the current project version */
+			for buildSetting in buildSettingsMatchingBuildVersion {
+				switch buildSetting.value.location {
+					case .none: throw HagvtoolError(message: "Internal error: Got a CURRENT_PROJECT_VERSION build setting without a location.")
+					case .xcconfiguration(let config): config.rawBuildSettings?.removeValue(forKey: "CURRENT_PROJECT_VERSION")
+					case .xcconfigFile(let xcconfig, lineID: let lineID, for: _):
+						xcconfig.value.lines.removeValue(forKey: lineID)
+						xcconfigsToRewrite.append(xcconfig)
+				}
+			}
+			
+			configuration.rawBuildSettings?["CURRENT_PROJECT_VERSION"] = newVersion
+		}
+		
+		try xcodeproj.managedObjectContext.performAndWait{
 			try xcodeproj.managedObjectContext.save()
 			try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
-//			guard resolvedCurrentBuildVersion?.sources.count ?? 1 == 1 else {
-//				throw HagvtoolError(message: "The CURRENT_PROJECT_VERSION value is not .")
-//			}
-//			print(resolvedCurrentBuildVersion?.sources)
+			
+			var rewrittenURLs = Set<URL>()
+			for xcconfig in xcconfigsToRewrite {
+				let url = xcconfig.value.sourceURL
+				guard !rewrittenURLs.contains(url) else {continue}
+				
+				try Data(xcconfig.value.stringSerialization().utf8).write(to: url)
+				rewrittenURLs.insert(url)
+			}
 		}
 	}
 	
