@@ -50,4 +50,4 @@ An executable to manage the versions in an Xcode project.
 - https://pewpewthespells.com/blog/xcconfig_guide.html
 - https://nshipster.com/xcconfig/
 - https://stackoverflow.com/q/1393987
-- And of course (but discovered very late), https://github.com/tuist/XcodeProj!
+- And of course (but discovered very late), https://github.com/tuist/XcodeProj
