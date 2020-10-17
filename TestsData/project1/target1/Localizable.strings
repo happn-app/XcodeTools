@@ -6,5 +6,6 @@
   
 */
 
-/* yes, this is valid 🤦‍♂️ */
+/* yes, these are valid 🤦‍♂️ */
 key_whose_value_is_the_key;
+"key_whose_value_is_the_key_in_quotes";
