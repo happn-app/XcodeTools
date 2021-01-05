@@ -104,7 +104,7 @@ public struct BuildSettings {
 		}
 	}
 	
-	var flattened: [String: String] {
+	public var flattened: [String: String] {
 		var ret = [String: String]()
 		for settingRef in settings {
 			let setting = settingRef.value
