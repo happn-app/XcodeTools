@@ -174,7 +174,7 @@ public class PBXFileElement : PBXObject {
 		}
 	}
 	
-	public func resolvedPathAsURL(xcodeprojURL: URL, variables: [String: String] = [:]) throws -> URL {
+	public func resolvedPathAsURL(xcodeprojURL: URL, variables: [String: String]) throws -> URL {
 		func relativeToXcodeproj(_ path: String) -> URL {
 			let projectURL = xcodeprojURL.deletingLastPathComponent()
 			guard !path.isEmpty else {return projectURL}
