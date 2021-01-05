@@ -104,6 +104,15 @@ public struct BuildSettings {
 		}
 	}
 	
+	var flattened: [String: String] {
+		var ret = [String: String]()
+		for settingRef in settings {
+			let setting = settingRef.value
+			ret[setting.key.serialized] = setting.stringValue
+		}
+		return ret
+	}
+	
 }
 
 
