@@ -59,7 +59,7 @@
 		7B591C90250B515400B6CA54 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		7B591C92250B515400B6CA54 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7B591C93250B515400B6CA54 /* target1.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = target1.entitlements; sourceTree = "<group>"; };
-		7B591C99250B51B400B6CA54 /* test.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = test.xcconfig; sourceTree = "<group>"; };
+		7B591C99250B51B400B6CA54 /* test.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = test.xcconfig; path = target1/test.xcconfig; sourceTree = SOURCE_ROOT; };
 		7B591C9B250B51D400B6CA54 /* Utils.xcconfigimport */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Utils.xcconfigimport; sourceTree = "<group>"; };
 		7B591C9D250B59AB00B6CA54 /* test2.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = test2.xcconfig; sourceTree = "<group>"; };
 		7B591C9F250B5C7100B6CA54 /* test3.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = test3.xcconfig; sourceTree = "<group>"; };

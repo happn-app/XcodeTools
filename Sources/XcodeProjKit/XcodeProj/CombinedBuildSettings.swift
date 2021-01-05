@@ -147,7 +147,7 @@ public struct CombinedBuildSettings {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
 				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
-			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL)
+			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: ["SOURCE_ROOT": xcodeprojURL.deletingLastPathComponent().absoluteURL.path])
 			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: config))
 			buildSettingsLevelsBuilding.append(config)
 		}
