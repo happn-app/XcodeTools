@@ -21,15 +21,11 @@ class TestsProject1 : XCTestCase {
 	func testFileElementPaths() throws {
 		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
 		
-		var standardBuildSettings = BuildSettings.standardDefaultSettingsDictionary(xcodprojURL: xcodeprojURL)
-		for name in ["SDKROOT", "BUILT_PRODUCTS_DIR"] {
-			standardBuildSettings[name] = standardBuildSettings[name] ?? "/tmp/DUMMY_" + name
-		}
-		
+		let standardSettings = try BuildSettings.standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: xcodeprojURL)
 		try xcodeproj.managedObjectContext.performAndWait{
 			let fetchRequest: NSFetchRequest<PBXFileElement> = NSFetchRequest(entityName: "PBXFileElement")
 			try xcodeproj.managedObjectContext.fetch(fetchRequest).forEach{
-				XCTAssertNoThrow(try $0.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: standardBuildSettings))
+				XCTAssertNoThrow(try $0.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: standardSettings))
 			}
 		}
 	}

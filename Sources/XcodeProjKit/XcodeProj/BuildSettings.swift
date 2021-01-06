@@ -43,16 +43,16 @@ public struct BuildSettings {
 	}
 	
 	public static func standardDefaultSettings(xcodprojURL: URL) -> BuildSettings {
-		return BuildSettings(rawBuildSettings: standardDefaultSettingsDictionary(xcodprojURL: xcodprojURL))
+		return BuildSettings(rawBuildSettings: standardDefaultSettingsAsDictionary(xcodprojURL: xcodprojURL))
 	}
 	
 	/**
 	Return the standard default build settings that one can use to resolve the
-	build settings _and the paths_ in a pbxproj.
+	build settings in a pbxproj.
 	
 	For the time being only a very limited set of variables are returned. We
 	might return more later. */
-	public static func standardDefaultSettingsDictionary(xcodprojURL: URL) -> [String: String] {
+	public static func standardDefaultSettingsAsDictionary(xcodprojURL: URL) -> [String: String] {
 		let projectDirPath = xcodprojURL.deletingLastPathComponent().path
 		return [
 			"HOME": FileManager.default.homeDirectoryForCurrentUser.path,
@@ -64,6 +64,34 @@ public struct BuildSettings {
 			"SRCROOT": projectDirPath,
 			"SOURCE_ROOT": projectDirPath /* Unofficial alias of SRCROOT */
 		]
+	}
+	
+	/**
+	Return the standard default build settings that one can use to resolve the
+	build settings _and the paths_ in a pbxproj.
+	
+	For the time being only a very limited set of variables are returned. We
+	might return more later.
+	
+	The dictionary is the same as the standard default settings, but with the
+	following keys added: `SDKROOT`, `DEVELOPER_DIR` and `BUILT_PRODUCTS_DIR`.
+	
+	The default values for these keys are:
+	```
+	- SDKROOT            -> /tmp/__DUMMY_SDK__;
+	- BUILT_PRODUCTS_DIR -> /tmp/__DUMMY_BUILT_PRODUCT_DIR__;
+	- DEVELOPER_DIR      -> The developer dir retrieved via the getDeveloperDir() function.
+	``` */
+	public static func standardDefaultSettingsForResolvingPaths(xcodprojURL: URL) throws -> BuildSettings {
+		return try BuildSettings(rawBuildSettings: standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: xcodprojURL))
+	}
+	
+	public static func standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: URL) throws -> [String: String] {
+		var ret = standardDefaultSettingsAsDictionary(xcodprojURL: xcodprojURL)
+		ret["SDKROOT"] = "/tmp/__DUMMY_SDK__"
+		ret["BUILT_PRODUCTS_DIR"] = "/tmp/__DUMMY_BUILT_PRODUCT_DIR__"
+		ret["DEVELOPER_DIR"] = try getDeveloperDir()
+		return ret
 	}
 	
 	public var settings: [BuildSettingRef]
