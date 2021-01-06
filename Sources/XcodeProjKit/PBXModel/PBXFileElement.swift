@@ -170,7 +170,7 @@ public class PBXFileElement : PBXObject {
 				return (nil, path)
 				
 			case .unknown:
-				NSLog("%@", "Warning: Asked resolved path of a file element whose source tree is unknown! Returning nil.")
+				NSLog("%@", "Warning: Asked resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
 				/* I guess? */
 				return nil
 				
