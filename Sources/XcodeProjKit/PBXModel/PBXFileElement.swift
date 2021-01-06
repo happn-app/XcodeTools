@@ -110,22 +110,22 @@ public class PBXFileElement : PBXObject {
 		return group_
 	}
 	
-	var name: String? {
+	public var name: String? {
 		rawName ?? rawPath
 	}
 	
-	var path: String? {
+	public var path: String? {
 		rawPath
 	}
 	
-	var sourceTree: SourceTree? {
+	public var sourceTree: SourceTree? {
 		return rawSourceTree.flatMap{ SourceTree($0) }
 	}
 	
 	/**
 	The given resolved path is relative to the xcodeproj path if the returned
 	`rootVar` is nil. */
-	var resolvedPathInfo: (rootVar: String?, path: String)? {
+	public var resolvedPathInfo: (rootVar: String?, path: String)? {
 		guard let sourceTree = sourceTree else {
 			return nil
 		}

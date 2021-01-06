@@ -105,7 +105,6 @@ public class PBXProject : PBXObject {
 		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.xcIDAndComment(projectName: projectName).get()}
 		if let r = projectReferences {
 			mySerialization["projectReferences"] = r
-			
 		}
 		mySerialization["compatibilityVersion"]   = try compatibilityVersion.get()
 		mySerialization["projectDirPath"]         = try projectDirPath.get()
