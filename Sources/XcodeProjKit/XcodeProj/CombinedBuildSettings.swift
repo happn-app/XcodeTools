@@ -175,7 +175,7 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns the value that matches the given settings key.
+	Returns the resolved value that matches the given settings key.
 	
 	This method cannot fail and returns a non-optional because if a variable does
 	not have a value (does not exist), its value is set to "".
