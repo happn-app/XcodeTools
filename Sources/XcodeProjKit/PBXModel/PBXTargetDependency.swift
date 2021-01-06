@@ -10,6 +10,7 @@ public class PBXTargetDependency : PBXObject {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
 		name = try rawObject.getIfExists("name")
+		platformFilter = try rawObject.getIfExists("platformFilter")
 		
 		let productRefID: String? = try rawObject.getIfExists("productRef")
 		productRef = try productRefID.flatMap{ try XCSwiftPackageProductDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
@@ -27,10 +28,11 @@ public class PBXTargetDependency : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let n = name        {mySerialization["name"] = n}
-		if let r = productRef  {mySerialization["productRef"] = try r.xcIDAndComment(projectName: projectName).get()}
-		if let t = target      {mySerialization["target"] = try t.xcIDAndComment(projectName: projectName).get()}
-		if let t = targetProxy {mySerialization["targetProxy"] = try t.xcIDAndComment(projectName: projectName).get()}
+		if let n = name           {mySerialization["name"] = n}
+		if let f = platformFilter {mySerialization["platformFilter"] = f}
+		if let r = productRef     {mySerialization["productRef"] = try r.xcIDAndComment(projectName: projectName).get()}
+		if let t = target         {mySerialization["target"] = try t.xcIDAndComment(projectName: projectName).get()}
+		if let t = targetProxy    {mySerialization["targetProxy"] = try t.xcIDAndComment(projectName: projectName).get()}
 		
 		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
 		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in

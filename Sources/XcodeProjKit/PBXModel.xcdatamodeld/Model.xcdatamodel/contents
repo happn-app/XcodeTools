@@ -140,6 +140,7 @@
     </entity>
     <entity name="PBXTargetDependency" representedClassName="PBXTargetDependency" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="platformFilter" optional="YES" attributeType="String"/>
         <relationship name="productRef" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCSwiftPackageProductDependency" inverseName="targetDependencies_" inverseEntity="XCSwiftPackageProductDependency"/>
         <relationship name="target" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXTarget" inverseName="targetDependencies_" inverseEntity="PBXTarget"/>
         <relationship name="target_" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXTarget" inverseName="dependencies_cd" inverseEntity="PBXTarget"/>
@@ -207,7 +208,7 @@
         <element name="PBXShellScriptBuildPhase" positionX="-885.99609375" positionY="125.703125" width="167.34765625" height="163"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
         <element name="PBXTarget" positionX="-94.4765625" positionY="131.18359375" width="128" height="148"/>
-        <element name="PBXTargetDependency" positionX="-367.89453125" positionY="266.22265625" width="148.2578125" height="118"/>
+        <element name="PBXTargetDependency" positionX="-367.89453125" positionY="266.22265625" width="148.2578125" height="119"/>
         <element name="PBXVariantGroup" positionX="-424.0625" positionY="-468.58203125" width="128" height="73"/>
         <element name="ProjectReference" positionX="-751.7265625" positionY="-537.81640625" width="128" height="88"/>
         <element name="XCBuildConfiguration" positionX="269.82421875" positionY="-545.921875" width="254.86328125" height="103"/>
