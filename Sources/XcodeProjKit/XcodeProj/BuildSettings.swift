@@ -43,8 +43,18 @@ public struct BuildSettings {
 	}
 	
 	public static func standardDefaultSettings(xcodprojURL: URL) -> BuildSettings {
+		return BuildSettings(rawBuildSettings: standardDefaultSettingsDictionary(xcodprojURL: xcodprojURL))
+	}
+	
+	/**
+	Return the standard default build settings that one can use to resolve the
+	build settings _and the paths_ in a pbxproj.
+	
+	For the time being only a very limited set of variables are returned. We
+	might return more later. */
+	public static func standardDefaultSettingsDictionary(xcodprojURL: URL) -> [String: String] {
 		let projectDirPath = xcodprojURL.deletingLastPathComponent().path
-		return BuildSettings(rawBuildSettings: [
+		return [
 			"HOME": FileManager.default.homeDirectoryForCurrentUser.path,
 			
 			/* https://stackoverflow.com/a/43751741 */
@@ -53,7 +63,7 @@ public struct BuildSettings {
 			"PROJECT_NAME": xcodprojURL.deletingPathExtension().lastPathComponent,
 			"SRCROOT": projectDirPath,
 			"SOURCE_ROOT": projectDirPath /* Unofficial alias of SRCROOT */
-		])
+		]
 	}
 	
 	public var settings: [BuildSettingRef]
@@ -104,6 +114,9 @@ public struct BuildSettings {
 		}
 	}
 	
+	/**
+	Returns the build settings flattened as a dictionary. No variable resolution
+	is done. */
 	public var flattened: [String: String] {
 		var ret = [String: String]()
 		for settingRef in settings {

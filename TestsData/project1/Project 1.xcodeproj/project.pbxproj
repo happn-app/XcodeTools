@@ -20,6 +20,7 @@
 		7B591CAC250CE0E800B6CA54 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B591CAB250CE0E800B6CA54 /* ActionViewController.swift */; };
 		7B591CAF250CE0E800B6CA54 /* ActionViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B591CAD250CE0E800B6CA54 /* ActionViewController.xib */; };
 		7B591CB4250CE0E800B6CA54 /* Target "2".appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7B591CA5250CE0E800B6CA54 /* Target "2".appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7B9AB45825A5DCCC00069EE3 /* Loc2.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B9AB45A25A5DCCC00069EE3 /* Loc2.strings */; };
 		7BF8435025136BC1001EDEBF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7BF8434F25136BC1001EDEBF /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
@@ -71,6 +72,10 @@
 		7B591CB0250CE0E800B6CA54 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7B591CB1250CE0E800B6CA54 /* target2.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = target2.entitlements; sourceTree = "<group>"; };
 		7B591CBC250D2EEC00B6CA54 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
+		7B9AB45925A5DCCC00069EE3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Loc2.strings; sourceTree = "<group>"; };
+		7B9AB45D25A5DCEA00069EE3 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Main.strings; sourceTree = "<group>"; };
+		7B9AB45E25A5DCEA00069EE3 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/ActionViewController.strings; sourceTree = "<group>"; };
+		7B9AB45F25A5DCEA00069EE3 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Loc2.strings; sourceTree = "<group>"; };
 		7BF7E4A6250D2FEC00A678A5 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
 		7BF7E4A8250D2FFD00A678A5 /* test_dev_dir.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_dev_dir.xcconfigimport; sourceTree = "<group>"; };
 		7BF7E4AB250D310E00A678A5 /* test_srcroot.xcconfigimport */ = {isa = PBXFileReference; lastKnownFileType = text; path = test_srcroot.xcconfigimport; sourceTree = "<group>"; };
@@ -152,6 +157,7 @@
 				7B22A590251D420400FAC6F2 /* emoji!😁	.xcconfig */,
 				7BF7E4AC250D313B00A678A5 /* test_srcroot.xcconfigimport */,
 				7BF8434F25136BC1001EDEBF /* Localizable.strings */,
+				7B9AB45A25A5DCCC00069EE3 /* Loc2.strings */,
 			);
 			name = Target1;
 			path = target1;
@@ -318,6 +324,7 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
 			);
 			mainGroup = 7B591C7D250B515200B6CA54;
 			productRefGroup = 7B591C87250B515200B6CA54 /* Products */;
@@ -339,6 +346,7 @@
 				7B591C9A250B51B400B6CA54 /* test.xcconfig in Resources */,
 				7B591C8E250B515400B6CA54 /* Assets.xcassets in Resources */,
 				7BF8435025136BC1001EDEBF /* Localizable.strings in Resources */,
+				7B9AB45825A5DCCC00069EE3 /* Loc2.strings in Resources */,
 				7B591C9E250B59AB00B6CA54 /* test2.xcconfig in Resources */,
 				7B591C91250B515400B6CA54 /* Main.storyboard in Resources */,
 				7B591C9C250B51D400B6CA54 /* Utils.xcconfigimport in Resources */,
@@ -447,6 +455,7 @@
 			isa = PBXVariantGroup;
 			children = (
 				7B591C90250B515400B6CA54 /* Base */,
+				7B9AB45D25A5DCEA00069EE3 /* fr */,
 			);
 			name = Main.storyboard;
 			sourceTree = "<group>";
@@ -455,8 +464,18 @@
 			isa = PBXVariantGroup;
 			children = (
 				7B591CAE250CE0E800B6CA54 /* Base */,
+				7B9AB45E25A5DCEA00069EE3 /* fr */,
 			);
 			name = ActionViewController.xib;
+			sourceTree = "<group>";
+		};
+		7B9AB45A25A5DCCC00069EE3 /* Loc2.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7B9AB45925A5DCCC00069EE3 /* en */,
+				7B9AB45F25A5DCEA00069EE3 /* fr */,
+			);
+			name = Loc2.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -467,6 +486,7 @@
 			baseConfigurationReference = 7B591C99250B51B400B6CA54 /* test.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -532,6 +552,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";

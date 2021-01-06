@@ -57,4 +57,14 @@ public class PBXFileReference : PBXFileElement {
 		})
 	}
 	
+	public override var parent: PBXFileElement? {
+		assert(
+			(group_ != nil && variantGroup_ == nil && versionGroup_ == nil) ||
+			(group_ == nil && variantGroup_ != nil && versionGroup_ == nil) ||
+			(group_ == nil && variantGroup_ == nil && versionGroup_ != nil) ||
+			(group_ == nil && variantGroup_ == nil && versionGroup_ == nil)
+		)
+		return group_ ?? variantGroup_ ?? versionGroup_
+	}
+	
 }

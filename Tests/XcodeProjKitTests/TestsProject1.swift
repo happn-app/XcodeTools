@@ -18,6 +18,22 @@ class TestsProject1 : XCTestCase {
 //		try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
 	}
 	
+	func testFileElementPaths() throws {
+		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
+		
+		var standardBuildSettings = BuildSettings.standardDefaultSettingsDictionary(xcodprojURL: xcodeprojURL)
+		for name in ["SDKROOT", "BUILT_PRODUCTS_DIR"] {
+			standardBuildSettings[name] = standardBuildSettings[name] ?? "/tmp/DUMMY_" + name
+		}
+		
+		try xcodeproj.managedObjectContext.performAndWait{
+			let fetchRequest: NSFetchRequest<PBXFileElement> = NSFetchRequest(entityName: "PBXFileElement")
+			try xcodeproj.managedObjectContext.fetch(fetchRequest).forEach{
+				XCTAssertNoThrow(try $0.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: standardBuildSettings))
+			}
+		}
+	}
+	
 	func testXcodeprojAndPlist() throws {
 		let xcodeproj = try XcodeProj(xcodeprojURL: xcodeprojURL)
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets{ target, targetName, configuration, configurationName, combinedBuildSettings in

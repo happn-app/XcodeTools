@@ -105,6 +105,11 @@ public class PBXFileElement : PBXObject {
 		})
 	}
 	
+	/** Subclasses can override if needed. */
+	open var parent: PBXFileElement? {
+		return group_
+	}
+	
 	var name: String? {
 		rawName ?? rawPath
 	}
@@ -135,7 +140,7 @@ public class PBXFileElement : PBXObject {
 					}
 				} else {
 					guard let project = (self as? PBXGroup)?.projectForMainGroup else {
-						NSLog("%@", "Warning: Got asked the resolved path of a file element without a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
+						NSLog("%@", "Warning: Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
 					/* I don’t know the role of project.projectRoot. I tried
