@@ -18,6 +18,11 @@ let package = Package(
 		.target(name: "XcodeProjKit", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
 		.testTarget(name: "XcodeProjKitTests", dependencies: ["XcodeProjKit"]),
 		
+		/* A launcher for xcode tools binaries (xct-*) */
+		.target(name: "xct", dependencies: [
+			.product(name: "ArgumentParser", package: "swift-argument-parser")
+		]),
+		
 		.target(name: "hagvtool", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			"XcodeProjKit"
