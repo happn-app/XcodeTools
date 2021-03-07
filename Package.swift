@@ -12,7 +12,7 @@ let package = Package(
 		.executable(name: "hagvtool", targets: ["hagvtool"])
 	],
 	dependencies: [
-		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.3.1")
+		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0")
 	],
 	targets: [
 		.target(name: "XcodeProjKit", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
