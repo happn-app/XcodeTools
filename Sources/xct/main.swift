@@ -23,13 +23,14 @@ struct Xct : ParsableCommand {
 	var toolArguments: [String] = []
 	
 	func run() throws {
-		try withCStrings(["is-valid-jpeg"], scoped: { cargs in
+		let fullToolName = "xct-" + toolName
+		try withCStrings([fullToolName], scoped: { cargs in
 			/* The p implementation of exec searches for the binary path in PATH.
 			 * The v means we pass an array to exec (as opposed to the variadic
 			 * exec variant, which is not available in Swift anyway). */
-			let ret = execvp("is-valid-jpeg", cargs)
+			let ret = execvp(fullToolName, cargs)
 			assert(ret != 0, "exec should not return if it was successful.")
-			print("Got error #\(errno)")
+			perror("Error running executable \(fullToolName)")
 			throw ExitCode(errno)
 		})
 	}
