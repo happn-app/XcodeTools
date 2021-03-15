@@ -9,7 +9,10 @@ let package = Package(
 	],
 	products: [
 		.library(name: "XcodeProjKit", targets: ["XcodeProjKit"]),
-		.executable(name: "xct-versions", targets: ["xct-versions"])
+		.executable(name: "xct-versions", targets: ["xct-versions"]),
+		
+		/* Obsolete; kept for backwards-compatibility. Will be removed. */
+		.executable(name: "hagvtool", targets: ["hagvtool"])
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0")
@@ -24,6 +27,12 @@ let package = Package(
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
+			.product(name: "ArgumentParser", package: "swift-argument-parser"),
+			"XcodeProjKit"
+		]),
+		
+		/* Obsolete; kept for backwards-compatibility. Will be removed. */
+		.target(name: "hagvtool", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			"XcodeProjKit"
 		])
