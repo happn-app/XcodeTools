@@ -13,8 +13,8 @@ struct Xct : ParsableCommand {
 		discussion: "xct is a simple launcher for other XcodeTools binaries (xct-*). For instance, instead of calling “xct-versions”, you can call “xct versions”."
 	)
 	
-	@Option(name: .customShort("C"), help: "Change working directory before calling the tool.")
-	var pathToXcodeproj: String?
+	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"))
+	var workdir: String?
 	
 	@Argument
 	var toolName: String
