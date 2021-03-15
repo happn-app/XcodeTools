@@ -13,6 +13,9 @@ struct Xct : ParsableCommand {
 		discussion: "xct is a simple launcher for other XcodeTools binaries (xct-*). For instance, instead of calling “xct-versions”, you can call “xct versions”."
 	)
 	
+	@Option(help: "Set the path to the core xct programs.")
+	var execPath: String = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().path
+	
 	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"))
 	var workdir: String?
 	
@@ -23,8 +26,24 @@ struct Xct : ParsableCommand {
 	var toolArguments: [String] = []
 	
 	func run() throws {
+		/* Change current working if asked */
+		if let workdir = workdir {
+			guard FileManager.default.changeCurrentDirectoryPath(workdir) else {
+				#warning("Print “Cannot set current directory to \\(workdir)” to stderr")
+				throw ExitCode(1)
+			}
+		}
+		
+		/* Adding exec path to PATH */
+		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
+		let newPath = execPath + (path.isEmpty ? "" : ":") + path
+		guard setenv("PATH", newPath, 1) == 0 else {
+			perror("Error modifying PATH")
+			throw ExitCode(errno)
+		}
+		
 		let fullToolName = "xct-" + toolName
-		try withCStrings([fullToolName], scoped: { cargs in
+		try withCStrings([fullToolName] + toolArguments, scoped: { cargs in
 			/* The p implementation of exec searches for the binary path in PATH.
 			 * The v means we pass an array to exec (as opposed to the variadic
 			 * exec variant, which is not available in Swift anyway). */
