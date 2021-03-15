@@ -9,7 +9,7 @@ let package = Package(
 	],
 	products: [
 		.library(name: "XcodeProjKit", targets: ["XcodeProjKit"]),
-		.executable(name: "hagvtool", targets: ["hagvtool"])
+		.executable(name: "xct-versions", targets: ["xct-versions"])
 	],
 	dependencies: [
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0")
@@ -23,7 +23,7 @@ let package = Package(
 			.product(name: "ArgumentParser", package: "swift-argument-parser")
 		]),
 		
-		.target(name: "hagvtool", dependencies: [
+		.target(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			"XcodeProjKit"
 		])
