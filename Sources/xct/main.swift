@@ -1,6 +1,9 @@
 import Foundation
 
 import ArgumentParser
+import CLTLogger
+import Logging
+import SystemPackage
 
 
 
@@ -26,10 +29,13 @@ struct Xct : ParsableCommand {
 	var toolArguments: [String] = []
 	
 	func run() throws {
+		LoggingSystem.bootstrap{ _ in CLTLogger(messageTerminator: "\n") }
+		let logger = Logger(label: "main")
+		
 		/* Change current working if asked */
 		if let workdir = workdir {
 			guard FileManager.default.changeCurrentDirectoryPath(workdir) else {
-				#warning("Print “Cannot set current directory to \\(workdir)” to stderr")
+				logger.error("Cannot set current directory to \(workdir)")
 				throw ExitCode(1)
 			}
 		}
@@ -38,7 +44,7 @@ struct Xct : ParsableCommand {
 		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
 		let newPath = execPath + (path.isEmpty ? "" : ":") + path
 		guard setenv("PATH", newPath, 1) == 0 else {
-			perror("Error modifying PATH")
+			logger.error("Error modifying PATH: \(Errno(rawValue: errno).description)")
 			throw ExitCode(errno)
 		}
 		
@@ -49,7 +55,7 @@ struct Xct : ParsableCommand {
 			 * exec variant, which is not available in Swift anyway). */
 			let ret = execvp(fullToolName, cargs)
 			assert(ret != 0, "exec should not return if it was successful.")
-			perror("Error running executable \(fullToolName)")
+			logger.error("Error running executable \(fullToolName): \(Errno(rawValue: errno).description)")
 			throw ExitCode(errno)
 		})
 	}
