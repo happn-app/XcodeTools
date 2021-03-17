@@ -78,3 +78,6 @@ struct XctVersions : ParsableCommand {
 	var xctVersionsOptions: XctVersions.Options
 	
 }
+
+
+XctVersions.main()

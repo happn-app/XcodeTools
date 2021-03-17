@@ -1,5 +1,0 @@
-import Foundation
-
-
-
-XctVersions.main()
