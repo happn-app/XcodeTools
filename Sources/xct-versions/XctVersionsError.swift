@@ -2,7 +2,7 @@ import Foundation
 
 
 
-public struct HagvtoolError : Error {
+public struct XctVersionsError : Error {
 	
 	public var message: String
 	

@@ -8,10 +8,10 @@ import XcodeProjKit
 struct ValidateVersionSetup : ParsableCommand {
 	
 	@OptionGroup
-	var hagvtoolOptions: Hagvtool.Options
+	var xctVersionsOptions: XctVersions.Options
 	
 	func run() throws {
-		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
+		let xcodeproj = try XcodeProj(path: xctVersionsOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		let xcodeprojURL = xcodeproj.xcodeprojURL
 		
 		let projectMessages = try xcodeproj.iterateCombinedBuildSettingsOfProject{ configuration, configurationName, combinedBuildSetting -> [Output.DiagnosticMessage] in
@@ -24,7 +24,7 @@ struct ValidateVersionSetup : ParsableCommand {
 			return [currentProjectVersionMessage, marketingVersionMessage].compactMap{ $0 }
 		}.flatMap{ $0 }
 		
-		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
+		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: xctVersionsOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
 			let plistMessages: [Output.DiagnosticMessage?]
 			if let plist = try combinedBuildSettings.infoPlistRaw(xcodeprojURL: xcodeprojURL) {
 				let bundleVersion = plist["CFBundleVersion"] as? String
@@ -81,7 +81,7 @@ struct ValidateVersionSetup : ParsableCommand {
 		}.flatMap{ $0 }
 		
 		let output = Output(messages: projectMessages + targetMessages)
-		try Hagvtool.printOutput(output, format: hagvtoolOptions.outputFormat)
+		try XctVersions.printOutput(output, format: xctVersionsOptions.outputFormat)
 		
 		if !output.messages.isEmpty {
 			throw ExitCode(1)

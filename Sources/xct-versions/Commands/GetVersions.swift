@@ -8,7 +8,7 @@ import XcodeProjKit
 struct GetVersions : ParsableCommand {
 	
 	@OptionGroup
-	var hagvtoolOptions: Hagvtool.Options
+	var xctVersionsOptions: XctVersions.Options
 	
 	@Flag
 	var failOnMultipleBuildVersions = false
@@ -20,8 +20,8 @@ struct GetVersions : ParsableCommand {
 	var failOnMultipleVersions = false
 	
 	func run() throws {
-		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
-		let versions = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: hagvtoolOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.Version] in
+		let xcodeproj = try XcodeProj(path: xctVersionsOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
+		let versions = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: xctVersionsOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.Version] in
 			let plist = try combinedBuildSettings.infoPlistResolved(xcodeprojURL: xcodeproj.xcodeprojURL)
 			return [
 				Output.Version(
@@ -60,7 +60,7 @@ struct GetVersions : ParsableCommand {
 		}.flatMap{ $0 }
 		
 		let output = Output(versions: versions)
-		try Hagvtool.printOutput(output, format: hagvtoolOptions.outputFormat)
+		try XctVersions.printOutput(output, format: xctVersionsOptions.outputFormat)
 		
 		if failOnMultipleBuildVersions || failOnMultipleVersions {
 			guard output.reducedBuildVersionForAll != nil else {

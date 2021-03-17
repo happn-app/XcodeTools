@@ -4,7 +4,7 @@ import ArgumentParser
 
 
 
-struct Hagvtool : ParsableCommand {
+struct XctVersions : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(
 		abstract: "Manage versions of Xcode projects",
@@ -68,13 +68,13 @@ struct Hagvtool : ParsableCommand {
 					encoder.outputFormatting = encoder.outputFormatting.union([.prettyPrinted, .sortedKeys])
 				}
 				guard let jsonStr = try String(data: encoder.encode(output), encoding: .utf8) else {
-					throw HagvtoolError(message: "Cannot convert JSON data to string")
+					throw XctVersionsError(message: "Cannot convert JSON data to string")
 				}
 				print(jsonStr)
 		}
 	}
 	
 	@OptionGroup
-	var hagvtoolOptions: Hagvtool.Options
+	var xctVersionsOptions: XctVersions.Options
 	
 }

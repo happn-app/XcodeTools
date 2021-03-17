@@ -42,7 +42,7 @@ values in the plist at runtime. +
 See https://stackoverflow.com/a/50731052 for more info about Xcode variable
 resolutions.
 
-=== hagvtool
+=== xct-versions
 An executable to manage the versions in an Xcode project.
 
 == References and Useful Links for Parsing the pbxproj & co

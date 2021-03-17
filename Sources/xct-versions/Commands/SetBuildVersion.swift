@@ -8,7 +8,7 @@ import XcodeProjKit
 struct SetBuildVersion : ParsableCommand {
 	
 	@OptionGroup
-	var hagvtoolOptions: Hagvtool.Options
+	var xctVersionsOptions: XctVersions.Options
 	
 	@OptionGroup
 	var setVersionOptions: SetVersion.Options
@@ -17,10 +17,10 @@ struct SetBuildVersion : ParsableCommand {
 	var newVersion: String
 	
 	func run() throws {
-		let xcodeproj = try XcodeProj(path: hagvtoolOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
+		let xcodeproj = try XcodeProj(path: xctVersionsOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 		do {
 			try SetVersion.setVersion(
-				options: setVersionOptions, generalOptions: hagvtoolOptions,
+				options: setVersionOptions, generalOptions: xctVersionsOptions,
 				newVersion: newVersion,
 				xcodeproj: xcodeproj,
 				plistKey: "CFBundleVersion",
