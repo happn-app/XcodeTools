@@ -24,12 +24,24 @@ let package = Package(
 		.target(name: "XcodeProjKit", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
 		.testTarget(name: "XcodeProjKitTests", dependencies: ["XcodeProjKit"]),
 		
+		.target(name: "libxct", dependencies: [
+			.product(name: "CLTLogger",     package: "clt-logger"),
+			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "SystemPackage", package: "swift-system"),
+			"XcodeProjKit"
+		]),
+		
 		/* A launcher for xcode tools binaries (xct-*) */
 		.target(name: "xct", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system")
+		]),
+		
+		.target(name: "xct-build", dependencies: [
+			.product(name: "ArgumentParser", package: "swift-argument-parser"),
+			"XcodeProjKit"
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
