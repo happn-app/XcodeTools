@@ -25,7 +25,7 @@ struct Xct : ParsableCommand {
 	@Argument
 	var toolName: String
 	
-	@Argument
+	@Argument(parsing: .unconditionalRemaining)
 	var toolArguments: [String] = []
 	
 	func run() throws {
