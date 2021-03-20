@@ -51,3 +51,6 @@ An executable to manage the versions in an Xcode project.
 - https://nshipster.com/xcconfig/
 - https://stackoverflow.com/q/1393987
 - And of course (but discovered very late), https://github.com/tuist/XcodeProj
+
+== Other Projects of Interest
+- https://github.com/openbakery/gradle-xcodePlugin
