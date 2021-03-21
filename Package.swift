@@ -47,6 +47,7 @@ let package = Package(
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
+			.product(name: "SystemPackage",  package: "swift-system"),
 			"XcodeProjKit"
 		]),
 		
