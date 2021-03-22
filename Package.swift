@@ -25,6 +25,8 @@ let package = Package(
 		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.1.1")
 	],
 	targets: [
+		.target(name: "CMacroExports"),
+		
 		.target(name: "XcodeProjKit", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
 		.testTarget(name: "XcodeProjKitTests", dependencies: ["XcodeProjKit"]),
 		
@@ -32,7 +34,7 @@ let package = Package(
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "SystemPackage", package: "swift-system"),
-			"XcodeProjKit"
+			.target(name: "XcodeProjKit")
 		]),
 		
 		/* A launcher for xcode tools binaries (xct-*) */
@@ -40,7 +42,8 @@ let package = Package(
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
-			.product(name: "SystemPackage",  package: "swift-system")
+			.product(name: "SystemPackage",  package: "swift-system"),
+			.target(name: "CMacroExports")
 		]),
 		
 		.target(name: "xct-build", dependencies: [
@@ -48,12 +51,13 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			"XcodeProjKit"
+			.target(name: "CMacroExports"),
+			.target(name: "XcodeProjKit")
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			"XcodeProjKit"
+			.target(name: "XcodeProjKit")
 		]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
@@ -62,7 +66,7 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			"XcodeProjKit"
+			.target(name: "XcodeProjKit")
 		])
 	]
 )
