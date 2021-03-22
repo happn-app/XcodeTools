@@ -17,10 +17,10 @@ struct Hagvtool : ParsableCommand {
 	var arguments: [String] = []
 	
 	func run() throws {
-		LoggingSystem.bootstrap{ _ in CLTLogger(messageTerminator: "\n") }
+		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		let logger = Logger(label: "main")
 		
-		logger.error("⚠️ hagvtool has been deprecated. Please use \"xct versions\" instead.\n---------")
+		logger.error("hagvtool has been deprecated. Please use \"xct versions\" instead.")
 		try withCStrings(["xct-versions"] + arguments, scoped: { cargs in
 			/* The p implementation of exec searches for the binary path in PATH.
 			 * The v means we pass an array to exec (as opposed to the variadic

@@ -22,7 +22,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.1"),
-		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.1.1")
+		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.2.0")
 	],
 	targets: [
 		.target(name: "CMacroExports"),
@@ -43,7 +43,8 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "CMacroExports")
+			.target(name: "CMacroExports"),
+			.target(name: "libxct")
 		]),
 		
 		.target(name: "xct-build", dependencies: [
@@ -52,12 +53,14 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "CMacroExports"),
-			.target(name: "XcodeProjKit")
+			.target(name: "XcodeProjKit"),
+			.target(name: "libxct")
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.target(name: "XcodeProjKit")
+			.target(name: "XcodeProjKit"),
+			.target(name: "libxct")
 		]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
@@ -66,7 +69,7 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "XcodeProjKit")
+			.target(name: "libxct")
 		])
 	]
 )

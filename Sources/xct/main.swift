@@ -19,7 +19,7 @@ struct Xct : ParsableCommand {
 	)
 	
 	static var logger: Logger = {
-		LoggingSystem.bootstrap{ _ in CLTLogger(messageTerminator: "\n") }
+		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		return Logger(label: "main")
 	}()
 	
