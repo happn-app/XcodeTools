@@ -22,7 +22,8 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.1"),
-		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.2.0")
+		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.2.0"),
+		.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.1.1")
 	],
 	targets: [
 		.target(name: "CMacroExports"),
@@ -31,9 +32,10 @@ let package = Package(
 		.testTarget(name: "XcodeProjKitTests", dependencies: ["XcodeProjKit"]),
 		
 		.target(name: "libxct", dependencies: [
-			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
+			.target(name: "CMacroExports"),
 			.target(name: "XcodeProjKit")
 		]),
 		
@@ -51,8 +53,8 @@ let package = Package(
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
+			.product(name: "StreamReader",   package: "stream-reader"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "CMacroExports"),
 			.target(name: "XcodeProjKit"),
 			.target(name: "libxct")
 		]),

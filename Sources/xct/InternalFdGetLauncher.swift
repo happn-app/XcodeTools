@@ -21,7 +21,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 	func run() throws {
 		let fd = FileHandle.standardInput.fileDescriptor
 		let xcodeFd = try receiveFd(from: fd)
-		print(xcodeFd)
+		Xct.logger.debug("fd received: \(xcodeFd)")
 		
 		try withCStrings([toolName] + toolArguments, scoped: { cargs in
 			/* The v means we pass an array to exec (as opposed to the variadic
@@ -69,6 +69,11 @@ struct InternalFdGetLauncher : ParsableCommand {
 		var fd: Int32 = -1
 		memmove(&fd, XCT_CMSG_DATA(cmsg), MemoryLayout.size(ofValue: fd))
 		return fd
+	}
+	
+	/* If needed. From https://stackoverflow.com/a/12340767 */
+	private func isValidFileDescriptor(_ fd: FileDescriptor) -> Bool {
+		return fcntl(fd.rawValue, F_GETFL) != -1 || errno != EBADF
 	}
 	
 }

@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "stream-reader",
+        "repositoryURL": "https://github.com/xcode-actions/stream-reader.git",
+        "state": {
+          "branch": null,
+          "revision": "38d28cb58b5cbb6bf86596bb834efc8368d2185d",
+          "version": "3.1.1"
+        }
+      },
+      {
         "package": "swift-argument-parser",
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {

@@ -20,7 +20,9 @@ struct Xct : ParsableCommand {
 	
 	static var logger: Logger = {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
-		return Logger(label: "main")
+		var ret = Logger(label: "main")
+		ret.logLevel = .debug
+		return ret
 	}()
 	
 	@Option(help: "Set the path to the core xct programs.")
