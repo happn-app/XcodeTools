@@ -10,7 +10,7 @@ extension Process {
 	
 	/**
 	How to redirect stdout and stderr? */
-	public enum OutputRedirect {
+	public enum RedirectMode {
 		case none
 		case toNull
 		case capture
@@ -75,8 +75,8 @@ extension Process {
 	public static func spawnedAndStreamedProcess(
 		_ executable: String, args: [String],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
-		stdoutRedirect: OutputRedirect = OutputRedirect.none,
-		stderrRedirect: OutputRedirect = OutputRedirect.none,
+		stdoutRedirect: RedirectMode = RedirectMode.none,
+		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: [FileDescriptor] = [],
 		signalsToForward: [Int32],
@@ -126,8 +126,8 @@ extension Process {
 	public static func spawnAndStreamProcess(
 		_ executable: String, args: [String],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
-		stdoutRedirect: OutputRedirect = OutputRedirect.none,
-		stderrRedirect: OutputRedirect = OutputRedirect.none,
+		stdoutRedirect: RedirectMode = RedirectMode.none,
+		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: [FileDescriptor] = [],
 		signalsToForward: [Int32],
