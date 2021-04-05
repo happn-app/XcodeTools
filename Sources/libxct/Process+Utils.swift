@@ -19,12 +19,10 @@ extension Process {
 	}
 	
 	/**
-	Spawns a process, streams all of its outputs (stdout, stderr and all
+	Spawns a process, and streams all of its outputs (stdout, stderr and all
 	additional output file descriptors) in the handler (line by line, each line
 	containing the newline char, a valid newline is only "\n", but line might not
-	end with a newline if last line of the output), then waits for process to
-	exit (in theory if output is over, process should be done, but process can
-	close its output fd).
+	end with a newline if last line of the output).
 	
 	The process will be launched in its own PGID. Which means, if your process is
 	launched in a Terminal, then you spawn a process using this method, then the
@@ -125,7 +123,7 @@ extension Process {
 			p.arguments = args
 		} else {
 			guard let execBaseURL = getenv(LibXctConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
-				LibXctConfig.logger?.error("Cannot launch process and send it fd if \(LibXctConstants.envVarNameExecPath) is not set.")
+				LibXctConfig.logger?.error("Cannot launch process and send its fd if \(LibXctConstants.envVarNameExecPath) is not set.")
 				throw LibXctError.envVarXctExecPathNotSet
 			}
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
