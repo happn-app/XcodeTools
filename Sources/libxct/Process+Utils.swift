@@ -147,6 +147,7 @@ extension Process {
 						guard let line = String(data: lineData, encoding: .utf8),
 								let eol = String(data: eolData, encoding: .utf8)
 						else {
+							LibXctConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
 							return
 						}
 						outputHandler(line + eol, notifiedFd)
