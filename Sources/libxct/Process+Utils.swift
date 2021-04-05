@@ -66,6 +66,10 @@ extension Process {
 	- Important: The handler will not be called on the calling thread (so you can
 	`waitUntilExit` on the `Process` and still receive the stream “live”).
 	
+	- Note: In addition to the process, we might want to return a `DispatchGroup`
+	that would end when all of the streams are ended, so we can wait on that in
+	addition to (or instead of) waiting on the end of the process.
+	
 	- Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
 	`stdout` and `stderr`, which are handled and differently) to clone in the
 	child process. The key is the file descriptor to clone (from the parent
