@@ -174,6 +174,9 @@ extension Process {
 			
 		}
 		
+		for signal in signalsToForward {
+		}
+		
 		return p
 	}
 	
