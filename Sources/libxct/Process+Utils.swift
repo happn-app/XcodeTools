@@ -123,7 +123,7 @@ extension Process {
 	and you get the termination status and reason on return.
 	
 	- Returns: The exit status of the process and its termination reason. */
-	public static func spawnAndStreamProcess(
+	public static func spawnAndStream(
 		_ executable: String, args: [String],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
 		stdoutRedirect: RedirectMode = RedirectMode.none,

@@ -44,7 +44,7 @@ struct XctBuild : ParsableCommand {
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath
 		]
-		let (terminationStatus, terminationReason) = try Process.spawnAndStreamProcess(
+		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
 			"/usr/bin/xcodebuild", args: args,
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
