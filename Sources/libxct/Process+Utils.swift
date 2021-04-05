@@ -1,5 +1,6 @@
 import Foundation
 
+import StreamReader
 import SystemPackage
 
 import CMacroExports
@@ -47,6 +48,9 @@ extension Process {
 	
 	A dummy § for Xcode.
 	
+	- Important: The `additionalOutputFileDescriptors` might be modified by this
+	method to require non-blocking I/O.
+	
 	- Important: For technical reasons (and design choice), if file descriptors
 	to send is not empty, the process will be launched _via_ `xct`.
 	
@@ -69,47 +73,97 @@ extension Process {
 	process.
 	- Parameter additionalOutputFileDescriptor: Additional output file
 	descriptors to stream from the process. Usually used with
-	`fileDescriptorsToClone` (you open a socket, give the write fd in fds to
-	clone, and the read fd to additional output fds).
+	`fileDescriptorsToSend` (you open a socket, give the write fd in fds to
+	clone, and the read fd to additional output fds). If they do not already, the
+	file descriptors will probably be modified by this method to require non-
+	blocking I/Os.
 	- Returns: The _started_ `Process` object that was created. */
 	public static func spawnedAndStreamedProcess(
-		_ executable: String, args: [String],
+		_ executable: String, args: [String] = [],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
-		additionalOutputFileDescriptors: [FileDescriptor] = [],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: [Int32],
-		outputHandler: (_ line: String, _ sourceFd: FileDescriptor) -> Void
+		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> Process {
 		let p = Process()
+		p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
 		
-		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
-		if additionalOutputFileDescriptors.isEmpty {
-			p.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-			p.arguments = [executable] + args
+		var fdRedirects = [FileDescriptor: FileDescriptor]()
+		var outputFileDescriptors = additionalOutputFileDescriptors
+		switch stdoutRedirect {
+			case .none:         (/*nop*/)
+			case .toNull:       p.standardOutput = nil
+			case .toFd(let fd): p.standardOutput = FileHandle(fileDescriptor: fd.rawValue)
+			case .capture:
+				let pipe = Pipe()
+				p.standardOutput = pipe
+				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
+				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
+				fdRedirects[fd] = FileDescriptor.xctStdout
+		}
+		switch stderrRedirect {
+			case .none:         (/*nop*/)
+			case .toNull:       p.standardError = nil
+			case .toFd(let fd): p.standardError = FileHandle(fileDescriptor: fd.rawValue)
+			case .capture:
+				let pipe = Pipe()
+				p.standardError = pipe
+				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
+				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
+				fdRedirects[fd] = FileDescriptor.xctStderr
+		}
+		
+		if fileDescriptorsToSend.isEmpty {
+			p.executableURL = URL(fileURLWithPath: executable)
+			p.arguments = args
 		} else {
 			guard let execBaseURL = getenv(LibXctConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
 				LibXctConfig.logger?.error("Cannot launch process and send it fd if \(LibXctConstants.envVarNameExecPath) is not set.")
 				throw LibXctError.envVarXctExecPathNotSet
 			}
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
-			p.arguments = [
-				"internal-fd-get-launcher",
-				"/usr/bin/env", executable
-			] + args
+			p.arguments = ["internal-fd-get-launcher", executable] + args
 		}
 		
-		for fd in /*[fileDescriptorForStdout, fileDescriptorForStderr].compactMap({ $0 }) + */additionalOutputFileDescriptors {
+		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
+		for fd in outputFileDescriptors {
+			let notifiedFd = fdRedirects[fd] ?? fd
+			try setRequireNonBlockingIO(on: fd, logChange: fd == notifiedFd)
+			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
+			
 			let source = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
 			source.setEventHandler{
-				print("yo")
+				/* This guard could probably be an assert */
+				guard !source.isCancelled else {return}
+				do {
+					while let (lineData, eolData) = try streamReader.readLine() {
+						guard let line = String(data: lineData, encoding: .utf8),
+								let eol = String(data: eolData, encoding: .utf8)
+						else {
+							return
+						}
+						outputHandler(line + eol, notifiedFd)
+					}
+					/* We have read all the stream, we can stop */
+					source.cancel()
+				} catch let s as Errno where s == Errno.resourceTemporarilyUnavailable {
+					/* This is a “normal” error, so we only log w/ trace level. */
+					LibXctConfig.logger?.trace("Error reading fd \(streamReader.sourceStream): \(s)")
+				} catch {
+					LibXctConfig.logger?.warning("Error reading fd \(streamReader.sourceStream): \(error)")
+				}
 			}
-			source.setCancelHandler{
-			}
-			source.resume()
+			/* No cancel handler. Pipes file descriptors are closed when the Pipe
+			 * object is released, that is when the Process object is deallocated.
+			 * (TODO: Verify the sentence above is actually true!) */
+			
+			source.activate()
 		}
 		
+		LibXctConfig.logger?.debug("Launching process \(executable)")
 		try p.run()
 		for (fdToSend, fdInChild) in fileDescriptorsToSend {
 			
@@ -124,14 +178,14 @@ extension Process {
 	
 	- Returns: The exit status of the process and its termination reason. */
 	public static func spawnAndStream(
-		_ executable: String, args: [String],
+		_ executable: String, args: [String] = [],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
-		additionalOutputFileDescriptors: [FileDescriptor] = [],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: [Int32],
-		outputHandler: (_ line: String, _ sourceFd: FileDescriptor) -> Void
+		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
 		let p = try spawnedAndStreamedProcess(
 			executable, args: args,
@@ -148,8 +202,29 @@ extension Process {
 		return (p.terminationStatus, p.terminationReason)
 	}
 	
+	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
+		let curFlags = fcntl(fd.rawValue, F_GETFL)
+		guard curFlags != -1 else {
+			throw LibXctError.systemError(Errno(rawValue: errno))
+		}
+		
+		let newFlags = curFlags | O_NONBLOCK
+		guard newFlags != curFlags else {
+			/* Nothing to do */
+			return
+		}
+		
+		if logChange {
+			/* We only log for fd that were not ours */
+			LibXctConfig.logger?.info("Setting O_NONBLOCK option on fd \(fd)")
+		}
+		guard fcntl(fd.rawValue, F_SETFL, newFlags) != -1 else {
+			throw LibXctError.systemError(Errno(rawValue: errno))
+		}
+	}
+	
 	/* https://stackoverflow.com/a/28005250 (last variant) */
-	private func send(fd: CInt, to socket: Int32) throws {
+	private static func send(fd: CInt, to socket: Int32) throws {
 		var fd = fd /* Because we use a pointer to it at some point, but never actually modified */
 		
 		var msg = msghdr()

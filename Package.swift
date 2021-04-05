@@ -28,8 +28,8 @@ let package = Package(
 	targets: [
 		.target(name: "CMacroExports"),
 		
-		.target(name: "XcodeProjKit", dependencies: [], resources: [Resource.process("PBXModel.xcdatamodeld")]),
-		.testTarget(name: "XcodeProjKitTests", dependencies: ["XcodeProjKit"]),
+		.target(name: "XcodeProjKit", resources: [Resource.process("PBXModel.xcdatamodeld")]),
+		.testTarget(name: "XcodeProjKitTests", dependencies: [.target(name: "XcodeProjKit")]),
 		
 		.target(name: "libxct", dependencies: [
 			.product(name: "Logging",       package: "swift-log"),
@@ -37,6 +37,14 @@ let package = Package(
 			.product(name: "SystemPackage", package: "swift-system"),
 			.target(name: "CMacroExports"),
 			.target(name: "XcodeProjKit")
+		]),
+		.testTarget(name: "libxctTests", dependencies: [
+			.target(name: "libxct"),
+			.target(name: "xct"), /* libxct depends (indirectly) on xct to launch processes w/ additional fds. */
+			.product(name: "CLTLogger",     package: "clt-logger"),
+			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "StreamReader",  package: "stream-reader"),
+			.product(name: "SystemPackage", package: "swift-system")
 		]),
 		
 		/* A launcher for xcode tools binaries (xct-*) */
