@@ -133,14 +133,22 @@ extension Process {
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
 			let notifiedFd = fdRedirects[fd] ?? fd
-			try setRequireNonBlockingIO(on: fd, logChange: fd == notifiedFd)
+//			try setRequireNonBlockingIO(on: fd, logChange: fd == notifiedFd)
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			
 			let source = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
 			source.setEventHandler{
 				/* This guard could probably be an assert */
 				guard !source.isCancelled else {return}
+				
 				do {
+					let estimatedBytesAvailable = source.data /* See doc of dispatch_source_get_data in objc */
+					/* mask is always 0 for read source (see doc of dispatch_source_get_mask in objc) */
+					
+					streamReader.underlyingStreamReadSizeLimit = nil
+					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2))
+					streamReader.underlyingStreamReadSizeLimit = 0
+					
 					while let (lineData, eolData) = try streamReader.readLine() {
 						guard let line = String(data: lineData, encoding: .utf8),
 								let eol = String(data: eolData, encoding: .utf8)
@@ -152,9 +160,8 @@ extension Process {
 					}
 					/* We have read all the stream, we can stop */
 					source.cancel()
-				} catch let s as Errno where s == Errno.resourceTemporarilyUnavailable {
-					/* This is a “normal” error, so we only log w/ trace level. */
-					LibXctConfig.logger?.trace("Error reading fd \(streamReader.sourceStream): \(s)")
+				} catch StreamReaderError.streamReadForbidden {
+					/* nop */
 				} catch {
 					LibXctConfig.logger?.warning("Error reading fd \(streamReader.sourceStream): \(error)")
 				}

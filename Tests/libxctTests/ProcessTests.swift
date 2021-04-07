@@ -61,17 +61,25 @@ final class ProcessTests : XCTestCase {
 			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("slow_and_interleaved_output.swift")
 		
-		let n = 3
+		let n = 3 /* Not lower than 2 to get fdSwitchCount high enough */
 		let t = 0.25
 		
+		var fdSwitchCount = 0
+		var previousFd: FileDescriptor?
 		var linesByFd = [FileDescriptor: [String]]()
 		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
 			scriptURL.path, args: ["\(n)", "\(t)"], stdin: nil,
 			stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
 			outputHandler: { line, fd in
+				if previousFd != fd {
+					fdSwitchCount += 1
+					previousFd = fd
+				}
 				linesByFd[fd, default: []].append(line)
 			}
 		)
+		
+		XCTAssert(fdSwitchCount > 2)
 		
 		XCTAssertEqual(terminationStatus, 0)
 		XCTAssertEqual(terminationReason, .exit)
