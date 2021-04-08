@@ -28,7 +28,9 @@ let package = Package(
 	targets: [
 		.target(name: "CMacroExports"),
 		
-		.target(name: "XcodeProjKit", resources: [Resource.process("PBXModel.xcdatamodeld")]),
+		.target(name: "Utils"),
+		
+		.target(name: "XcodeProjKit", dependencies: [.target(name: "Utils")], resources: [Resource.process("PBXModel.xcdatamodeld")]),
 		.testTarget(name: "XcodeProjKitTests", dependencies: [.target(name: "XcodeProjKit")]),
 		
 		.target(name: "libxct", dependencies: [
@@ -36,6 +38,7 @@ let package = Package(
 			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
 			.target(name: "CMacroExports"),
+			.target(name: "Utils"),
 			.target(name: "XcodeProjKit")
 		]),
 		.testTarget(name: "libxctTests", dependencies: [

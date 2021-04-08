@@ -3,18 +3,6 @@ import Foundation
 
 
 
-extension Collection {
-	
-	public var onlyElement: Element? {
-		guard let e = first, count == 1 else {
-			return nil
-		}
-		return e
-	}
-	
-}
-
-
 extension Dictionary {
 	
 	func get<T>(_ key: Key) throws -> T {
@@ -40,66 +28,14 @@ extension Dictionary {
 }
 
 
-public extension NSManagedObjectContext {
-	
-	/* Should be declared as rethrows instead of throws, but did not find a way
-	 * to do it sadly. */
-	func performAndWait<T>(_ block: () throws -> T) throws -> T {
-		var ret: T?
-		var err: Error?
-		performAndWait{
-			do    {ret = try block()}
-			catch {err = error}
-		}
-		if let e = err {throw e}
-		return ret!
-	}
-	
-}
-
-
-extension NSEntityDescription {
-	
-	func topmostSuperentity() -> NSEntityDescription {
-		if let s = superentity {
-			return s.topmostSuperentity()
-		}
-		return self
-	}
-	
-}
-
-
-extension Scanner {
-	
-	convenience init(forParsing string: String) {
-		self.init(string: string)
-		
-		locale = nil
-		caseSensitive = true
-		charactersToBeSkipped = CharacterSet()
-	}
-	
-}
-
-
 extension Optional {
 	
-	public func get(nilError: Error = XcodeProjKitError(message: "Trying to get value of nil optional")) throws -> Wrapped {
+	func get(nilError: Error = XcodeProjKitError(message: "Trying to get value of nil optional")) throws -> Wrapped {
 		guard let v = self else {
 			throw nilError
 		}
 		return v
 	}
-	
-}
-
-
-extension CharacterSet {
-	
-	static let asciiNum = CharacterSet(charactersIn: "0123456789")
-	static let asciiAlpha = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	static let asciiAlphanum = asciiAlpha.union(asciiNum)
 	
 }
 
@@ -157,6 +93,36 @@ extension String {
 				.replacingOccurrences(of: "\t", with: "\\t",  options: .literal)
 		}
 		return "\"" + escaped + "\""
+	}
+	
+}
+
+
+public extension NSManagedObjectContext {
+	
+	/* Should be declared as rethrows instead of throws, but did not find a way
+	 * to do it sadly. */
+	func performAndWait<T>(_ block: () throws -> T) throws -> T {
+		var ret: T?
+		var err: Error?
+		performAndWait{
+			do    {ret = try block()}
+			catch {err = error}
+		}
+		if let e = err {throw e}
+		return ret!
+	}
+	
+}
+
+
+extension NSEntityDescription {
+	
+	func topmostSuperentity() -> NSEntityDescription {
+		if let s = superentity {
+			return s.topmostSuperentity()
+		}
+		return self
 	}
 	
 }

@@ -4,6 +4,7 @@ import StreamReader
 import SystemPackage
 
 import CMacroExports
+import Utils
 
 
 
@@ -79,7 +80,8 @@ extension Process {
 	clone, and the read fd to additional output fds). If they do not already, the
 	file descriptors will probably be modified by this method to require non-
 	blocking I/Os.
-	- Returns: The _started_ `Process` object that was created. */
+	- Returns: The _started_ `Process` object that was created and a dispatch
+	group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
 		_ executable: String, args: [String] = [],
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
@@ -89,7 +91,7 @@ extension Process {
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: [Int32],
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
-	) throws -> Process {
+	) throws -> (Process, DispatchGroup) {
 		let p = Process()
 		p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
 		
@@ -130,53 +132,32 @@ extension Process {
 			p.arguments = ["internal-fd-get-launcher", executable] + args
 		}
 		
+		let streamGroup = DispatchGroup()
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
-			let notifiedFd = fdRedirects[fd] ?? fd
-//			try setRequireNonBlockingIO(on: fd, logChange: fd == notifiedFd)
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
-			let source = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
-			source.setEventHandler{
-				/* This guard could probably be an assert */
-				guard !source.isCancelled else {return}
-				
-				do {
-					let estimatedBytesAvailable = source.data /* See doc of dispatch_source_get_data in objc */
-					/* mask is always 0 for read source (see doc of dispatch_source_get_mask in objc) */
-					
-					/* We do not need to check the number of bytes actually read. If
-					 * EOF was reached (nothing was read), the stream reader will
-					 * remember it, and the readLine method will properly return nil
-					 * without even trying to read from the stream. Which matters,
-					 * because we forbid the reader from reading from the underlying
-					 * stream (except in this read). */
-					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2 + 1), allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
-					
-					while let (lineData, eolData) = try streamReader.readLine() {
-						guard let line = String(data: lineData, encoding: .utf8),
-								let eol = String(data: eolData, encoding: .utf8)
-						else {
-							LibXctConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
-							return
-						}
-						outputHandler(line + eol, notifiedFd)
-					}
-					/* We have read all the stream, we can stop */
-					LibXctConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
-					source.cancel()
-				} catch StreamReaderError.streamReadForbidden {
-					LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
-				} catch {
-					LibXctConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
-				}
-			}
-			/* No cancel handler. Pipes file descriptors are closed when the Pipe
-			 * object is released, that is when the Process object is deallocated.
-			 * (TODO: Verify the sentence above is actually true!) */
+			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
 			
-			source.activate()
+			streamSource.setRegistrationHandler(handler: streamGroup.enter)
+			streamSource.setCancelHandler(handler: streamGroup.leave)
+			
+			let timerRef = Ref<DispatchSourceTimer?>(nil)
+			streamSource.setEventHandler{
+				/* `source.data`: see doc of dispatch_source_get_data in objc */
+				/* `source.mask`: see doc of dispatch_source_get_mask in objc (is always 0 for read source) */
+				Process.handleProcessOutput(
+					streamSource: streamSource,
+					streamQueue: streamQueue,
+					outputHandler: { str in outputHandler(str, fdRedirects[fd] ?? fd) },
+					streamReader: streamReader,
+					estimatedBytesAvailable: streamSource.data,
+					timerRef: timerRef, fromTimer: false
+				)
+			}
+			
+			streamSource.activate()
 		}
 		
 		LibXctConfig.logger?.info("Launching process \(executable)")
@@ -188,7 +169,7 @@ extension Process {
 		for signal in signalsToForward {
 		}
 		
-		return p
+		return (p, streamGroup)
 	}
 	
 	/**
@@ -206,7 +187,7 @@ extension Process {
 		signalsToForward: [Int32],
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
-		let p = try spawnedAndStreamedProcess(
+		let (p, g) = try spawnedAndStreamedProcess(
 			executable, args: args,
 			stdin: stdin,
 			stdoutRedirect: stdoutRedirect,
@@ -218,6 +199,7 @@ extension Process {
 		)
 		
 		p.waitUntilExit()
+		g.wait()
 		return (p.terminationStatus, p.terminationReason)
 	}
 	
@@ -239,6 +221,82 @@ extension Process {
 		}
 		guard fcntl(fd.rawValue, F_SETFL, newFlags) != -1 else {
 			throw LibXctError.systemError(Errno(rawValue: errno))
+		}
+	}
+	
+	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (String) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt, timerRef: Ref<DispatchSourceTimer?>, fromTimer: Bool) {
+		timerRef.value?.setEventHandler(handler: nil)
+		timerRef.value?.cancel()
+		
+		/* This timer thingy is probably not needed at all. The general idea was
+		 * to avoid blocking in an infinite read of the output stream in case the
+		 * dispatch source read “did not work” and we were never called in the
+		 * event handler.
+		 * We thought about this case when closing the fd before reading the
+		 * stream ended (for tests). Turns out the dispatch source will not be
+		 * called, but the system read function will also block. Period. Whether
+		 * the fd was set non-blocking or not.
+		 * So the timer will indeed call this method, but we will still be
+		 * blocked, basically rendering this workaround useless.
+		 * We could probably time the read function and stop it (how?) if it took
+		 * too long, but 1/ how much is too long? 2/ if the user closes the file
+		 * descriptor while being used by someone else, he deserves to suffer. */
+		let timer = DispatchSource.makeTimerSource(queue: streamQueue)
+		timerRef.value = timer
+		timer.setEventHandler(handler: {
+			Process.handleProcessOutput(
+				streamSource: streamSource,
+				streamQueue: streamQueue,
+				outputHandler: outputHandler,
+				streamReader: streamReader,
+				estimatedBytesAvailable: 1,
+				timerRef: timerRef, fromTimer: true
+			)
+		})
+		timer.schedule(deadline: .now() + .seconds(3))
+		timer.activate()
+		
+		let cancelAllSources = {
+			timerRef.value?.cancel()
+			timerRef.value = nil
+			streamSource.cancel()
+		}
+		
+		do {
+			/* A bit more than estimates to get everything. */
+			let toRead = Int(estimatedBytesAvailable * 2 + 1)
+			LibXctConfig.logger?.trace("Reading about \(toRead) bytes from \(streamReader.sourceStream) from timer \(fromTimer)")
+			/* We do not need to check the number of bytes actually read. If EOF
+			 * was reached (nothing was read), the stream reader will remember it,
+			 * and the readLine method will properly return nil without even trying
+			 * to read from the stream. Which matters, because we forbid the reader
+			 * from reading from the underlying stream (except in this read). */
+			_ = try streamReader.readStreamInBuffer(size: toRead, allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
+			
+			while let (lineData, eolData) = try streamReader.readLine() {
+				guard let line = String(data: lineData, encoding: .utf8),
+						let eol = String(data: eolData, encoding: .utf8)
+				else {
+					LibXctConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
+					return
+				}
+				outputHandler(line + eol)
+			}
+			/* We have read all the stream, we can stop */
+			LibXctConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
+			cancelAllSources()
+			
+		} catch StreamReaderError.streamReadForbidden {
+			LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
+			
+		} catch Errno.resourceTemporarilyUnavailable {
+			LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): resource temporarily unavailable")
+			
+		} catch {
+			LibXctConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
+			/* We stop everything at first error. Most likely the error is bad fd
+			 * because process exited and we were too long to read from the stream. */
+			cancelAllSources()
 		}
 	}
 	
