@@ -79,7 +79,7 @@ final class ProcessTests : XCTestCase {
 			}
 		)
 		
-		XCTAssert(fdSwitchCount > 2)
+		XCTAssertGreaterThan(fdSwitchCount, 2)
 		
 		XCTAssertEqual(terminationStatus, 0)
 		XCTAssertEqual(terminationReason, .exit)

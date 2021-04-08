@@ -146,7 +146,13 @@ extension Process {
 					/* mask is always 0 for read source (see doc of dispatch_source_get_mask in objc) */
 					
 					streamReader.underlyingStreamReadSizeLimit = nil
-					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2))
+					/* We do not need to check the number of bytes actually read. If
+					 * EOF was reached (nothing was read), the stream reader will
+					 * remember it, and the readLine method will properly return nil
+					 * without even trying to read from the stream. Which matters,
+					 * because we forbid the reader from reading from the underlying
+					 * stream after this read. */
+					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2 + 1), allowMoreThanOneRead: false)
 					streamReader.underlyingStreamReadSizeLimit = 0
 					
 					while let (lineData, eolData) = try streamReader.readLine() {
@@ -159,11 +165,12 @@ extension Process {
 						outputHandler(line + eol, notifiedFd)
 					}
 					/* We have read all the stream, we can stop */
+					LibXctConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
 					source.cancel()
 				} catch StreamReaderError.streamReadForbidden {
-					/* nop */
+					LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
 				} catch {
-					LibXctConfig.logger?.warning("Error reading fd \(streamReader.sourceStream): \(error)")
+					LibXctConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
 				}
 			}
 			/* No cancel handler. Pipes file descriptors are closed when the Pipe
@@ -173,7 +180,7 @@ extension Process {
 			source.activate()
 		}
 		
-		LibXctConfig.logger?.debug("Launching process \(executable)")
+		LibXctConfig.logger?.info("Launching process \(executable)")
 		try p.run()
 		for (fdToSend, fdInChild) in fileDescriptorsToSend {
 			
