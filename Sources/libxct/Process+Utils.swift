@@ -135,6 +135,7 @@ extension Process {
 			let notifiedFd = fdRedirects[fd] ?? fd
 //			try setRequireNonBlockingIO(on: fd, logChange: fd == notifiedFd)
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
+			streamReader.underlyingStreamReadSizeLimit = 0
 			
 			let source = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
 			source.setEventHandler{
@@ -145,15 +146,13 @@ extension Process {
 					let estimatedBytesAvailable = source.data /* See doc of dispatch_source_get_data in objc */
 					/* mask is always 0 for read source (see doc of dispatch_source_get_mask in objc) */
 					
-					streamReader.underlyingStreamReadSizeLimit = nil
 					/* We do not need to check the number of bytes actually read. If
 					 * EOF was reached (nothing was read), the stream reader will
 					 * remember it, and the readLine method will properly return nil
 					 * without even trying to read from the stream. Which matters,
 					 * because we forbid the reader from reading from the underlying
-					 * stream after this read. */
-					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2 + 1), allowMoreThanOneRead: false)
-					streamReader.underlyingStreamReadSizeLimit = 0
+					 * stream (except in this read). */
+					_ = try streamReader.readStreamInBuffer(size: Int(estimatedBytesAvailable * 2 + 1), allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
 					
 					while let (lineData, eolData) = try streamReader.readLine() {
 						guard let line = String(data: lineData, encoding: .utf8),
