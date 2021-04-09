@@ -47,9 +47,6 @@ extension Process {
 	
 	A dummy § for Xcode.
 	
-	- Important: The `additionalOutputFileDescriptors` might be modified by this
-	method to require non-blocking I/O.
-	
 	- Important: For technical reasons (and design choice), if file descriptors
 	to send is not empty, the process will be launched _via_ `xct`.
 	
@@ -65,21 +62,15 @@ extension Process {
 	- Important: The handler will not be called on the calling thread (so you can
 	`waitUntilExit` on the `Process` and still receive the stream “live”).
 	
-	- Note: In addition to the process, we might want to return a `DispatchGroup`
-	that would end when all of the streams are ended, so we can wait on that in
-	addition to (or instead of) waiting on the end of the process.
-	
 	- Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
 	`stdout` and `stderr`, which are handled and differently) to clone in the
 	child process. The key is the file descriptor to clone (from the parent
 	process to the child), the value is the descriptor you’ll get in the child
 	process.
-	- Parameter additionalOutputFileDescriptor: Additional output file
+	- Parameter additionalOutputFileDescriptors: Additional output file
 	descriptors to stream from the process. Usually used with
 	`fileDescriptorsToSend` (you open a socket, give the write fd in fds to
-	clone, and the read fd to additional output fds). If they do not already, the
-	file descriptors will probably be modified by this method to require non-
-	blocking I/Os.
+	clone, and the read fd to additional output fds).
 	- Returns: The _started_ `Process` object that was created and a dispatch
 	group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
@@ -173,8 +164,9 @@ extension Process {
 	}
 	
 	/**
-	Exactly the same as `spawnedAndStreamedProcess`, but the process is waited on
-	and you get the termination status and reason on return.
+	Exactly the same as `spawnedAndStreamedProcess`, but the process and the
+	streamed file descriptors are waited on and you get the termination status
+	and reason on return.
 	
 	- Returns: The exit status of the process and its termination reason. */
 	public static func spawnAndStream(
