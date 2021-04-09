@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import XcodeProjKit
+@testable import XcodeProj
 
 
 

@@ -20,7 +20,7 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		
 		if let showEnvVarsInLogStr: String = try rawObject.getIfExists("showEnvVarsInLog") {
 			guard let value = Int(showEnvVarsInLogStr) else {
-				throw XcodeProjKitError(message: "Unexpected show env vars in log value \(showEnvVarsInLogStr)")
+				throw XcodeProjError(message: "Unexpected show env vars in log value \(showEnvVarsInLogStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for showEnvVarsInLog \(showEnvVarsInLogStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
@@ -30,7 +30,7 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		
 		if let alwaysOutOfDateStr: String = try rawObject.getIfExists("alwaysOutOfDate") {
 			guard let value = Int(alwaysOutOfDateStr) else {
-				throw XcodeProjKitError(message: "Unexpected always out of date value \(alwaysOutOfDateStr)")
+				throw XcodeProjError(message: "Unexpected always out of date value \(alwaysOutOfDateStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for alwaysOutOfDate \(alwaysOutOfDateStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

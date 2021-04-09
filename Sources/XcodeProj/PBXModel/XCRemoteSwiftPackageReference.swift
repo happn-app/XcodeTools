@@ -12,7 +12,7 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 		do {
 			let repositoryURLStr: String = try rawObject.get("repositoryURL")
 			guard let url = URL(string: repositoryURLStr) else {
-				throw XcodeProjKitError(message: "Expected repositoryURL to be a valid URL in object w/ id \(xcID ?? "<unknown>") but got \(repositoryURLStr)")
+				throw XcodeProjError(message: "Expected repositoryURL to be a valid URL in object w/ id \(xcID ?? "<unknown>") but got \(repositoryURLStr)")
 			}
 			repositoryURL = url
 		}

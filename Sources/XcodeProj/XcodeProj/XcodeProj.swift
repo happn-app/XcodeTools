@@ -29,7 +29,7 @@ public struct XcodeProj {
 				return true
 			}
 			guard let e = xcodeprojs.onlyElement else {
-				throw XcodeProjKitError(message: "Cannot find xcodeproj")
+				throw XcodeProjError(message: "Cannot find xcodeproj")
 			}
 			xcodeprojPath = e
 		}
@@ -44,7 +44,7 @@ public struct XcodeProj {
 		/* *** Load CoreData model *** */
 		
 		guard let model = ModelSingleton.model else {
-			throw XcodeProjKitError(message: "Cannot load CoreData model")
+			throw XcodeProjError(message: "Cannot load CoreData model")
 		}
 		managedObjectModel = model
 		
@@ -81,7 +81,7 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard combinedBuildSettings.targetName == nil else {
-					throw XcodeProjKitError(message: "Internal error: Got combined build settings for project which has a target name.")
+					throw XcodeProjError(message: "Internal error: Got combined build settings for project which has a target name.")
 				}
 				return try handler(combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}
@@ -96,10 +96,10 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard let targetName = combinedBuildSettings.targetName else {
-					throw XcodeProjKitError(message: "Internal error: Got combined build settings for target which does not have a target name.")
+					throw XcodeProjError(message: "Internal error: Got combined build settings for target which does not have a target name.")
 				}
 				guard let target = combinedBuildSettings.target else {
-					throw XcodeProjKitError(message: "Internal error: Got combined build settings for target which does not have a target.")
+					throw XcodeProjError(message: "Internal error: Got combined build settings for target which does not have a target.")
 				}
 				return try handler(target, targetName, combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}

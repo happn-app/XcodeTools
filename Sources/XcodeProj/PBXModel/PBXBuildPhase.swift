@@ -27,13 +27,13 @@ public class PBXBuildPhase : PBXObject {
 		
 		if let buildActionMaskStr: String = try rawObject.getIfExists("buildActionMask") {
 			guard let value = Int32(buildActionMaskStr) else {
-				throw XcodeProjKitError(message: "Unexpected build action mask value \(buildActionMaskStr) in object \(xcID ?? "<unknown>")")
+				throw XcodeProjError(message: "Unexpected build action mask value \(buildActionMaskStr) in object \(xcID ?? "<unknown>")")
 			}
 			buildActionMask = NSNumber(value: value)
 		}
 		if let runOnlyForDeploymentPostprocessingStr: String = try rawObject.getIfExists("runOnlyForDeploymentPostprocessing") {
 			guard let value = Int16(runOnlyForDeploymentPostprocessingStr) else {
-				throw XcodeProjKitError(message: "Unexpected run only for deployment postprocessing value \(runOnlyForDeploymentPostprocessingStr)")
+				throw XcodeProjError(message: "Unexpected run only for deployment postprocessing value \(runOnlyForDeploymentPostprocessingStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Unknown value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

@@ -36,11 +36,11 @@ public struct BuildSettings {
 		
 		if #available(OSX 10.15.4, *) {
 			guard p.terminationStatus == 0, let output = try pipe.fileHandleForReading.readToEnd().flatMap({ String(data: $0, encoding: .utf8) }), !output.isEmpty else {
-				throw XcodeProjKitError(message: "Cannot get DEVELOPER_DIR")
+				throw XcodeProjError(message: "Cannot get DEVELOPER_DIR")
 			}
 			return output.trimmingCharacters(in: .whitespacesAndNewlines)
 		} else {
-			throw XcodeProjKitError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
+			throw XcodeProjError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
 		}
 	}
 	

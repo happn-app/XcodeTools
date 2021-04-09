@@ -38,7 +38,7 @@ public class PBXProject : PBXObject {
 		do {
 			let hasScannedForEncodingsStr: String = try rawObject.get("hasScannedForEncodings")
 			guard let value = Int(hasScannedForEncodingsStr) else {
-				throw XcodeProjKitError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
+				throw XcodeProjError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Suspicious value for hasScannedForEncodings \(hasScannedForEncodingsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
@@ -68,7 +68,7 @@ public class PBXProject : PBXObject {
 					let projectRefID = rawProjectReference["ProjectRef"],
 					rawProjectReference.count == 2
 				else {
-					throw XcodeProjKitError(message: "Invalid (or unknown) project reference")
+					throw XcodeProjError(message: "Invalid (or unknown) project reference")
 				}
 				let projectReference = ProjectReference(context: context)
 				projectReference.productGroup = try PBXFileElement.unsafeInstantiate(rawObjects: rawObjects, id: productGroupID, context: context, decodedObjects: &decodedObjects)

@@ -17,7 +17,7 @@ public class PBXLegacyTarget : PBXTarget {
 		do {
 		let passBuildSettingsInEnvironmentStr: String = try rawObject.get("passBuildSettingsInEnvironment")
 			guard let value = Int16(passBuildSettingsInEnvironmentStr) else {
-				throw XcodeProjKitError(message: "Unexpected pass build settings in environment value \(passBuildSettingsInEnvironmentStr)")
+				throw XcodeProjError(message: "Unexpected pass build settings in environment value \(passBuildSettingsInEnvironmentStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Unknown value for passBuildSettingsInEnvironment \(passBuildSettingsInEnvironmentStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")

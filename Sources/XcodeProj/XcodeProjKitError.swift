@@ -2,7 +2,7 @@ import Foundation
 
 
 
-public struct XcodeProjKitError : Error {
+public struct XcodeProjError : Error {
 	
 	public var message: String
 	

@@ -77,7 +77,7 @@ public struct CombinedBuildSettings {
 	the xcodeproj path. */
 	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
 		guard let targets = project.targets else {
-			throw XcodeProjKitError(message: "targets property is not set in project \(project)")
+			throw XcodeProjError(message: "targets property is not set in project \(project)")
 		}
 		
 		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.buildConfigurationList?.buildConfigurations, targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
@@ -101,30 +101,30 @@ public struct CombinedBuildSettings {
 	the xcodeproj path. */
 	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration]?, targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettingsRef]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [String: CombinedBuildSettings] {
 		guard let configurations = configurations else {
-			throw XcodeProjKitError(message: "configurations property not set")
+			throw XcodeProjError(message: "configurations property not set")
 		}
 		
 		let settings: [(String, CombinedBuildSettings)] = try configurations.map{ configuration in
 			guard let name = configuration.name else {
-				throw XcodeProjKitError(message: "Got configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
+				throw XcodeProjError(message: "Got configuration \(configuration.xcID ?? "<unknown>") which does not have a name")
 			}
 			let targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
 				let (target, projectSettingsPerConfigName) = targetAndProjectSettingsPerConfigName
 				guard let projectSettings = projectSettingsPerConfigName[name] else {
-					throw XcodeProjKitError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
+					throw XcodeProjError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
 				}
 				return (target, projectSettings)
 			}
 			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
-			throw XcodeProjKitError(message: "Got two configuration with the same same; this is not normal.")
+			throw XcodeProjError(message: "Got two configuration with the same same; this is not normal.")
 		})
 	}
 	
 	init(configuration config: XCBuildConfiguration, targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws {
 		guard let configName = config.name else {
-			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have a name")
+			throw XcodeProjError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have a name")
 		}
 		configuration = config
 		configurationName = configName
@@ -133,7 +133,7 @@ public struct CombinedBuildSettings {
 		
 		if let (lTarget, projectSettings) = targetAndProjectSettings {
 			guard let name = lTarget.name else {
-				throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ target \(lTarget.xcID ?? "<unknown>") which does not have a name")
+				throw XcodeProjError(message: "Trying to init a CombinedBuildSettings w/ target \(lTarget.xcID ?? "<unknown>") which does not have a name")
 			}
 			target = lTarget
 			targetName = name
@@ -145,7 +145,7 @@ public struct CombinedBuildSettings {
 		
 		if let baseConfigurationReference = config.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
-				throw XcodeProjKitError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
+				throw XcodeProjError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: ["SOURCE_ROOT": xcodeprojURL.deletingLastPathComponent().absoluteURL.path])
 			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: config))
@@ -153,7 +153,7 @@ public struct CombinedBuildSettings {
 		}
 		
 		guard let rawBuildSettings = configuration.rawBuildSettings else {
-			throw XcodeProjKitError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have build settings")
+			throw XcodeProjError(message: "Trying to init a CombinedBuildSettings w/ configuration \(config.xcID ?? "<unknown>") which does not have build settings")
 		}
 		
 		let buildSettings = BuildSettingsRef(BuildSettings(rawBuildSettings: rawBuildSettings, location: .xcconfiguration(config)))
@@ -244,7 +244,7 @@ public struct CombinedBuildSettings {
 		let plistData = try Data(contentsOf: plistURL)
 		let deserializedPlist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil)
 		guard let deserializedPlistObject = deserializedPlist as? [String: Any] else {
-			throw XcodeProjKitError(message: "Cannot deserialize plist file at URL \(plistURL) as a [String: Any].")
+			throw XcodeProjError(message: "Cannot deserialize plist file at URL \(plistURL) as a [String: Any].")
 		}
 		return deserializedPlistObject
 	}

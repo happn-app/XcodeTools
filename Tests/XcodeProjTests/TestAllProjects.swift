@@ -1,7 +1,7 @@
 import Foundation
 import XCTest
 
-@testable import XcodeProjKit
+@testable import XcodeProj
 
 
 
@@ -12,7 +12,7 @@ class TestAllProjects : XCTestCase {
 	func testReserialization() throws {
 		let fm = FileManager.default
 		guard let de = fm.enumerator(atPath: testProjectsURL.path) else {
-			throw XcodeProjKitError(message: "Cannot get dir enumerator at path \(testProjectsURL.path)")
+			throw XcodeProjError(message: "Cannot get dir enumerator at path \(testProjectsURL.path)")
 		}
 		
 		while let f = de.nextObject() as! String? {

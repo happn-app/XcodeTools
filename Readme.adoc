@@ -5,7 +5,7 @@ François Lamboley <francois.lamboley@happn.com>
 A collection of utilities to work with Xcode files. Currently there are two
 products in this SPM project.
 
-=== XcodeProjKit
+=== XcodeProj
 A reusable lib to work with xcodeproj files. Specifically the lib allows easy
 parsing of pbxproj and xcconfig files. Schemes are not supported (yet).
 
@@ -31,10 +31,10 @@ is supported, however, the resolution of the variables do not take the parameter
 in account yet.
 
 _Other Note_: I use the post-Xcode 10 variable resolution to resolve variables.
-You might see a difference in the values `XcodeProjKit` computes and the ones
+You might see a difference in the values `XcodeProj` computes and the ones
 Xcode shows in the GUI editor. That is expected; the GUI seems to still use the
 pre-Xcode 10 algorithm to resolve its variables. +
-You should however get the same values than `XcodeProjKit` at build time, if you
+You should however get the same values than `XcodeProj` at build time, if you
 don’t please file an issue! +
 You can check whether the values are the same by adding a key in your
 `Info.plist` file with the value set to `$(VAR_TO_CHECK)` and checking the

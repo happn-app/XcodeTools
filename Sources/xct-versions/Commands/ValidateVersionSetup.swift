@@ -1,7 +1,7 @@
 import Foundation
 
 import ArgumentParser
-import XcodeProjKit
+import XcodeProj
 
 
 

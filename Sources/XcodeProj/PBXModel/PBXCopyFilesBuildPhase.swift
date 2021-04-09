@@ -14,7 +14,7 @@ public class PBXCopyFilesBuildPhase : PBXBuildPhase {
 		do {
 			let dstSubfolderSpecStr: String = try rawObject.get("dstSubfolderSpec")
 			guard let value = Int16(dstSubfolderSpecStr) else {
-				throw XcodeProjKitError(message: "Unexpected dst subfolder spec value \(dstSubfolderSpecStr)")
+				throw XcodeProjError(message: "Unexpected dst subfolder spec value \(dstSubfolderSpecStr)")
 			}
 			dstSubfolderSpec = value
 		}

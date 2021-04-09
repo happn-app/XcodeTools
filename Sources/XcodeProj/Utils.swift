@@ -7,10 +7,10 @@ extension Dictionary {
 	
 	func get<T>(_ key: Key) throws -> T {
 		guard let e = self[key] else {
-			throw XcodeProjKitError(message: "Value not found for key \(key)")
+			throw XcodeProjError(message: "Value not found for key \(key)")
 		}
 		guard let t = e as? T else {
-			throw XcodeProjKitError(message: "Value does not have correct type for key \(key)")
+			throw XcodeProjError(message: "Value does not have correct type for key \(key)")
 		}
 		return t
 	}
@@ -20,7 +20,7 @@ extension Dictionary {
 			return nil
 		}
 		guard let t = e as? T else {
-			throw XcodeProjKitError(message: "Value does not have correct type for key \(key)")
+			throw XcodeProjError(message: "Value does not have correct type for key \(key)")
 		}
 		return t
 	}
@@ -30,7 +30,7 @@ extension Dictionary {
 
 extension Optional {
 	
-	func get(nilError: Error = XcodeProjKitError(message: "Trying to get value of nil optional")) throws -> Wrapped {
+	func get(nilError: Error = XcodeProjError(message: "Trying to get value of nil optional")) throws -> Wrapped {
 		guard let v = self else {
 			throw nilError
 		}

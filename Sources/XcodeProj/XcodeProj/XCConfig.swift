@@ -91,7 +91,7 @@ public struct XCConfig {
 				let variableName: String
 				do {
 					guard let firstChar = scanner.scanCharacter() else {
-						throw XcodeProjKitError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
+						throw XcodeProjError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
 					}
 					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettingKey.charactersValidForFirstVariableCharacter.contains(scalar) else {
 						throw LineParsingError.invalidFirstCharInVar(firstChar)
@@ -170,7 +170,7 @@ public struct XCConfig {
 		
 		func lineString() throws -> String {
 			guard isValid else {
-				throw XcodeProjKitError(message: "Trying to get line string representation of invalid line \(self)")
+				throw XcodeProjError(message: "Trying to get line string representation of invalid line \(self)")
 			}
 			
 			switch self {
@@ -218,7 +218,7 @@ public struct XCConfig {
 		var isDir = ObjCBool(false)
 		if !FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) {
 			if failIfFileDoesNotExist {
-				throw XcodeProjKitError(message: "Cannot find xcconfig file at URL \(url.absoluteString)")
+				throw XcodeProjError(message: "Cannot find xcconfig file at URL \(url.absoluteString)")
 			} else {
 				lines = [:]
 				return
@@ -246,14 +246,14 @@ public struct XCConfig {
 			} catch let e as Line.LineParsingError {
 				stop = true
 				switch e {
-					case .unknownDirective(let directive):          error = XcodeProjKitError(message: "Unknown directive “\(directive)” in xcconfig file \(url.path).")
-					case .gotSpaceAfterSharpInDirective:            error = XcodeProjKitError(message: "Got a space after # (directive start) in xcconfig file \(url.path).")
-					case .noSpaceAfterIncludeDirective:             error = XcodeProjKitError(message: "No a space after #include in xcconfig file \(url.path). (This worked fine in previous versious versions of Xcode, but does not work anymore.)")
-					case .expectedDoubleQuoteAfterIncludeDirective: error = XcodeProjKitError(message: "Expected a double-quote after include directive in xcconfig file \(url.path).")
-					case .unterminatedIncludeFileName:              error = XcodeProjKitError(message: "Unterminated include file name in xcconfig file \(url.path).")
-					case .unexpectedCharAfterInclude:               error = XcodeProjKitError(message: "Unexpected characters after include directive in xcconfig file \(url.path).")
-					case .invalidFirstCharInVar:                    error = XcodeProjKitError(message: "Invalid first char for a variable in xcconfig \(url.path).")
-					case .unexpectedCharAfterVarName:               error = XcodeProjKitError(message: "Unexpected character after variable name in xcconfig \(url.path).")
+					case .unknownDirective(let directive):          error = XcodeProjError(message: "Unknown directive “\(directive)” in xcconfig file \(url.path).")
+					case .gotSpaceAfterSharpInDirective:            error = XcodeProjError(message: "Got a space after # (directive start) in xcconfig file \(url.path).")
+					case .noSpaceAfterIncludeDirective:             error = XcodeProjError(message: "No a space after #include in xcconfig file \(url.path). (This worked fine in previous versious versions of Xcode, but does not work anymore.)")
+					case .expectedDoubleQuoteAfterIncludeDirective: error = XcodeProjError(message: "Expected a double-quote after include directive in xcconfig file \(url.path).")
+					case .unterminatedIncludeFileName:              error = XcodeProjError(message: "Unterminated include file name in xcconfig file \(url.path).")
+					case .unexpectedCharAfterInclude:               error = XcodeProjError(message: "Unexpected characters after include directive in xcconfig file \(url.path).")
+					case .invalidFirstCharInVar:                    error = XcodeProjError(message: "Invalid first char for a variable in xcconfig \(url.path).")
+					case .unexpectedCharAfterVarName:               error = XcodeProjError(message: "Unexpected character after variable name in xcconfig \(url.path).")
 				}
 			} catch let e {
 				stop = true

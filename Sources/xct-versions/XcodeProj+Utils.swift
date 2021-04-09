@@ -1,6 +1,6 @@
 import Foundation
 
-import XcodeProjKit
+import XcodeProj
 
 
 

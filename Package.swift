@@ -8,7 +8,7 @@ let package = Package(
 		.macOS(.v10_15)
 	],
 	products: [
-		.library(name: "XcodeProjKit", targets: ["XcodeProjKit"]),
+		.library(name: "XcodeProj", targets: ["XcodeProj"]),
 		
 		.library(name: "libxct", targets: ["libxct"]),
 		.executable(name: "xct", targets: ["xct"]),
@@ -30,8 +30,8 @@ let package = Package(
 		
 		.target(name: "Utils"),
 		
-		.target(name: "XcodeProjKit", dependencies: [.target(name: "Utils")], resources: [Resource.process("PBXModel.xcdatamodeld")]),
-		.testTarget(name: "XcodeProjKitTests", dependencies: [.target(name: "XcodeProjKit")]),
+		.target(name: "XcodeProj", dependencies: [.target(name: "Utils")], resources: [Resource.process("PBXModel.xcdatamodeld")]),
+		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
 		.target(name: "libxct", dependencies: [
 			.product(name: "Logging",       package: "swift-log"),
@@ -39,7 +39,7 @@ let package = Package(
 			.product(name: "SystemPackage", package: "swift-system"),
 			.target(name: "CMacroExports"),
 			.target(name: "Utils"),
-			.target(name: "XcodeProjKit")
+			.target(name: "XcodeProj")
 		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
@@ -66,13 +66,13 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "StreamReader",   package: "stream-reader"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "XcodeProjKit"),
+			.target(name: "XcodeProj"),
 			.target(name: "libxct")
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.target(name: "XcodeProjKit"),
+			.target(name: "XcodeProj"),
 			.target(name: "libxct")
 		]),
 		

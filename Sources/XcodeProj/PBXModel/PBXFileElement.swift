@@ -54,19 +54,19 @@ public class PBXFileElement : PBXObject {
 		
 		if let indentWidthStr: String = try rawObject.getIfExists("indentWidth") {
 			guard let value = Int16(indentWidthStr) else {
-				throw XcodeProjKitError(message: "Unexpected indent width value \(indentWidthStr) in object \(xcID ?? "<unknown>")")
+				throw XcodeProjError(message: "Unexpected indent width value \(indentWidthStr) in object \(xcID ?? "<unknown>")")
 			}
 			indentWidth = NSNumber(value: value)
 		}
 		if let tabWidthStr: String = try rawObject.getIfExists("tabWidth") {
 			guard let value = Int16(tabWidthStr) else {
-				throw XcodeProjKitError(message: "Unexpected tab width value \(tabWidthStr) in object \(xcID ?? "<unknown>")")
+				throw XcodeProjError(message: "Unexpected tab width value \(tabWidthStr) in object \(xcID ?? "<unknown>")")
 			}
 			tabWidth = NSNumber(value: value)
 		}
 		if let usesTabsStr: String = try rawObject.getIfExists("usesTabs") {
 			guard let value = Int16(usesTabsStr) else {
-				throw XcodeProjKitError(message: "Unexpected uses tabs value \(usesTabsStr)")
+				throw XcodeProjError(message: "Unexpected uses tabs value \(usesTabsStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Unknown value for usesTabs \(usesTabsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
@@ -75,7 +75,7 @@ public class PBXFileElement : PBXObject {
 		}
 		if let wrapsLinesStr: String = try rawObject.getIfExists("wrapsLines") {
 			guard let value = Int16(wrapsLinesStr) else {
-				throw XcodeProjKitError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
+				throw XcodeProjError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
 			}
 			if value != 0 && value != 1 {
 				NSLog("%@", "Warning: Unknown value for wrapsLines \(wrapsLinesStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
@@ -189,11 +189,11 @@ public class PBXFileElement : PBXObject {
 		
 		switch resolvedPathInfo {
 			case nil:
-				throw XcodeProjKitError(message: "Cannot get resolved path info.")
+				throw XcodeProjError(message: "Cannot get resolved path info.")
 				
 			case (let rootVar?, let path)?:
 				guard let varValue = variables[rootVar] else {
-					throw XcodeProjKitError(message: "Cannot resolve the resovled path info because I do not have a value for variable \(rootVar).")
+					throw XcodeProjError(message: "Cannot resolve the resovled path info because I do not have a value for variable \(rootVar).")
 				}
 				if varValue.isEmpty  {return relativeToXcodeproj(path)}
 				else if path.isEmpty {return relativeToXcodeproj(varValue)}
