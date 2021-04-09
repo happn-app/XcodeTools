@@ -265,7 +265,7 @@ extension Process {
 		do {
 			/* A bit more than estimates to get everything. */
 			let toRead = Int(estimatedBytesAvailable * 2 + 1)
-			LibXctConfig.logger?.trace("Reading about \(toRead) bytes from \(streamReader.sourceStream) from timer \(fromTimer)")
+			LibXctConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream), triggered by timer: \(fromTimer)")
 			/* We do not need to check the number of bytes actually read. If EOF
 			 * was reached (nothing was read), the stream reader will remember it,
 			 * and the readLine method will properly return nil without even trying
