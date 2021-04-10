@@ -118,7 +118,7 @@ public struct CombinedBuildSettings {
 			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
-			throw XcodeProjError(message: "Got two configuration with the same same; this is not normal.")
+			throw XcodeProjError(message: "Got two configuration with the same name; this is not normal.")
 		})
 	}
 	

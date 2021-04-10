@@ -29,7 +29,7 @@ public struct XcodeProj {
 				return true
 			}
 			guard let e = xcodeprojs.onlyElement else {
-				throw XcodeProjError(message: "Cannot find xcodeproj")
+				throw XcodeProjError.cannotFindSingleXcodeproj
 			}
 			xcodeprojPath = e
 		}
@@ -44,12 +44,16 @@ public struct XcodeProj {
 		/* *** Load CoreData model *** */
 		
 		guard let model = ModelSingleton.model else {
-			throw XcodeProjError(message: "Cannot load CoreData model")
+			throw XcodeProjError.internalError(.modelNotFound)
 		}
 		managedObjectModel = model
 		
-		persistentCoordinator = NSPersistentStoreCoordinator(managedObjectModel: managedObjectModel)
-		try persistentCoordinator.addPersistentStore(ofType: NSInMemoryStoreType, configurationName: nil, at: nil, options: nil)
+		let pc = NSPersistentStoreCoordinator(managedObjectModel: managedObjectModel)
+		_ = try Result{ try pc.addPersistentStore(ofType: NSInMemoryStoreType, configurationName: nil, at: nil, options: nil) }
+			.flatMapError{ error in Result.failure(XcodeProjError.internalError(.cannotLoadModel(error))) }
+			.get()
+		
+		persistentCoordinator = pc
 		
 		managedObjectContext = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
 		managedObjectContext.persistentStoreCoordinator = persistentCoordinator
@@ -81,7 +85,7 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard combinedBuildSettings.targetName == nil else {
-					throw XcodeProjError(message: "Internal error: Got combined build settings for project which has a target name.")
+					throw XcodeProjError.internalError(.combinedSettingsForProjectWithTargetName)
 				}
 				return try handler(combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}
@@ -96,10 +100,10 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard let targetName = combinedBuildSettings.targetName else {
-					throw XcodeProjError(message: "Internal error: Got combined build settings for target which does not have a target name.")
+					throw XcodeProjError.internalError(.combinedSettingsForTargetWithoutTargetName)
 				}
 				guard let target = combinedBuildSettings.target else {
-					throw XcodeProjError(message: "Internal error: Got combined build settings for target which does not have a target.")
+					throw XcodeProjError.internalError(.combinedSettingsForTargetWithoutTarget)
 				}
 				return try handler(target, targetName, combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}

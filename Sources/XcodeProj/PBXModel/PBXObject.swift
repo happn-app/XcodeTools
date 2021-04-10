@@ -66,7 +66,7 @@ public class PBXObject : NSManagedObject {
 	static func unsafeInstantiate(id: String, on context: NSManagedObjectContext, rawObjects: [String: [String: Any]], decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
-				throw XcodeProjError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary for id \(id).")
+				throw XcodeProjError.parseError(.invalidObjectTypeInDecodedObjects(expectedType: self), objectID: id)
 			}
 			return result
 		}
@@ -75,16 +75,16 @@ public class PBXObject : NSManagedObject {
 		let isa: String = try rawObject.getForParse("isa", id)
 		
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
-			throw XcodeProjError(message: "Given context does not have a model!")
+			throw XcodeProjError.internalError(.managedContextHasNoModel)
 		}
 		guard let entity = model.entitiesByName[isa] ?? (XcodeProjConfig.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
-			throw XcodeProjError(message: "Did not find isa \(isa) in the CoreData model.")
+			throw XcodeProjError.parseError(.isaNotFoundInModel(isa), objectID: id)
 		}
 		guard !entity.isAbstract || (XcodeProjConfig.allowPBXObjectAllocation && entity.name == "PBXObject") else {
-			throw XcodeProjError(message: "Given isa \(isa) is abstract in the CoreData model (entity = \(entity.name ?? "<unknown>")")
+			throw XcodeProjError.parseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
-			throw XcodeProjError(message: "Given isa \(isa) whose entity is not related to PBXObject! This is an internal logic error.")
+			throw XcodeProjError.internalError(.tryingToInstantiateNonPBXObjectEntity(isa: isa, entity: entity))
 		}
 		
 		/* First let’s see if the object is not already in the graph */
@@ -93,7 +93,7 @@ public class PBXObject : NSManagedObject {
 		fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), id)
 		let results = try context.fetch(fetchRequest)
 		guard results.count <= 1 else {
-			throw XcodeProjError(message: "Internal error: got \(results.count) where at most 1 was expected.")
+			throw XcodeProjError.internalError(.gotMoreThanOneObjectForID(id))
 		}
 		
 		let created: Bool
@@ -103,7 +103,7 @@ public class PBXObject : NSManagedObject {
 		
 		guard let result = resultObject as? Self else {
 			if created {context.delete(resultObject)}
-			throw XcodeProjError(message: "Error, expected an object of type \(self), but got something else for id \(id).")
+			throw XcodeProjError.parseError(.invalidObjectTypeFetchedOrCreated(expectedType: self), objectID: id)
 		}
 		
 		do {
@@ -136,10 +136,7 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	/*protected*/ open func fillValues(rawObject: [String: Any], rawObjects: [String: [String: Any]], context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws {
-		guard context === managedObjectContext else {
-			throw XcodeProjError(message: "Internal error: asked to fill values of an object with a context != than object’s context")
-		}
-		
+		assert(context === managedObjectContext)
 		self.rawObject = rawObject
 		
 		/* Let’s validate we know all the properties in the raw object. */
@@ -216,7 +213,7 @@ public class PBXObject : NSManagedObject {
 				ret += "}"
 				
 			default:
-				throw XcodeProjError(message: "Unknown object type to serialize \(type(of: v)); \(v)")
+				throw XcodeProjError.internalError(.unknownObjectTypeDuringSerialization(object: v))
 		}
 		return ret
 	}

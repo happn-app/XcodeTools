@@ -97,7 +97,7 @@ extension Dictionary where Key == String {
 extension Optional {
 	
 	func getForSerialization(_ propretyName: String, _ objectID: String?) throws -> Wrapped {
-		return try get(orThrow: XcodeProjError.serializationError(.missingProperty(propertyName: propretyName), objectID: objectID))
+		return try get(orThrow: XcodeProjError.invalidObjectGraph(.missingProperty(propertyName: propretyName), objectID: objectID))
 	}
 	
 }
