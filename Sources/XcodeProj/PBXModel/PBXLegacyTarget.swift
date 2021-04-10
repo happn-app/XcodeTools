@@ -20,7 +20,7 @@ public class PBXLegacyTarget : PBXTarget {
 				throw XcodeProjError(message: "Unexpected pass build settings in environment value \(passBuildSettingsInEnvironmentStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for passBuildSettingsInEnvironment \(passBuildSettingsInEnvironmentStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Unknown value for passBuildSettingsInEnvironment \(passBuildSettingsInEnvironmentStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			passBuildSettingsInEnvironment = (value != 0)
 		}
@@ -33,11 +33,7 @@ public class PBXLegacyTarget : PBXTarget {
 		mySerialization["buildWorkingDirectory"]          = try buildWorkingDirectory.get()
 		mySerialization["passBuildSettingsInEnvironment"] = passBuildSettingsInEnvironment ? "1" : "0"
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

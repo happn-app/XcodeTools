@@ -26,7 +26,7 @@ public class PBXFileReference : PBXFileElement {
 				throw XcodeProjError(message: "Unexpected include in index value \(includeInIndexStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for includeInIndex \(includeInIndexStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Suspicious value for includeInIndex \(includeInIndexStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			includeInIndex = NSNumber(value: value != 0)
 		}
@@ -50,11 +50,7 @@ public class PBXFileReference : PBXFileElement {
 		if let v = xcLanguageSpecificationIdentifier  {mySerialization["xcLanguageSpecificationIdentifier"] = v}
 		if let v = plistStructureDefinitionIdentifier {mySerialization["plistStructureDefinitionIdentifier"] = v}
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 	public override var parent: PBXFileElement? {

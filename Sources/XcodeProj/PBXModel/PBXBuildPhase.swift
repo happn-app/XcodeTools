@@ -7,14 +7,9 @@ import Foundation
 public class PBXBuildPhase : PBXObject {
 	
 	open override class func propertyRenamings() -> [String : String] {
-		let mine = [
+		return super.propertyRenamings().mergingUnambiguous([
 			"files_cd": "files"
-		]
-		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
-			precondition(current == new, "Incompatible property renamings")
-			NSLog("%@", "Warning: Internal logic shadiness: Property rename has been declared twice for destination \(current), in class \(self)")
-			return current
-		})
+		])
 	}
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
@@ -23,11 +18,11 @@ public class PBXBuildPhase : PBXObject {
 		name = try rawObject.getIfExists("name")
 		
 		let filesIDs: [String] = try rawObject.get("files")
-		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
 		if let buildActionMaskStr: String = try rawObject.getIfExists("buildActionMask") {
 			guard let value = Int32(buildActionMaskStr) else {
-				throw XcodeProjError(message: "Unexpected build action mask value \(buildActionMaskStr) in object \(xcID ?? "<unknown>")")
+				throw XcodeProjError.parseError(.unexpectedPropertyValue(propertyName: "buildActionMask", value: buildActionMaskStr), objectID: xcID)
 			}
 			buildActionMask = NSNumber(value: value)
 		}
@@ -36,7 +31,7 @@ public class PBXBuildPhase : PBXObject {
 				throw XcodeProjError(message: "Unexpected run only for deployment postprocessing value \(runOnlyForDeploymentPostprocessingStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Unknown value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			runOnlyForDeploymentPostprocessing = NSNumber(value: value != 0)
 		}
@@ -62,11 +57,7 @@ public class PBXBuildPhase : PBXObject {
 		if let b = runOnlyForDeploymentPostprocessing?.boolValue {mySerialization["runOnlyForDeploymentPostprocessing"] = b ? "1" : "0"}
 		mySerialization["files"] = try files.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

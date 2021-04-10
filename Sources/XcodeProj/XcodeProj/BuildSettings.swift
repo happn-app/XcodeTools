@@ -125,7 +125,7 @@ public struct BuildSettings {
 					guard !path.isEmpty else {
 						/* An empty path is ignored by Xcode with a warning AFAICT
 						 * (Xcode 12.0.1 (12A7300)) */
-						NSLog("%@", "Warning: Trying to import empty file path from \(url.path).")
+						XcodeProjConfig.logger?.warning("Trying to import empty file path from \(url.path).")
 						return []
 					}
 					
@@ -134,7 +134,7 @@ public struct BuildSettings {
 						let importedConfig = try BuildSettings(xcconfigURL: urlToImport, sourceConfig: sourceConfig, failIfFileDoesNotExist: !isOptional, seenFiles: seenFiles, allowCommaSeparatorForParameters: allowCommaSeparatorForParameters, allowSpacesAfterSharp: allowSpacesAfterSharp, allowNoSpacesAfterInclude: allowNoSpacesAfterInclude)
 						return importedConfig.settings
 					} else {
-						NSLog("%@", "Warning: Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.path).")
+						XcodeProjConfig.logger?.warning("Skipping include of \(urlToImport.absoluteString) to avoid cycling dependency from \(url.path).")
 						return []
 					}
 					

@@ -49,7 +49,7 @@ public struct BuildSettingKey : Hashable {
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		garbage = scanner.scanUpToCharacters(from: CharacterSet()) ?? ""
 		if !garbage.isEmpty {
-			NSLog("%@", "Warning: Got build setting key which seems invalid. Got garbage: “\(garbage)”. Raw key is: “\(serializedKey)”.")
+			XcodeProjConfig.logger?.warning("Got build setting key which seems invalid. Got garbage: “\(garbage)”. Raw key is: “\(serializedKey)”.")
 		}
 	}
 	

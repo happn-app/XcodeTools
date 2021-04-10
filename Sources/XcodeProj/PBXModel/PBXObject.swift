@@ -8,14 +8,62 @@ import Foundation
 @objc(PBXObject)
 public class PBXObject : NSManagedObject {
 	
-	/* Set to true to allow allocate unknown objects as PBXObjects. */
-	static let allowPBXObjectAllocation = false
-	
+	/* **************
+	   MARK: - Public
+	   ************** */
+		
 	open class func propertyRenamings() -> [String: String] {
 		return ["xcID": "id"]
 	}
 	
-	public static func unsafeInstantiate(rawObjects: [String: [String: Any]], id: String, context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws -> Self {
+	open var oneLineStringSerialization: Bool {
+		return false
+	}
+	
+	open func stringSerializationName(projectName: String) -> String? {
+		return nil
+	}
+	
+	open func knownValuesSerialized(projectName: String) throws -> [String: Any] {
+		return try ["isa": rawISA.get()]
+	}
+	
+	/**
+	All the values in the raw object, but modified w/ known values in the model. */
+	public func allSerialized(projectName: String) throws -> [String: Any] {
+		let known = try knownValuesSerialized(projectName: projectName)
+		let nonNilRawObject = rawObject ?? [:]
+		
+		let diffUnknownButExist = Set(nonNilRawObject.keys).subtracting(known.keys)
+		let diffKnownButDoNotExist = Set(known.keys).subtracting(nonNilRawObject.keys)
+		if !diffUnknownButExist.isEmpty,    let logger = XcodeProjConfig.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist.sorted())")}
+		if !diffKnownButDoNotExist.isEmpty, let logger = XcodeProjConfig.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
+		
+		return (rawObject ?? [:]).merging(known, uniquingKeysWith: { _, new in new })
+	}
+	
+	/* Sadly, we do need the project name here… */
+	public func stringSerialization(projectName: String, indentCount: Int = 0, indentBase: String = "\t") throws -> String {
+		let indent = String(repeating: indentBase, count: indentCount)
+		
+		let key = try """
+		
+		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
+		"""
+		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
+		return key + " = " + value + ";"
+			
+	}
+	
+	/* ****************
+	   MARK: - Internal
+	   **************** */
+	
+	/**
+	Instantiate a managed object if needed, or return the already instantiated
+	object from the `decodedObjects` dictionary. In case of instantiation, will
+	add the instantiated object to the `decodedObjects` dictionary. */
+	static func unsafeInstantiate(id: String, on context: NSManagedObjectContext, rawObjects: [String: [String: Any]], decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
 				throw XcodeProjError(message: "Error, expected an object of type \(self), but got something else in the decoded objects dictionary for id \(id).")
@@ -29,10 +77,10 @@ public class PBXObject : NSManagedObject {
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
 			throw XcodeProjError(message: "Given context does not have a model!")
 		}
-		guard let entity = model.entitiesByName[isa] ?? (allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
+		guard let entity = model.entitiesByName[isa] ?? (XcodeProjConfig.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
 			throw XcodeProjError(message: "Did not find isa \(isa) in the CoreData model.")
 		}
-		guard !entity.isAbstract || (allowPBXObjectAllocation && entity.name == "PBXObject") else {
+		guard !entity.isAbstract || (XcodeProjConfig.allowPBXObjectAllocation && entity.name == "PBXObject") else {
 			throw XcodeProjError(message: "Given isa \(isa) is abstract in the CoreData model (entity = \(entity.name ?? "<unknown>")")
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
@@ -87,7 +135,7 @@ public class PBXObject : NSManagedObject {
 		return (NSOrderedSet(array: v), true)
 	}
 	
-	open func fillValues(rawObject: [String: Any], rawObjects: [String: [String: Any]], context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws {
+	/*protected*/ open func fillValues(rawObject: [String: Any], rawObjects: [String: [String: Any]], context: NSManagedObjectContext, decodedObjects: inout [String: PBXObject]) throws {
 		guard context === managedObjectContext else {
 			throw XcodeProjError(message: "Internal error: asked to fill values of an object with a context != than object’s context")
 		}
@@ -97,48 +145,19 @@ public class PBXObject : NSManagedObject {
 		/* Let’s validate we know all the properties in the raw object. */
 		let renamings = Self.propertyRenamings()
 		let unknownProperties = Set(rawObject.keys).subtracting(entity.propertiesByName.keys.map{ renamings[$0] ?? $0 }).subtracting(["isa"])
-		if !unknownProperties.isEmpty {
-			NSLog("%@", "Warning: In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(xcID ?? "<unknown>"), got the following unknown properties: \(unknownProperties.sorted())")
+		if !unknownProperties.isEmpty, let logger = XcodeProjConfig.logger {
+			logger.warning("In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(xcID ?? "<unknown>"), got the following unknown properties: \(unknownProperties.sorted())")
 		}
 	}
 	
-	open var oneLineStringSerialization: Bool {
-		return false
-	}
-	
-	open func stringSerializationName(projectName: String) -> String? {
-		return nil
-	}
-	
-	open func knownValuesSerialized(projectName: String) throws -> [String: Any] {
-		return try ["isa": rawISA.get()]
-	}
-	
 	/**
-	All the values in the raw object, but modified w/ known values in the model. */
-	public func allSerialized(projectName: String) throws -> [String: Any] {
-		let known = try knownValuesSerialized(projectName: projectName)
-		let nonNilRawObject = rawObject ?? [:]
-		
-		let diffUnknownButExist = Set(nonNilRawObject.keys).subtracting(known.keys)
-		let diffKnownButDoNotExist = Set(known.keys).subtracting(nonNilRawObject.keys)
-		if !diffUnknownButExist.isEmpty {NSLog("%@", "Warning: In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist)")}
-		if !diffKnownButDoNotExist.isEmpty {NSLog("%@", "Warning: In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
-		
-		return (rawObject ?? [:]).merging(known, uniquingKeysWith: { _, new in new })
-	}
-	
-	/* Sadly, we do need the project name here… */
-	public func stringSerialization(projectName: String, indentCount: Int = 0, indentBase: String = "\t") throws -> String {
-		let indent = String(repeating: indentBase, count: indentCount)
-		
-		let key = try """
-		
-		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
-		"""
-		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
-		return key + " = " + value + ";"
-			
+	Merge both serializations. If the child serialization overrides anything from
+	the parent’s one, a warning is logged. */
+	/*protected*/ func mergeSerialization(_ parent: [String: Any], _ child: [String: Any]) -> [String: Any] {
+		return parent.merging(child, uniquingKeysWith: { current, new in
+			XcodeProjConfig.logger?.warning("Child serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			return new
+		})
 	}
 	
 	/** The xcID of the object and its associated comment. */

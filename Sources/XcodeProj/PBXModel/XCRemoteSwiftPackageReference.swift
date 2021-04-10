@@ -28,11 +28,7 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 		mySerialization["repositoryURL"] = try repositoryURL.get().absoluteString
 		mySerialization["requirement"] = try requirement.get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

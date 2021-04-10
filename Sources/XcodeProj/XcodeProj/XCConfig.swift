@@ -227,7 +227,7 @@ public struct XCConfig {
 		if isDir.boolValue {
 			/* We do not fail if the xcconfig file is a directory! This is the
 			 * observed behaviour in Xcode. It simply gives a warning. */
-			NSLog("%@", "Warning: Tried to import directory \(url.path) in an xcconfig file.")
+			XcodeProjConfig.logger?.warning("Tried to import directory \(url.path) in an xcconfig file.")
 			lines = [:]
 			return
 		}

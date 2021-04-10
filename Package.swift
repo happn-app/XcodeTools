@@ -30,7 +30,12 @@ let package = Package(
 		
 		.target(name: "Utils"),
 		
-		.target(name: "XcodeProj", dependencies: [.target(name: "Utils")], resources: [Resource.process("PBXModel.xcdatamodeld")]),
+		.target(name: "XcodeProj", dependencies: [
+			.target(name: "Utils"),
+			.product(name: "Logging", package: "swift-log")
+		], resources: [
+			Resource.process("PBXModel.xcdatamodeld")
+		]),
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
 		.target(name: "libxct", dependencies: [

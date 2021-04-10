@@ -23,7 +23,7 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 				throw XcodeProjError(message: "Unexpected show env vars in log value \(showEnvVarsInLogStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for showEnvVarsInLog \(showEnvVarsInLogStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Suspicious value for showEnvVarsInLog \(showEnvVarsInLogStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			showEnvVarsInLog = NSNumber(value: value != 0)
 		}
@@ -33,7 +33,7 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 				throw XcodeProjError(message: "Unexpected always out of date value \(alwaysOutOfDateStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Suspicious value for alwaysOutOfDate \(alwaysOutOfDateStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Suspicious value for alwaysOutOfDate \(alwaysOutOfDateStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			alwaysOutOfDate = NSNumber(value: value != 0)
 		}
@@ -54,11 +54,7 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		mySerialization["shellPath"]   = try shellPath.get()
 		mySerialization["shellScript"] = try shellScript.get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

@@ -7,14 +7,9 @@ import Foundation
 public class XCConfigurationList : PBXObject {
 	
 	open override class func propertyRenamings() -> [String : String] {
-		let mine = [
-			"buildConfigurations_cd": "buildConfigurations",
-		]
-		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
-			precondition(current == new, "Incompatible property renamings")
-			NSLog("%@", "Warning: Internal logic shadiness: Property rename has been declared twice for destination \(current), in class \(self)")
-			return current
-		})
+		return super.propertyRenamings().mergingUnambiguous([
+			"buildConfigurations_cd": "buildConfigurations"
+		])
 	}
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
@@ -28,12 +23,12 @@ public class XCConfigurationList : PBXObject {
 			case "0": defaultConfigurationIsVisible = false
 			case "1": defaultConfigurationIsVisible = true /* I’ve never encountered this case; I assume the value would be 1 for a true value. */
 			default:
-				NSLog("%@", "Warning: Unknown defaultConfigurationIsVisible value: \(defaultConfigurationIsVisibleStr)")
+				XcodeProjConfig.logger?.warning("Unknown defaultConfigurationIsVisible value: \(defaultConfigurationIsVisibleStr)")
 				defaultConfigurationIsVisible = nil
 		}
 		
 		let buildConfigurationIDs: [String] = try rawObject.get("buildConfigurations")
-		buildConfigurations = try buildConfigurationIDs.map{ try XCBuildConfiguration.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		buildConfigurations = try buildConfigurationIDs.map{ try XCBuildConfiguration.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
 	public var buildConfigurations: [XCBuildConfiguration]? {
@@ -51,7 +46,7 @@ public class XCConfigurationList : PBXObject {
 			usedByType = t.rawISA ?? "(null)"
 			usedByName = t.name ?? "(null)"
 		} else {
-			NSLog("%@", "Warning: Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
+			XcodeProjConfig.logger?.warning("Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
 			return nil
 		}
 		return "Build configuration list for \(usedByType) \"\(usedByName)\""
@@ -63,11 +58,7 @@ public class XCConfigurationList : PBXObject {
 		if let v = defaultConfigurationIsVisible?.boolValue {mySerialization["defaultConfigurationIsVisible"] = v ? "1" : "0"}
 		mySerialization["buildConfigurations"] = try buildConfigurations.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

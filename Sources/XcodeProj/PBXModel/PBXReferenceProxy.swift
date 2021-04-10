@@ -12,7 +12,7 @@ public class PBXReferenceProxy : PBXFileElement {
 		fileType = try rawObject.get("fileType")
 		
 		let remoteRefID: String = try rawObject.get("remoteRef")
-		remoteRef = try PBXContainerItemProxy.unsafeInstantiate(rawObjects: rawObjects, id: remoteRefID, context: context, decodedObjects: &decodedObjects)
+		remoteRef = try PBXContainerItemProxy.unsafeInstantiate(id: remoteRefID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
@@ -20,11 +20,7 @@ public class PBXReferenceProxy : PBXFileElement {
 		mySerialization["fileType"]  = try fileType.get()
 		mySerialization["remoteRef"] = try remoteRef.get().xcIDAndComment(projectName: projectName).get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

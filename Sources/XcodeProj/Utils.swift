@@ -3,6 +3,24 @@ import Foundation
 
 
 
+extension Dictionary where Value : Equatable {
+	
+	/**
+	Same as `merging(_:, uniquingKeysWith:)`, but other dictionary must be fully
+	distinct from client (set of keys is distinct) or value must be the same for
+	the same keys, otherwise you get a crash.
+	
+	- Note: Requires `Value` of the `Dictionary` to be `Equatable` only to be
+	able to check if values are equal in case of same key in two dictionaries. */
+	func mergingUnambiguous(_ other: [Key: Value]) -> [Key: Value] {
+		return merging(other, uniquingKeysWith: { current, new in
+			precondition(current == new, "Incompatible property renamings")
+			return current
+		})
+	}
+	
+}
+
 extension Dictionary {
 	
 	func get<T>(_ key: Key) throws -> T {

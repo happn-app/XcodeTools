@@ -7,15 +7,10 @@ import Foundation
 public class PBXTarget : PBXObject {
 	
 	open override class func propertyRenamings() -> [String : String] {
-		let mine = [
+		return super.propertyRenamings().mergingUnambiguous([
 			"buildPhases_cd": "buildPhases",
 			"dependencies_cd": "dependencies"
-		]
-		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
-			precondition(current == new, "Incompatible property renamings")
-			NSLog("%@", "Warning: Internal logic shadiness: Property rename has been declared twice for destination \(current), in class \(self)")
-			return current
-		})
+		])
 	}
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
@@ -25,13 +20,13 @@ public class PBXTarget : PBXObject {
 		productName = try rawObject.get("productName")
 		
 		let dependenciesIDs: [String] = try rawObject.get("dependencies")
-		dependencies = try dependenciesIDs.map{ try PBXTargetDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		dependencies = try dependenciesIDs.map{ try PBXTargetDependency.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
 		let buildPhasesIDs: [String] = try rawObject.get("buildPhases")
-		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
 		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
-		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(rawObjects: rawObjects, id: buildConfigurationListID, context: context, decodedObjects: &decodedObjects)
+		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(id: buildConfigurationListID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
 	}
 	
 	public var buildPhases: [PBXBuildPhase]? {
@@ -56,11 +51,7 @@ public class PBXTarget : PBXObject {
 		mySerialization["buildPhases"]            = try buildPhases.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
 		mySerialization["buildConfigurationList"] = try buildConfigurationList.get().xcIDAndComment(projectName: projectName).get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

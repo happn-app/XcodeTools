@@ -12,7 +12,7 @@ public class XCSwiftPackageProductDependency : PBXObject {
 		productName = try rawObject.get("productName")
 		
 		let packageID: String? = try rawObject.getIfExists("package")
-		package = try packageID.flatMap{ try XCRemoteSwiftPackageReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		package = try packageID.flatMap{ try XCRemoteSwiftPackageReference.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
@@ -20,11 +20,7 @@ public class XCSwiftPackageProductDependency : PBXObject {
 		if let p = package {mySerialization["package"] = try p.xcIDAndComment(projectName: projectName).get()}
 		mySerialization["productName"] = try productName.get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 	public override func stringSerializationName(projectName: String) -> String? {

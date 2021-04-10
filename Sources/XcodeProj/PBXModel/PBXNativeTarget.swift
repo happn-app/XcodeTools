@@ -7,31 +7,26 @@ import Foundation
 public class PBXNativeTarget : PBXTarget {
 	
 	open override class func propertyRenamings() -> [String : String] {
-		let mine = [
+		return super.propertyRenamings().mergingUnambiguous([
 			"buildRules_cd": "buildRules",
 			"packageProductDependencies_cd": "packageProductDependencies"
-		]
-		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
-			precondition(current == new, "Incompatible property renamings")
-			NSLog("%@", "Warning: Internal logic shadiness: Property rename has been declared twice for destination \(current), in class \(self)")
-			return current
-		})
+		])
 	}
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
 		let productReferenceID: String? = try rawObject.getIfExists("productReference")
-		productReference = try productReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		productReference = try productReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
 		productType = try rawObject.get("productType")
 		productInstallPath = try rawObject.getIfExists("productInstallPath")
 		
 		let buildRulesIDs: [String]? = try rawObject.getIfExists("buildRules")
-		buildRules = try buildRulesIDs?.map{ try PBXBuildRule.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		buildRules = try buildRulesIDs?.map{ try PBXBuildRule.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
 		let packageProductDependenciesIDs: [String]? = try rawObject.getIfExists("packageProductDependencies")
-		packageProductDependencies = try packageProductDependenciesIDs?.map{ try XCSwiftPackageProductDependency.unsafeInstantiate(rawObjects: rawObjects, id: $0, context: context, decodedObjects: &decodedObjects) }
+		packageProductDependencies = try packageProductDependenciesIDs?.map{ try XCSwiftPackageProductDependency.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
 	public var buildRules: [PBXBuildRule]? {
@@ -52,11 +47,7 @@ public class PBXNativeTarget : PBXTarget {
 		if let r = packageProductDependencies {mySerialization["packageProductDependencies"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
 		mySerialization["productType"] = try productType.get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 }

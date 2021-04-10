@@ -67,9 +67,9 @@ public struct PBXProj {
 		rootObject = try context.performAndWait{
 			var decodedObjects = [String: PBXObject]()
 			for key in ro.keys {
-				_ = try PBXObject.unsafeInstantiate(rawObjects: ro, id: key, context: context, decodedObjects: &decodedObjects)
+				_ = try PBXObject.unsafeInstantiate(id: key, on: context, rawObjects: ro, decodedObjects: &decodedObjects)
 			}
-			let ret = try PBXProject.unsafeInstantiate(rawObjects: ro, id: roid, context: context, decodedObjects: &decodedObjects)
+			let ret = try PBXProject.unsafeInstantiate(id: roid, on: context, rawObjects: ro, decodedObjects: &decodedObjects)
 			do {
 				try context.save()
 			} catch {

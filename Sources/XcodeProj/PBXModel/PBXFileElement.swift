@@ -32,16 +32,11 @@ public class PBXFileElement : PBXObject {
 	}
 	
 	open override class func propertyRenamings() -> [String : String] {
-		let mine = [
+		return super.propertyRenamings().mergingUnambiguous([
 			"rawName": "name",
 			"rawPath": "path",
 			"rawSourceTree": "sourceTree"
-		]
-		return super.propertyRenamings().merging(mine, uniquingKeysWith: { current, new in
-			precondition(current == new, "Incompatible property renamings")
-			NSLog("%@", "Warning: Internal logic shadiness: Property rename has been declared twice for destination \(current), in class \(self)")
-			return current
-		})
+		])
 	}
 	
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
@@ -69,7 +64,7 @@ public class PBXFileElement : PBXObject {
 				throw XcodeProjError(message: "Unexpected uses tabs value \(usesTabsStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for usesTabs \(usesTabsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Unknown value for usesTabs \(usesTabsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			usesTabs = NSNumber(value: value != 0)
 		}
@@ -78,7 +73,7 @@ public class PBXFileElement : PBXObject {
 				throw XcodeProjError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
 			}
 			if value != 0 && value != 1 {
-				NSLog("%@", "Warning: Unknown value for wrapsLines \(wrapsLinesStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
+				XcodeProjConfig.logger?.warning("Unknown value for wrapsLines \(wrapsLinesStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
 			}
 			wrapsLines = NSNumber(value: value != 0)
 		}
@@ -98,11 +93,7 @@ public class PBXFileElement : PBXObject {
 		if let b = wrapsLines?.boolValue    {mySerialization["wrapsLines"] = b ? "1" : "0"}
 		mySerialization["sourceTree"] = try rawSourceTree.get()
 		
-		let parentSerialization = try super.knownValuesSerialized(projectName: projectName)
-		return parentSerialization.merging(mySerialization, uniquingKeysWith: { current, new in
-			NSLog("%@", "Warning: My serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
-			return new
-		})
+		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
 	/** Subclasses can override if needed. */
@@ -140,7 +131,7 @@ public class PBXFileElement : PBXObject {
 					}
 				} else {
 					guard let project = (self as? PBXGroup)?.projectForMainGroup else {
-						NSLog("%@", "Warning: Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
+						XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
 					/* I don’t know the role of project.projectRoot. I tried
@@ -165,12 +156,12 @@ public class PBXFileElement : PBXObject {
 					return nil
 				}
 				if !path.starts(with: "/") {
-					NSLog("%@", "Warning: Got an absolute source tree in \(xcID ?? "<unknown object>"), but file element path does not start w/ a slash!")
+					XcodeProjConfig.logger?.warning("Got an absolute source tree in \(xcID ?? "<unknown object>"), but file element path does not start w/ a slash!")
 				}
 				return (nil, path)
 				
 			case .unknown:
-				NSLog("%@", "Warning: Asked resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
+				XcodeProjConfig.logger?.warning("Asked resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
 				/* I guess? */
 				return nil
 				
