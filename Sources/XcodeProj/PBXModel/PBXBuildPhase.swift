@@ -15,26 +15,13 @@ public class PBXBuildPhase : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		name = try rawObject.getIfExists("name")
+		name = try rawObject.getIfExistsForParse("name", xcID)
 		
-		let filesIDs: [String] = try rawObject.get("files")
+		let filesIDs: [String] = try rawObject.getForParse("files", xcID)
 		files = try filesIDs.map{ try PBXBuildFile.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		if let buildActionMaskStr: String = try rawObject.getIfExists("buildActionMask") {
-			guard let value = Int32(buildActionMaskStr) else {
-				throw XcodeProjError.parseError(.unexpectedPropertyValue(propertyName: "buildActionMask", value: buildActionMaskStr), objectID: xcID)
-			}
-			buildActionMask = NSNumber(value: value)
-		}
-		if let runOnlyForDeploymentPostprocessingStr: String = try rawObject.getIfExists("runOnlyForDeploymentPostprocessing") {
-			guard let value = Int16(runOnlyForDeploymentPostprocessingStr) else {
-				throw XcodeProjError(message: "Unexpected run only for deployment postprocessing value \(runOnlyForDeploymentPostprocessingStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Unknown value for runOnlyForDeploymentPostprocessing \(runOnlyForDeploymentPostprocessingStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			runOnlyForDeploymentPostprocessing = NSNumber(value: value != 0)
-		}
+		buildActionMask = try rawObject.getInt32AsNumberIfExistsForParse("buildActionMask", xcID)
+		runOnlyForDeploymentPostprocessing = try rawObject.getBoolAsNumberIfExistsForParse("runOnlyForDeploymentPostprocessing", xcID)
 	}
 	
 	public var files: [PBXBuildFile]? {
@@ -55,7 +42,7 @@ public class PBXBuildPhase : PBXObject {
 		if let n = name                                          {mySerialization["name"] = n}
 		if let m = buildActionMask                               {mySerialization["buildActionMask"] = m.stringValue}
 		if let b = runOnlyForDeploymentPostprocessing?.boolValue {mySerialization["runOnlyForDeploymentPostprocessing"] = b ? "1" : "0"}
-		mySerialization["files"] = try files.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		mySerialization["files"] = try files.getForSerialization("files", xcID).getIDsAndCommentsForSerialization("files", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

@@ -15,11 +15,11 @@ public class XCBuildConfiguration : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		name = try rawObject.get("name")
+		name = try rawObject.getForParse("name", xcID)
 		
-		rawBuildSettings = try rawObject.get("buildSettings")
+		rawBuildSettings = try rawObject.getForParse("buildSettings", xcID)
 		
-		let baseConfigurationReferenceID: String? = try rawObject.getIfExists("baseConfigurationReference")
+		let baseConfigurationReferenceID: String? = try rawObject.getIfExistsForParse("baseConfigurationReference", xcID)
 		baseConfigurationReference = try baseConfigurationReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
@@ -29,9 +29,9 @@ public class XCBuildConfiguration : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let c = baseConfigurationReference {mySerialization["baseConfigurationReference"] = try c.xcIDAndComment(projectName: projectName).get()}
-		mySerialization["name"]          = try name.get()
-		mySerialization["buildSettings"] = try rawBuildSettings.get()
+		if let c = baseConfigurationReference {mySerialization["baseConfigurationReference"] = try c.getIDAndCommentForSerialization("baseConfigurationReference", xcID, projectName: projectName)}
+		mySerialization["name"]          = try name.getForSerialization("name", xcID)
+		mySerialization["buildSettings"] = try rawBuildSettings.getForSerialization("buildSettings", xcID)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17709" systemVersion="20C69" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17709" systemVersion="20D91" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1">
     <entity name="PBXAggregateTarget" representedClassName="PBXAggregateTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXAppleScriptBuildPhase" representedClassName="PBXAppleScriptBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXBuildFile" representedClassName="PBXBuildFile" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
@@ -162,7 +162,7 @@
         <relationship name="list_" optional="YES" maxCount="1" deletionRule="Nullify" ordered="YES" destinationEntity="XCConfigurationList" inverseName="buildConfigurations_cd" inverseEntity="XCConfigurationList"/>
     </entity>
     <entity name="XCConfigurationList" representedClassName="XCConfigurationList" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
-        <attribute name="defaultConfigurationIsVisible" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
+        <attribute name="defaultConfigurationIsVisible" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="defaultConfigurationName" optional="YES" attributeType="String"/>
         <relationship name="buildConfigurations_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="XCBuildConfiguration" inverseName="list_" inverseEntity="XCBuildConfiguration"/>
         <relationship name="project_" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="buildConfigurationList" inverseEntity="PBXProject"/>
@@ -212,7 +212,7 @@
         <element name="PBXVariantGroup" positionX="-424.0625" positionY="-468.58203125" width="128" height="73"/>
         <element name="ProjectReference" positionX="-751.7265625" positionY="-537.81640625" width="128" height="88"/>
         <element name="XCBuildConfiguration" positionX="269.82421875" positionY="-545.921875" width="254.86328125" height="103"/>
-        <element name="XCConfigurationList" positionX="670.90625" positionY="-220.73046875" width="183.18359375" height="118"/>
+        <element name="XCConfigurationList" positionX="670.90625" positionY="-220.73046875" width="183.18359375" height="104"/>
         <element name="XCRemoteSwiftPackageReference" positionX="369.375" positionY="-257.44140625" width="195.94140625" height="103"/>
         <element name="XCSwiftPackageProductDependency" positionX="-149.6484375" positionY="-330.59765625" width="223.52734375" height="118"/>
         <element name="XCVersionGroup" positionX="-373.62109375" positionY="-370.39453125" width="128" height="88"/>

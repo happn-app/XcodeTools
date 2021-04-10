@@ -9,16 +9,16 @@ public class PBXTargetDependency : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		name = try rawObject.getIfExists("name")
-		platformFilter = try rawObject.getIfExists("platformFilter")
+		name = try rawObject.getIfExistsForParse("name", xcID)
+		platformFilter = try rawObject.getIfExistsForParse("platformFilter", xcID)
 		
-		let productRefID: String? = try rawObject.getIfExists("productRef")
+		let productRefID: String? = try rawObject.getIfExistsForParse("productRef", xcID)
 		productRef = try productRefID.flatMap{ try XCSwiftPackageProductDependency.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let targetID: String? = try rawObject.getIfExists("target")
+		let targetID: String? = try rawObject.getIfExistsForParse("target", xcID)
 		target = try targetID.flatMap{ try PBXTarget.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let targetProxyID: String? = try rawObject.getIfExists("targetProxy")
+		let targetProxyID: String? = try rawObject.getIfExistsForParse("targetProxy", xcID)
 		targetProxy = try targetProxyID.flatMap{ try PBXContainerItemProxy.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
@@ -30,9 +30,9 @@ public class PBXTargetDependency : PBXObject {
 		var mySerialization = [String: Any]()
 		if let n = name           {mySerialization["name"] = n}
 		if let f = platformFilter {mySerialization["platformFilter"] = f}
-		if let r = productRef     {mySerialization["productRef"] = try r.xcIDAndComment(projectName: projectName).get()}
-		if let t = target         {mySerialization["target"] = try t.xcIDAndComment(projectName: projectName).get()}
-		if let t = targetProxy    {mySerialization["targetProxy"] = try t.xcIDAndComment(projectName: projectName).get()}
+		if let r = productRef     {mySerialization["productRef"] = try r.getIDAndCommentForSerialization("productRef", xcID, projectName: projectName)}
+		if let t = target         {mySerialization["target"] = try t.getIDAndCommentForSerialization("target", xcID, projectName: projectName)}
+		if let t = targetProxy    {mySerialization["targetProxy"] = try t.getIDAndCommentForSerialization("targetProxy", xcID, projectName: projectName)}
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

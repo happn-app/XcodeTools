@@ -42,41 +42,15 @@ public class PBXFileElement : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		rawSourceTree = try rawObject.get("sourceTree")
+		rawSourceTree = try rawObject.getForParse("sourceTree", xcID)
 		
-		rawName = try rawObject.getIfExists("name")
-		rawPath = try rawObject.getIfExists("path")
+		rawName = try rawObject.getIfExistsForParse("name", xcID)
+		rawPath = try rawObject.getIfExistsForParse("path", xcID)
 		
-		if let indentWidthStr: String = try rawObject.getIfExists("indentWidth") {
-			guard let value = Int16(indentWidthStr) else {
-				throw XcodeProjError(message: "Unexpected indent width value \(indentWidthStr) in object \(xcID ?? "<unknown>")")
-			}
-			indentWidth = NSNumber(value: value)
-		}
-		if let tabWidthStr: String = try rawObject.getIfExists("tabWidth") {
-			guard let value = Int16(tabWidthStr) else {
-				throw XcodeProjError(message: "Unexpected tab width value \(tabWidthStr) in object \(xcID ?? "<unknown>")")
-			}
-			tabWidth = NSNumber(value: value)
-		}
-		if let usesTabsStr: String = try rawObject.getIfExists("usesTabs") {
-			guard let value = Int16(usesTabsStr) else {
-				throw XcodeProjError(message: "Unexpected uses tabs value \(usesTabsStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Unknown value for usesTabs \(usesTabsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			usesTabs = NSNumber(value: value != 0)
-		}
-		if let wrapsLinesStr: String = try rawObject.getIfExists("wrapsLines") {
-			guard let value = Int16(wrapsLinesStr) else {
-				throw XcodeProjError(message: "Unexpected wraps lines value \(wrapsLinesStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Unknown value for wrapsLines \(wrapsLinesStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			wrapsLines = NSNumber(value: value != 0)
-		}
+		indentWidth = try rawObject.getInt16AsNumberIfExistsForParse("indentWidth", xcID)
+		tabWidth = try rawObject.getInt16AsNumberIfExistsForParse("tabWidth", xcID)
+		usesTabs = try rawObject.getBoolAsNumberIfExistsForParse("usesTabs", xcID)
+		wrapsLines = try rawObject.getBoolAsNumberIfExistsForParse("wrapsLines", xcID)
 	}
 	
 	open override func stringSerializationName(projectName: String) -> String? {
@@ -91,7 +65,7 @@ public class PBXFileElement : PBXObject {
 		if let v = indentWidth?.stringValue {mySerialization["indentWidth"] = v}
 		if let b = usesTabs?.boolValue      {mySerialization["usesTabs"] = b ? "1" : "0"}
 		if let b = wrapsLines?.boolValue    {mySerialization["wrapsLines"] = b ? "1" : "0"}
-		mySerialization["sourceTree"] = try rawSourceTree.get()
+		mySerialization["sourceTree"] = try rawSourceTree.getForSerialization("sourceTree", nil)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

@@ -9,14 +9,8 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		do {
-			let repositoryURLStr: String = try rawObject.get("repositoryURL")
-			guard let url = URL(string: repositoryURLStr) else {
-				throw XcodeProjError(message: "Expected repositoryURL to be a valid URL in object w/ id \(xcID ?? "<unknown>") but got \(repositoryURLStr)")
-			}
-			repositoryURL = url
-		}
-		requirement = try rawObject.get("requirement")
+		repositoryURL = try rawObject.getURLForParse("repositoryURL", xcID)
+		requirement = try rawObject.getForParse("requirement", xcID)
 	}
 	
 	public override func stringSerializationName(projectName: String) -> String? {
@@ -25,8 +19,8 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["repositoryURL"] = try repositoryURL.get().absoluteString
-		mySerialization["requirement"] = try requirement.get()
+		mySerialization["repositoryURL"] = try repositoryURL.getForSerialization("repositoryURL", xcID).absoluteString
+		mySerialization["requirement"] = try requirement.getForSerialization("requirement", xcID)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

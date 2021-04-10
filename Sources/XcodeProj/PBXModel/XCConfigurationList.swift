@@ -15,19 +15,12 @@ public class XCConfigurationList : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		defaultConfigurationName = try rawObject.getIfExists("defaultConfigurationName")
+		defaultConfigurationName = try rawObject.getIfExistsForParse("defaultConfigurationName", xcID)
 		
 		/* No idea what defaultConfigurationIsVisible changes, but it exists… */
-		let defaultConfigurationIsVisibleStr: String = try rawObject.get("defaultConfigurationIsVisible")
-		switch try rawObject.get("defaultConfigurationIsVisible") as String {
-			case "0": defaultConfigurationIsVisible = false
-			case "1": defaultConfigurationIsVisible = true /* I’ve never encountered this case; I assume the value would be 1 for a true value. */
-			default:
-				XcodeProjConfig.logger?.warning("Unknown defaultConfigurationIsVisible value: \(defaultConfigurationIsVisibleStr)")
-				defaultConfigurationIsVisible = nil
-		}
+		defaultConfigurationIsVisible = try rawObject.getBoolForParse("defaultConfigurationIsVisible", xcID)
 		
-		let buildConfigurationIDs: [String] = try rawObject.get("buildConfigurations")
+		let buildConfigurationIDs: [String] = try rawObject.getForParse("buildConfigurations", xcID)
 		buildConfigurations = try buildConfigurationIDs.map{ try XCBuildConfiguration.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
@@ -54,9 +47,9 @@ public class XCConfigurationList : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let n = defaultConfigurationName                 {mySerialization["defaultConfigurationName"] = n}
-		if let v = defaultConfigurationIsVisible?.boolValue {mySerialization["defaultConfigurationIsVisible"] = v ? "1" : "0"}
-		mySerialization["buildConfigurations"] = try buildConfigurations.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		if let n = defaultConfigurationName {mySerialization["defaultConfigurationName"] = n}
+		mySerialization["defaultConfigurationIsVisible"] = defaultConfigurationIsVisible ? "1" : "0"
+		mySerialization["buildConfigurations"]           = try buildConfigurations.getForSerialization("buildConfigurations", xcID).getIDsAndCommentsForSerialization("buildConfigurations", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

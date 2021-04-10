@@ -25,7 +25,7 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	open func knownValuesSerialized(projectName: String) throws -> [String: Any] {
-		return try ["isa": rawISA.get()]
+		return try ["isa": rawISA.getForSerialization("isa", xcID)]
 	}
 	
 	/**
@@ -48,7 +48,7 @@ public class PBXObject : NSManagedObject {
 		
 		let key = try """
 		
-		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).get()))
+		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).getForSerialization("xcID", xcID)))
 		"""
 		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
@@ -71,8 +71,8 @@ public class PBXObject : NSManagedObject {
 			return result
 		}
 		
-		let rawObject: [String: Any] = try rawObjects.get(id)
-		let isa: String = try rawObject.get("isa")
+		let rawObject: [String: Any] = try rawObjects.getForParse(id, nil)
+		let isa: String = try rawObject.getForParse("isa", id)
 		
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
 			throw XcodeProjError(message: "Given context does not have a model!")
@@ -190,8 +190,8 @@ public class PBXObject : NSManagedObject {
 				
 			case let v as ProjectReference:
 				let dic = try [
-					"ProjectRef": v.projectRef?.xcIDAndComment(projectName: projectName).get(),
-					"ProductGroup": v.productGroup?.xcIDAndComment(projectName: projectName).get()
+					"ProjectRef": v.projectRef?.getIDAndCommentForSerialization("ProjectRef", xcID, projectName: projectName),
+					"ProductGroup": v.productGroup?.getIDAndCommentForSerialization("ProductGroup", xcID, projectName: projectName)
 				]
 				ret += try serializeAnyToString(dic, isRoot: isRoot, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneline)
 				

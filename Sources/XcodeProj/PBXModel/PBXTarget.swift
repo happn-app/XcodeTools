@@ -16,16 +16,16 @@ public class PBXTarget : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		name = try rawObject.get("name")
-		productName = try rawObject.get("productName")
+		name = try rawObject.getForParse("name", xcID)
+		productName = try rawObject.getForParse("productName", xcID)
 		
-		let dependenciesIDs: [String] = try rawObject.get("dependencies")
+		let dependenciesIDs: [String] = try rawObject.getForParse("dependencies", xcID)
 		dependencies = try dependenciesIDs.map{ try PBXTargetDependency.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let buildPhasesIDs: [String] = try rawObject.get("buildPhases")
+		let buildPhasesIDs: [String] = try rawObject.getForParse("buildPhases", xcID)
 		buildPhases = try buildPhasesIDs.map{ try PBXBuildPhase.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
+		let buildConfigurationListID: String = try rawObject.getForParse("buildConfigurationList", xcID)
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(id: buildConfigurationListID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
 	}
 	
@@ -45,11 +45,11 @@ public class PBXTarget : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["name"]                   = try name.get()
-		mySerialization["productName"]            = try productName.get()
-		mySerialization["dependencies"]           = try dependencies.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
-		mySerialization["buildPhases"]            = try buildPhases.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
-		mySerialization["buildConfigurationList"] = try buildConfigurationList.get().xcIDAndComment(projectName: projectName).get()
+		mySerialization["name"]                   = try name.getForSerialization("name", xcID)
+		mySerialization["productName"]            = try productName.getForSerialization("productName", xcID)
+		mySerialization["dependencies"]           = try dependencies.getForSerialization("dependencies", xcID).getIDsAndCommentsForSerialization("dependencies", xcID, projectName: projectName)
+		mySerialization["buildPhases"]            = try buildPhases.getForSerialization("buildPhases", xcID).getIDsAndCommentsForSerialization("buildPhases", xcID, projectName: projectName)
+		mySerialization["buildConfigurationList"] = try buildConfigurationList.getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

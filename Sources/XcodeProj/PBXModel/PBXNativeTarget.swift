@@ -16,16 +16,16 @@ public class PBXNativeTarget : PBXTarget {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		let productReferenceID: String? = try rawObject.getIfExists("productReference")
+		let productReferenceID: String? = try rawObject.getIfExistsForParse("productReference", xcID)
 		productReference = try productReferenceID.flatMap{ try PBXFileReference.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		productType = try rawObject.get("productType")
-		productInstallPath = try rawObject.getIfExists("productInstallPath")
+		productType = try rawObject.getForParse("productType", xcID)
+		productInstallPath = try rawObject.getIfExistsForParse("productInstallPath", xcID)
 		
-		let buildRulesIDs: [String]? = try rawObject.getIfExists("buildRules")
+		let buildRulesIDs: [String]? = try rawObject.getIfExistsForParse("buildRules", xcID)
 		buildRules = try buildRulesIDs?.map{ try PBXBuildRule.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let packageProductDependenciesIDs: [String]? = try rawObject.getIfExists("packageProductDependencies")
+		let packageProductDependenciesIDs: [String]? = try rawObject.getIfExistsForParse("packageProductDependencies", xcID)
 		packageProductDependencies = try packageProductDependenciesIDs?.map{ try XCSwiftPackageProductDependency.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
@@ -41,11 +41,11 @@ public class PBXNativeTarget : PBXTarget {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let r = buildRules                 {mySerialization["buildRules"]                 = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
-		if let r = productReference           {mySerialization["productReference"]           = try r.xcIDAndComment(projectName: projectName).get()}
+		if let r = buildRules                 {mySerialization["buildRules"]                 = try r.getIDsAndCommentsForSerialization("buildRules", xcID, projectName: projectName)}
+		if let r = productReference           {mySerialization["productReference"]           = try r.getIDAndCommentForSerialization("productReference", xcID, projectName: projectName)}
 		if let p = productInstallPath         {mySerialization["productInstallPath"]         = p}
-		if let r = packageProductDependencies {mySerialization["packageProductDependencies"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
-		mySerialization["productType"] = try productType.get()
+		if let r = packageProductDependencies {mySerialization["packageProductDependencies"] = try r.getIDsAndCommentsForSerialization("packageProductDependencies", xcID, projectName: projectName)}
+		mySerialization["productType"] = try productType.getForSerialization("productType", xcID)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

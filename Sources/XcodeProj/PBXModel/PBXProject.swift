@@ -17,53 +17,44 @@ public class PBXProject : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		attributes = try rawObject.getIfExists("attributes")
+		attributes = try rawObject.getIfExistsForParse("attributes", xcID)
 		
-		compatibilityVersion = try rawObject.get("compatibilityVersion")
+		compatibilityVersion = try rawObject.getForParse("compatibilityVersion", xcID)
 		
-		projectDirPath = try rawObject.get("projectDirPath")
-		projectRoot = try rawObject.getIfExists("projectRoot")
+		projectDirPath = try rawObject.getForParse("projectDirPath", xcID)
+		projectRoot = try rawObject.getIfExistsForParse("projectRoot", xcID)
 		if !(projectRoot?.isEmpty ?? true) {
 			XcodeProjConfig.logger?.warning("Suspicious non empty value for projectRoot: \(projectRoot ?? "<nil>"). This probably changes nothing, but I can’t guarantee it.")
 		}
 		
-		knownRegions = try rawObject.get("knownRegions")
-		developmentRegion = try rawObject.get("developmentRegion")
+		knownRegions = try rawObject.getForParse("knownRegions", xcID)
+		developmentRegion = try rawObject.getForParse("developmentRegion", xcID)
 		
-		do {
-			let hasScannedForEncodingsStr: String = try rawObject.get("hasScannedForEncodings")
-			guard let value = Int(hasScannedForEncodingsStr) else {
-				throw XcodeProjError(message: "Unexpected has scanned for encodings value \(hasScannedForEncodingsStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Suspicious value for hasScannedForEncodings \(hasScannedForEncodingsStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			hasScannedForEncodings = (value != 0)
-		}
+		hasScannedForEncodings = try rawObject.getBoolForParse("hasScannedForEncodings", xcID)
 		
-		let targetIDs: [String] = try rawObject.get("targets")
+		let targetIDs: [String] = try rawObject.getForParse("targets", xcID)
 		targets = try targetIDs.map{ try PBXTarget.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let packageReferenceIDs: [String]? = try rawObject.getIfExists("packageReferences")
+		let packageReferenceIDs: [String]? = try rawObject.getIfExistsForParse("packageReferences", xcID)
 		packageReferences = try packageReferenceIDs.flatMap{ try $0.map{ try XCRemoteSwiftPackageReference.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) } }
 		
-		let mainGroupIDs: String = try rawObject.get("mainGroup")
+		let mainGroupIDs: String = try rawObject.getForParse("mainGroup", xcID)
 		mainGroup = try PBXGroup.unsafeInstantiate(id: mainGroupIDs, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
 		
-		let productRefGroupID: String? = try rawObject.getIfExists("productRefGroup")
+		let productRefGroupID: String? = try rawObject.getIfExistsForParse("productRefGroup", xcID)
 		productRefGroup = try productRefGroupID.flatMap{ try PBXGroup.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 		
-		let buildConfigurationListID: String = try rawObject.get("buildConfigurationList")
+		let buildConfigurationListID: String = try rawObject.getForParse("buildConfigurationList", xcID)
 		buildConfigurationList = try XCConfigurationList.unsafeInstantiate(id: buildConfigurationListID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
 		
-		if let rawProjectReferences: [[String: String]] = try rawObject.getIfExists("projectReferences") {
+		if let rawProjectReferences: [[String: String]] = try rawObject.getIfExistsForParse("projectReferences", xcID) {
 			projectReferences = try rawProjectReferences.map{ rawProjectReference in
 				guard
 					let productGroupID = rawProjectReference["ProductGroup"],
 					let projectRefID = rawProjectReference["ProjectRef"],
 					rawProjectReference.count == 2
 				else {
-					throw XcodeProjError(message: "Invalid (or unknown) project reference")
+					throw XcodeProjError.parseError(.unknownOrInvalidProjectReference(rawProjectReference), objectID: xcID)
 				}
 				let projectReference = ProjectReference(context: context)
 				projectReference.productGroup = try PBXFileElement.unsafeInstantiate(id: productGroupID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
@@ -96,19 +87,19 @@ public class PBXProject : PBXObject {
 		var mySerialization = [String: Any]()
 		if let a = attributes        {mySerialization["attributes"]        = a}
 		if let r = projectRoot       {mySerialization["projectRoot"]       = r}
-		if let r = packageReferences {mySerialization["packageReferences"] = try r.map{ try $0.xcIDAndComment(projectName: projectName).get() }}
-		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.xcIDAndComment(projectName: projectName).get()}
+		if let r = packageReferences {mySerialization["packageReferences"] = try r.getIDsAndCommentsForSerialization("packageReferences", xcID, projectName: projectName)}
+		if let r = productRefGroup   {mySerialization["productRefGroup"]   = try r.getIDAndCommentForSerialization("productRefGroup", xcID, projectName: projectName)}
 		if let r = projectReferences {
 			mySerialization["projectReferences"] = r
 		}
-		mySerialization["compatibilityVersion"]   = try compatibilityVersion.get()
-		mySerialization["projectDirPath"]         = try projectDirPath.get()
-		mySerialization["knownRegions"]           = try knownRegions.get()
-		mySerialization["developmentRegion"]      = try developmentRegion.get()
+		mySerialization["compatibilityVersion"]   = try compatibilityVersion.getForSerialization("compatibilityVersion", xcID)
+		mySerialization["projectDirPath"]         = try projectDirPath.getForSerialization("projectDirPath", xcID)
+		mySerialization["knownRegions"]           = try knownRegions.getForSerialization("knownRegions", xcID)
+		mySerialization["developmentRegion"]      = try developmentRegion.getForSerialization("developmentRegion", xcID)
 		mySerialization["hasScannedForEncodings"] = hasScannedForEncodings ? "1" : "0"
-		mySerialization["targets"]                = try targets.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
-		mySerialization["mainGroup"]              = try mainGroup.get().xcIDAndComment(projectName: projectName).get()
-		mySerialization["buildConfigurationList"] = try buildConfigurationList.get().xcIDAndComment(projectName: projectName).get()
+		mySerialization["targets"]                = try targets.getForSerialization("targets", xcID).getIDsAndCommentsForSerialization("targets", xcID, projectName: projectName)
+		mySerialization["mainGroup"]              = try mainGroup.getIDAndCommentForSerialization("mainGroup", xcID, projectName: projectName)
+		mySerialization["buildConfigurationList"] = try buildConfigurationList.getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

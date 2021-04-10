@@ -15,7 +15,7 @@ public class PBXGroup : PBXFileElement {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		let childrenIDs: [String] = try rawObject.get("children")
+		let childrenIDs: [String] = try rawObject.getForParse("children", xcID)
 		children = try childrenIDs.map{ try PBXFileElement.unsafeInstantiate(id: $0, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects) }
 	}
 	
@@ -26,7 +26,7 @@ public class PBXGroup : PBXFileElement {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["children"] = try children.get().map{ try $0.xcIDAndComment(projectName: projectName).get() }
+		mySerialization["children"] = try children.getForSerialization("children", xcID).getIDsAndCommentsForSerialization("children", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

@@ -9,34 +9,17 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		inputPaths = try rawObject.get("inputPaths")
-		inputFileListPaths = try rawObject.getIfExists("inputFileListPaths")
+		inputPaths = try rawObject.getForParse("inputPaths", xcID)
+		inputFileListPaths = try rawObject.getIfExistsForParse("inputFileListPaths", xcID)
 		
-		outputPaths = try rawObject.get("outputPaths")
-		outputFileListPaths = try rawObject.getIfExists("outputFileListPaths")
+		outputPaths = try rawObject.getForParse("outputPaths", xcID)
+		outputFileListPaths = try rawObject.getIfExistsForParse("outputFileListPaths", xcID)
 		
-		shellPath = try rawObject.get("shellPath")
-		shellScript = try rawObject.get("shellScript")
+		shellPath = try rawObject.getForParse("shellPath", xcID)
+		shellScript = try rawObject.getForParse("shellScript", xcID)
 		
-		if let showEnvVarsInLogStr: String = try rawObject.getIfExists("showEnvVarsInLog") {
-			guard let value = Int(showEnvVarsInLogStr) else {
-				throw XcodeProjError(message: "Unexpected show env vars in log value \(showEnvVarsInLogStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Suspicious value for showEnvVarsInLog \(showEnvVarsInLogStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			showEnvVarsInLog = NSNumber(value: value != 0)
-		}
-		
-		if let alwaysOutOfDateStr: String = try rawObject.getIfExists("alwaysOutOfDate") {
-			guard let value = Int(alwaysOutOfDateStr) else {
-				throw XcodeProjError(message: "Unexpected always out of date value \(alwaysOutOfDateStr)")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Suspicious value for alwaysOutOfDate \(alwaysOutOfDateStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			alwaysOutOfDate = NSNumber(value: value != 0)
-		}
+		showEnvVarsInLog = try rawObject.getBoolAsNumberIfExistsForParse("showEnvVarsInLog", xcID)
+		alwaysOutOfDate = try rawObject.getBoolAsNumberIfExistsForParse("alwaysOutOfDate", xcID)
 	}
 	
 	open override var buildPhaseBaseTypeAsString: String {
@@ -49,10 +32,10 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		if let v = alwaysOutOfDate?.boolValue  {mySerialization["alwaysOutOfDate"] = v ? "1" : "0"}
 		if let v = inputFileListPaths          {mySerialization["inputFileListPaths"] = v}
 		if let v = outputFileListPaths         {mySerialization["outputFileListPaths"] = v}
-		mySerialization["inputPaths"]  = try inputPaths.get()
-		mySerialization["outputPaths"] = try outputPaths.get()
-		mySerialization["shellPath"]   = try shellPath.get()
-		mySerialization["shellScript"] = try shellScript.get()
+		mySerialization["inputPaths"]  = try inputPaths.getForSerialization("inputPaths", xcID)
+		mySerialization["outputPaths"] = try outputPaths.getForSerialization("outputPaths", xcID)
+		mySerialization["shellPath"]   = try shellPath.getForSerialization("shellPath", xcID)
+		mySerialization["shellScript"] = try shellScript.getForSerialization("shellScript", xcID)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}

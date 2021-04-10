@@ -38,25 +38,25 @@ public struct PBXProj {
 		
 		rawDecoded = decoded
 		
-		archiveVersion = try rawDecoded.get("archiveVersion")
+		archiveVersion = try rawDecoded.getForParse("archiveVersion", nil)
 		guard archiveVersion == "1" else {
 			throw XcodeProjError(message: "Got unexpected value for the “archiveVersion” property in pbxproj.")
 		}
 		
-		let ov: String = try rawDecoded.get("objectVersion")
+		let ov: String = try rawDecoded.getForParse("objectVersion", nil)
 		guard ov == "46" || ov == "48" || ov == "50" || ov == "52" || ov == "53" || ov == "54" else {
 			throw XcodeProjError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
 		}
 		objectVersion = ov
 		
-		let classes: [String: Any]? = try rawDecoded.getIfExists("classes")
+		let classes: [String: Any]? = try rawDecoded.getIfExistsForParse("classes", nil)
 		guard classes?.isEmpty ?? true else {
 			throw XcodeProjError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
 		}
 		hasClassesProperty = (classes != nil)
 		
-		let roid: String = try rawDecoded.get("rootObject")
-		let ro: [String: [String: Any]] = try rawDecoded.get("objects")
+		let roid: String = try rawDecoded.getForParse("rootObject", nil)
+		let ro: [String: [String: Any]] = try rawDecoded.getForParse("objects", nil)
 		rootObjectID = roid
 		rawObjects = ro
 		
@@ -122,7 +122,7 @@ public struct PBXProj {
 			}
 			
 			for object in try context.fetch(request) {
-				let isa = try object.rawISA.get()
+				let isa = try object.rawISA.getForSerialization("isa", object.xcID)
 				if isa != previousISA {
 					printEndSection()
 					ret += """
@@ -137,7 +137,7 @@ public struct PBXProj {
 			printEndSection()
 		}
 		
-		let idAndComment = try rootObject.xcIDAndCommentString(projectName: projectName).get()
+		let idAndComment = try rootObject.xcIDAndCommentString(projectName: projectName).getForSerialization("xcID", rootObject.xcID)
 		ret += """
 			
 				};

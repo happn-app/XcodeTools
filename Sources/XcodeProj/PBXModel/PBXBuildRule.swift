@@ -9,35 +9,26 @@ public class PBXBuildRule : PBXObject {
 	open override func fillValues(rawObject: [String : Any], rawObjects: [String : [String : Any]], context: NSManagedObjectContext, decodedObjects: inout [String : PBXObject]) throws {
 		try super.fillValues(rawObject: rawObject, rawObjects: rawObjects, context: context, decodedObjects: &decodedObjects)
 		
-		fileType = try rawObject.get("fileType")
-		filePatterns = try rawObject.get("filePatterns")
-		compilerSpec = try rawObject.get("compilerSpec")
+		fileType = try rawObject.getForParse("fileType", xcID)
+		filePatterns = try rawObject.getForParse("filePatterns", xcID)
+		compilerSpec = try rawObject.getForParse("compilerSpec", xcID)
 		
-		inputFiles = try rawObject.get("inputFiles")
-		outputFiles = try rawObject.get("outputFiles")
+		inputFiles = try rawObject.getForParse("inputFiles", xcID)
+		outputFiles = try rawObject.getForParse("outputFiles", xcID)
 		
-		script = try rawObject.get("script")
+		script = try rawObject.getForParse("script", xcID)
 		
-		do {
-			let isEditableStr: String = try rawObject.get("isEditable")
-			guard let value = Int(isEditableStr) else {
-				throw XcodeProjError(message: "Unexpected is editable value \(isEditableStr) in object \(xcID ?? "<unknown>")")
-			}
-			if value != 0 && value != 1 {
-				XcodeProjConfig.logger?.warning("Suspicious value for isEditable \(isEditableStr) in object \(xcID ?? "<unknown>"); expecting 0 or 1; setting to true.")
-			}
-			isEditable = (value != 0)
-		}
+		isEditable = try rawObject.getBoolForParse("isEditable", xcID)
 	}
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["fileType"]     = try fileType.get()
-		mySerialization["filePatterns"] = try filePatterns.get()
-		mySerialization["compilerSpec"] = try compilerSpec.get()
-		mySerialization["inputFiles"]   = try inputFiles.get()
-		mySerialization["outputFiles"]  = try outputFiles.get()
-		mySerialization["script"]       = try script.get()
+		mySerialization["fileType"]     = try fileType.getForSerialization("fileType", xcID)
+		mySerialization["filePatterns"] = try filePatterns.getForSerialization("filePatterns", xcID)
+		mySerialization["compilerSpec"] = try compilerSpec.getForSerialization("compilerSpec", xcID)
+		mySerialization["inputFiles"]   = try inputFiles.getForSerialization("inputFiles", xcID)
+		mySerialization["outputFiles"]  = try outputFiles.getForSerialization("outputFiles", xcID)
+		mySerialization["script"]       = try script.getForSerialization("script", xcID)
 		mySerialization["isEditable"]   = isEditable ? "1" : "0"
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
