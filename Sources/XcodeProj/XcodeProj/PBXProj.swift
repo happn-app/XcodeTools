@@ -28,32 +28,35 @@ public struct PBXProj {
 	public let rootObject: PBXProject
 	
 	public init(url: URL, context: NSManagedObjectContext) throws {
-		let data = try Data(contentsOf: url)
+		let data = try Result{ try Data(contentsOf: url) }.mapError{ XcodeProjError.cannotReadPBXProjData(url, $0) }.get()
 		
 		var format = PropertyListSerialization.PropertyListFormat.xml
-		guard let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Any] else {
-			throw XcodeProjError(message: "Got unexpected type for decoded pbxproj plist (not [String: Any]) in pbxproj.")
-		}
+		let decodedUntyped = try Result{ try PropertyListSerialization.propertyList(from: data, options: [], format: &format) }
+			.mapError{ XcodeProjError.parseError(.pbxprojPlistParseError($0), objectID: nil) }.get()
+		
 		if format != .openStep {
 			XcodeProjConfig.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
+		}
+		
+		guard let decoded = decodedUntyped as? [String: Any] else {
+			throw XcodeProjError.parseError(.deserializedPlistHasInvalidType, objectID: nil)
 		}
 		
 		rawDecoded = decoded
 		
 		archiveVersion = try rawDecoded.getForParse("archiveVersion", nil)
 		guard archiveVersion == "1" else {
-			throw XcodeProjError(message: "Got unexpected value for the “archiveVersion” property in pbxproj.")
+			throw XcodeProjError.unsupportedPBXProj(.unknownArchiveVersion(archiveVersion))
 		}
 		
-		let ov: String = try rawDecoded.getForParse("objectVersion", nil)
-		guard ov == "46" || ov == "48" || ov == "50" || ov == "52" || ov == "53" || ov == "54" else {
-			throw XcodeProjError(message: "Got unexpected value “\(ov)” for the “objectVersion” property in pbxproj.")
+		objectVersion = try rawDecoded.getForParse("objectVersion", nil)
+		guard Set(arrayLiteral: "46", "48", "50", "52", "53", "54").contains(objectVersion) else {
+			throw XcodeProjError.unsupportedPBXProj(.unknownObjectVersion(objectVersion))
 		}
-		objectVersion = ov
 		
 		let classes: [String: Any]? = try rawDecoded.getIfExistsForParse("classes", nil)
 		guard classes?.isEmpty ?? true else {
-			throw XcodeProjError(message: "The “classes” property is not empty in pbxproj; bailing out because we don’t know what this means.")
+			throw XcodeProjError.unsupportedPBXProj(.classesPropertyIsNotEmpty(classes!))
 		}
 		hasClassesProperty = (classes != nil)
 		
@@ -62,8 +65,10 @@ public struct PBXProj {
 		rootObjectID = roid
 		rawObjects = ro
 		
-		guard rawDecoded.count == (classes == nil ? 4 : 5) else {
-			throw XcodeProjError(message: "Got unexpected properties in pbxproj.")
+		let unknownProperties = Set(arrayLiteral: "archiveVersion", "objectVersion", "classes", "rootObject", "objects")
+			.subtracting(rawDecoded.keys)
+		guard unknownProperties.isEmpty else {
+			throw XcodeProjError.unsupportedPBXProj(.unknownRootProperties(unknownProperties))
 		}
 		
 		rootObject = try context.performAndWait{
@@ -84,9 +89,10 @@ public struct PBXProj {
 	}
 	
 	public func stringSerialization(projectName: String) throws -> String {
-		guard let context = rootObject.managedObjectContext else {
-			throw XcodeProjError(message: "Cannot serialize PBXProj because the root object does not have a context")
-		}
+		/* It is a programmer error to try and serialize a PBXProj whose root
+		 * object has been deleted (nil managed object context), hence the forced
+		 * unwrap. */
+		let context = rootObject.managedObjectContext!
 		
 		var ret = """
 			// !$*UTF8*$!

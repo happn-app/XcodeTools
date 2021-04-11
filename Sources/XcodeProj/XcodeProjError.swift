@@ -6,6 +6,9 @@ import Foundation
 public enum XcodeProjError : Error {
 	
 	case cannotFindSingleXcodeproj
+	case cannotReadPBXProjData(URL, Error)
+	
+	case unsupportedPBXProj(UnsupportedPBXProjError)
 	
 	/** `objectID` is `nil` if unknown */
 	case parseError(ParseError, objectID: String?)
@@ -15,6 +18,9 @@ public enum XcodeProjError : Error {
 	case internalError(InternalError)
 	
 	public enum ParseError : Error {
+		
+		case pbxprojPlistParseError(Error)
+		case deserializedPlistHasInvalidType
 		
 		case missingProperty(propertyName: String)
 		case unexpectedPropertyValueType(propertyName: String, value: Any)
@@ -34,6 +40,18 @@ public enum XcodeProjError : Error {
 	public enum ObjectGraphError : Error {
 		
 		case missingProperty(propertyName: String)
+		
+	}
+	
+	public enum UnsupportedPBXProjError : Error {
+		
+		case unknownArchiveVersion(String)
+		case unknownObjectVersion(String)
+		/** Not sure what a non emtpy “classes” property means in a pbxproj, so we
+		throw an error if we get that. */
+		case classesPropertyIsNotEmpty([String: Any])
+		
+		case unknownRootProperties(Set<String>)
 		
 	}
 	
