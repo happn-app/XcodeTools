@@ -28,7 +28,7 @@ public struct PBXProj {
 	public let rootObject: PBXProject
 	
 	public init(url: URL, context: NSManagedObjectContext) throws {
-		let data = try Result{ try Data(contentsOf: url) }.mapError{ XcodeProjError.cannotReadPBXProjData(url, $0) }.get()
+		let data = try Result{ try Data(contentsOf: url) }.mapError{ XcodeProjError.cannotReadFile(url, $0) }.get()
 		
 		var format = PropertyListSerialization.PropertyListFormat.xml
 		let decodedUntyped = try Result{ try PropertyListSerialization.propertyList(from: data, options: [], format: &format) }
@@ -39,7 +39,7 @@ public struct PBXProj {
 		}
 		
 		guard let decoded = decodedUntyped as? [String: Any] else {
-			throw XcodeProjError.parseError(.deserializedPlistHasInvalidType, objectID: nil)
+			throw XcodeProjError.parseError(.deserializedPBXProjPlistHasInvalidType, objectID: nil)
 		}
 		
 		rawDecoded = decoded

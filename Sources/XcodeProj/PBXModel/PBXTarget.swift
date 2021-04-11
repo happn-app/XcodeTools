@@ -45,18 +45,19 @@ public class PBXTarget : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		if let bcl = buildConfigurationList {mySerialization["buildConfigurationList"] = try bcl.getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)}
-		mySerialization["name"]         = try getName()
-		mySerialization["productName"]  = try getProductName()
-		mySerialization["dependencies"] = try getDependencies().getIDsAndCommentsForSerialization("dependencies", xcID, projectName: projectName)
-		mySerialization["buildPhases"]  = try getBuildPhases().getIDsAndCommentsForSerialization("buildPhases", xcID, projectName: projectName)
+		mySerialization["name"]                   = try getName()
+		mySerialization["productName"]            = try getProductName()
+		mySerialization["dependencies"]           = try getDependencies().getIDsAndCommentsForSerialization("dependencies", xcID, projectName: projectName)
+		mySerialization["buildPhases"]            = try getBuildPhases().getIDsAndCommentsForSerialization("buildPhases", xcID, projectName: projectName)
+		mySerialization["buildConfigurationList"] = try getBuildConfigurationList().getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
-	public func getName()         throws -> String                {try PBXObject.getNonOptionalValue(name,         "name",         xcID)}
-	public func getProductName()  throws -> String                {try PBXObject.getNonOptionalValue(productName,  "productName",  xcID)}
-	public func getBuildPhases()  throws -> [PBXBuildPhase]       {try PBXObject.getNonOptionalValue(buildPhases,  "buildPhases",  xcID)}
-	public func getDependencies() throws -> [PBXTargetDependency] {try PBXObject.getNonOptionalValue(dependencies, "dependencies", xcID)}
-
+	public func getName()                   throws -> String                {try PBXObject.getNonOptionalValue(name,                   "name",                   xcID)}
+	public func getProductName()            throws -> String                {try PBXObject.getNonOptionalValue(productName,            "productName",            xcID)}
+	public func getBuildPhases()            throws -> [PBXBuildPhase]       {try PBXObject.getNonOptionalValue(buildPhases,            "buildPhases",            xcID)}
+	public func getDependencies()           throws -> [PBXTargetDependency] {try PBXObject.getNonOptionalValue(dependencies,           "dependencies",           xcID)}
+	public func getBuildConfigurationList() throws -> XCConfigurationList   {try PBXObject.getNonOptionalValue(buildConfigurationList, "buildConfigurationList", xcID)}
+	
 }

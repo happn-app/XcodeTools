@@ -5,22 +5,26 @@ import Foundation
 
 public enum XcodeProjError : Error {
 	
+	case cannotReadFile(URL, Error)
+	
 	case cannotFindSingleXcodeproj
-	case cannotReadPBXProjData(URL, Error)
 	
 	case unsupportedPBXProj(UnsupportedPBXProjError)
 	
-	/** `objectID` is `nil` if unknown */
+	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
 	case parseError(ParseError, objectID: String?)
-	/** `objectID` is `nil` if unknown */
+	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
 	case invalidObjectGraph(ObjectGraphError, objectID: String?)
 	
 	case internalError(InternalError)
 	
 	public enum ParseError : Error {
 		
+		case infoPlistParseError(Error)
+		case deserializedInfoPlistHasInvalidType
+		
 		case pbxprojPlistParseError(Error)
-		case deserializedPlistHasInvalidType
+		case deserializedPBXProjPlistHasInvalidType
 		
 		case missingProperty(propertyName: String)
 		case unexpectedPropertyValueType(propertyName: String, value: Any)
@@ -40,6 +44,7 @@ public enum XcodeProjError : Error {
 	public enum ObjectGraphError : Error {
 		
 		case missingProperty(propertyName: String)
+		case atLeastTwoConfigurationsHaveSameName
 		
 	}
 	

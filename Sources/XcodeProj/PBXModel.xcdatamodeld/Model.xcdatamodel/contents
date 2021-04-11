@@ -132,7 +132,7 @@
     <entity name="PBXTarget" representedClassName="PBXTarget" isAbstract="YES" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
         <attribute name="name" attributeType="String"/>
         <attribute name="productName" attributeType="String"/>
-        <relationship name="buildConfigurationList" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="target_" inverseEntity="XCConfigurationList"/>
+        <relationship name="buildConfigurationList" maxCount="1" deletionRule="Nullify" destinationEntity="XCConfigurationList" inverseName="target_" inverseEntity="XCConfigurationList"/>
         <relationship name="buildPhases_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXBuildPhase" inverseName="targets_" inverseEntity="PBXBuildPhase"/>
         <relationship name="dependencies_cd" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="PBXTargetDependency" inverseName="target_" inverseEntity="PBXTargetDependency"/>
         <relationship name="project_" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="PBXProject" inverseName="targets_cd" inverseEntity="PBXProject"/>
@@ -207,7 +207,7 @@
         <element name="PBXResourcesBuildPhase" positionX="-811.28515625" positionY="-98.22265625" width="161.390625" height="43"/>
         <element name="PBXShellScriptBuildPhase" positionX="-885.99609375" positionY="125.703125" width="167.34765625" height="163"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
-        <element name="PBXTarget" positionX="-94.4765625" positionY="131.18359375" width="128" height="148"/>
+        <element name="PBXTarget" positionX="-94.4765625" positionY="131.18359375" width="128" height="134"/>
         <element name="PBXTargetDependency" positionX="-367.89453125" positionY="266.22265625" width="148.2578125" height="119"/>
         <element name="PBXVariantGroup" positionX="-424.0625" positionY="-468.58203125" width="128" height="59"/>
         <element name="ProjectReference" positionX="-751.7265625" positionY="-537.81640625" width="128" height="88"/>
