@@ -23,15 +23,33 @@ public class PBXBuildRule : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["fileType"]     = try fileType.getForSerialization("fileType", xcID)
-		mySerialization["filePatterns"] = try filePatterns.getForSerialization("filePatterns", xcID)
-		mySerialization["compilerSpec"] = try compilerSpec.getForSerialization("compilerSpec", xcID)
-		mySerialization["inputFiles"]   = try inputFiles.getForSerialization("inputFiles", xcID)
-		mySerialization["outputFiles"]  = try outputFiles.getForSerialization("outputFiles", xcID)
-		mySerialization["script"]       = try script.getForSerialization("script", xcID)
+		mySerialization["fileType"]     = try getFileType()
+		mySerialization["filePatterns"] = try getFilePatterns()
+		mySerialization["compilerSpec"] = try getCompilerSpec()
+		mySerialization["inputFiles"]   = try getInputFiles()
+		mySerialization["outputFiles"]  = try getOutputFiles()
+		mySerialization["script"]       = try getScript()
 		mySerialization["isEditable"]   = isEditable ? "1" : "0"
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	/* (Very) sadly, a throwing computed property is not possible, so we use a
+	 * function to get the non-optional value.
+	 * Otherwise, for the compilerSpec example for instance, I’d very much have
+	 * liked to have a CoreData property named `compilerSpec_o` for instance and
+	 * a computed property defined like so:
+	 * var compilerSpec {
+	 *    get throws {try PBXObject.getNonOptionalValue(compilerSpec_o, "compilerSpec", xcID)}
+	 *    set        {compilerSpec_o = newValue}
+	 * }
+	 * https://forums.swift.org/t/proposal-allow-getters-and-setters-to-throw/191 */
+	
+	public func getCompilerSpec() throws -> String   {try PBXObject.getNonOptionalValue(compilerSpec, "compilerSpec", xcID)}
+	public func getFilePatterns() throws -> String   {try PBXObject.getNonOptionalValue(filePatterns, "filePatterns", xcID)}
+	public func getFileType()     throws -> String   {try PBXObject.getNonOptionalValue(fileType,     "fileType",     xcID)}
+	public func getInputFiles()   throws -> [String] {try PBXObject.getNonOptionalValue(inputFiles,   "inputFiles",   xcID)}
+	public func getOutputFiles()  throws -> [String] {try PBXObject.getNonOptionalValue(outputFiles,  "outputFiles",  xcID)}
+	public func getScript()       throws -> String   {try PBXObject.getNonOptionalValue(script,       "script",       xcID)}
 	
 }

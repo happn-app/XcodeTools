@@ -94,48 +94,19 @@ extension Dictionary where Key == String {
 }
 
 
-extension Optional {
-	
-	func getForSerialization(_ propretyName: String, _ objectID: String?) throws -> Wrapped {
-		return try get(orThrow: XcodeProjError.invalidObjectGraph(.missingProperty(propertyName: propretyName), objectID: objectID))
-	}
-	
-}
-
-
 extension PBXObject {
 	
 	func getIDAndCommentForSerialization(_ propretyName: String, _ objectID: String?, projectName: String) throws -> ValueAndComment {
-		return try xcIDAndComment(projectName: projectName).getForSerialization("\(propretyName).xcIDAndComment", objectID)
+		return try PBXObject.getNonOptionalValue(xcIDAndComment(projectName: projectName), "\(propretyName).xcIDAndComment", objectID)
 	}
 	
 }
 
 
-extension Optional where Wrapped : PBXObject {
-	
-	func getIDAndCommentForSerialization(_ propretyName: String, _ objectID: String?, projectName: String) throws -> ValueAndComment {
-		return try getForSerialization(propretyName, objectID).getIDAndCommentForSerialization(propretyName, objectID, projectName: projectName)
-	}
-	
-}
-
-
-/* Apparently, this ain’t possible, sadly. So we do the variant that comes next,
- * and call getForSerialization on the resulting optional value. */
-//extension Optional where Wrapped : Array<PBXObject> {
-//
-//	func getIDsAndCommentsForSerialization(_ propretyName: String, _ objectID: String?, projectName: String) throws -> [ValueAndComment] {
-//		return try getForSerialization(propretyName, objectID)
-//			.enumerated()
-//			.map{ try $0.element.xcIDAndComment(projectName: projectName).getForSerialization("\(propretyName)[\($0.offset)].xcIDAndComment", objectID) }
-//	}
-//
-//}
 extension Array where Element : PBXObject {
 	
 	func getIDsAndCommentsForSerialization(_ propretyName: String, _ objectID: String?, projectName: String) throws -> [ValueAndComment] {
-		return try enumerated().map{ try $0.element.xcIDAndComment(projectName: projectName).getForSerialization("\(propretyName)[\($0.offset)].xcIDAndComment", objectID) }
+		return try enumerated().map{ try $0.element.getIDAndCommentForSerialization("\(propretyName)[\($0.offset)]", objectID, projectName: projectName) }
 	}
 	
 }

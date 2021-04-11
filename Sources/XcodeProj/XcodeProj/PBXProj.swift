@@ -122,7 +122,7 @@ public struct PBXProj {
 			}
 			
 			for object in try context.fetch(request) {
-				let isa = try object.rawISA.getForSerialization("isa", object.xcID)
+				let isa = try object.getISA()
 				if isa != previousISA {
 					printEndSection()
 					ret += """
@@ -137,7 +137,7 @@ public struct PBXProj {
 			printEndSection()
 		}
 		
-		let idAndComment = try rootObject.xcIDAndCommentString(projectName: projectName).getForSerialization("xcID", rootObject.xcID)
+		let idAndComment = try rootObject.getIDAndCommentForSerialization("xcID", rootObject.xcID, projectName: projectName).asString()
 		ret += """
 			
 				};

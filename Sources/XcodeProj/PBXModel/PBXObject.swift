@@ -25,8 +25,11 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	open func knownValuesSerialized(projectName: String) throws -> [String: Any] {
-		return try ["isa": rawISA.getForSerialization("isa", xcID)]
+		return try ["isa": getISA()]
 	}
+	
+	public func getISA()     throws -> String {try PBXObject.getNonOptionalValue(rawISA, "isa",     xcID)}
+	public func getXcodeID() throws -> String {try PBXObject.getNonOptionalValue(xcID,   "XcodeID", xcID)}
 	
 	/**
 	All the values in the raw object, but modified w/ known values in the model. */
@@ -48,7 +51,7 @@ public class PBXObject : NSManagedObject {
 		
 		let key = try """
 		
-		\(indent)\(valueAndCommentAsString(xcIDAndComment(projectName: projectName).getForSerialization("xcID", xcID)))
+		\(indent)\(PBXObject.getNonOptionalValue(xcIDAndCommentString(projectName: projectName), "xcID", xcID))
 		"""
 		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
@@ -120,6 +123,10 @@ public class PBXObject : NSManagedObject {
 		}
 	}
 	
+	static func getNonOptionalValue<T>(_ cdValue: T?, _ propertyName: String, _ objectID: String?) throws -> T {
+		return try cdValue.get(orThrow: XcodeProjError.invalidObjectGraph(.missingProperty(propertyName: propertyName), objectID: objectID))
+	}
+	
 	static func getOptionalToMany<T>(_ cdValue: NSOrderedSet?, _ isSetFlag: Bool) -> [T]? {
 		guard isSetFlag else {
 			assert((cdValue?.count ?? 0) == 0)
@@ -163,7 +170,7 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	func xcIDAndCommentString(projectName: String) -> String? {
-		return xcIDAndComment(projectName: projectName).flatMap{ valueAndCommentAsString($0) }
+		return xcIDAndComment(projectName: projectName)?.asString()
 	}
 	
 	private func serializeAnyToString(_ v: Any, isRoot: Bool, projectName: String, indentCount: Int = 0, indentBase: String = "\t", oneline: Bool) throws -> String {
@@ -183,7 +190,7 @@ public class PBXObject : NSManagedObject {
 				ret += v.escapedForPBXProjValue()
 				
 			case let v as ValueAndComment:
-				ret += valueAndCommentAsString(v)
+				ret += v.asString()
 				
 			case let v as ProjectReference:
 				let dic = try [
@@ -216,10 +223,6 @@ public class PBXObject : NSManagedObject {
 				throw XcodeProjError.internalError(.unknownObjectTypeDuringSerialization(object: v))
 		}
 		return ret
-	}
-	
-	private func valueAndCommentAsString(_ valueAndComment: ValueAndComment) -> String {
-		return valueAndComment.value.escapedForPBXProjValue() + (valueAndComment.comment.flatMap{ " /* \($0) */" } ?? "")
 	}
 	
 }

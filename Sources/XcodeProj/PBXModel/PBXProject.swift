@@ -92,16 +92,24 @@ public class PBXProject : PBXObject {
 		if let r = projectReferences {
 			mySerialization["projectReferences"] = r
 		}
-		mySerialization["compatibilityVersion"]   = try compatibilityVersion.getForSerialization("compatibilityVersion", xcID)
-		mySerialization["projectDirPath"]         = try projectDirPath.getForSerialization("projectDirPath", xcID)
-		mySerialization["knownRegions"]           = try knownRegions.getForSerialization("knownRegions", xcID)
-		mySerialization["developmentRegion"]      = try developmentRegion.getForSerialization("developmentRegion", xcID)
+		mySerialization["compatibilityVersion"]   = try getCompatibilityVersion()
+		mySerialization["projectDirPath"]         = try getProjectDirPath()
+		mySerialization["knownRegions"]           = try getKnownRegions()
+		mySerialization["developmentRegion"]      = try getDevelopmentRegion()
 		mySerialization["hasScannedForEncodings"] = hasScannedForEncodings ? "1" : "0"
-		mySerialization["targets"]                = try targets.getForSerialization("targets", xcID).getIDsAndCommentsForSerialization("targets", xcID, projectName: projectName)
-		mySerialization["mainGroup"]              = try mainGroup.getIDAndCommentForSerialization("mainGroup", xcID, projectName: projectName)
-		mySerialization["buildConfigurationList"] = try buildConfigurationList.getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)
+		mySerialization["targets"]                = try getTargets().getIDsAndCommentsForSerialization("targets", xcID, projectName: projectName)
+		mySerialization["mainGroup"]              = try getMainGroup().getIDAndCommentForSerialization("mainGroup", xcID, projectName: projectName)
+		mySerialization["buildConfigurationList"] = try getBuildConfigurationList().getIDAndCommentForSerialization("buildConfigurationList", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getCompatibilityVersion()   throws -> String              {try PBXObject.getNonOptionalValue(compatibilityVersion,   "compatibilityVersion",   xcID)}
+	public func getDevelopmentRegion()      throws -> String              {try PBXObject.getNonOptionalValue(developmentRegion,      "developmentRegion",      xcID)}
+	public func getKnownRegions()           throws -> [String]            {try PBXObject.getNonOptionalValue(knownRegions,           "knownRegions",           xcID)}
+	public func getProjectDirPath()         throws -> String              {try PBXObject.getNonOptionalValue(projectDirPath,         "projectDirPath",         xcID)}
+	public func getBuildConfigurationList() throws -> XCConfigurationList {try PBXObject.getNonOptionalValue(buildConfigurationList, "buildConfigurationList", xcID)}
+	public func getMainGroup()              throws -> PBXGroup            {try PBXObject.getNonOptionalValue(mainGroup,              "mainGroup",              xcID)}
+	public func getTargets()                throws -> [PBXTarget]         {try PBXObject.getNonOptionalValue(targets,                "targets",                xcID)}
 	
 }

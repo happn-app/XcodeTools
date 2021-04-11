@@ -30,10 +30,13 @@ public class XCBuildConfiguration : PBXObject {
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let c = baseConfigurationReference {mySerialization["baseConfigurationReference"] = try c.getIDAndCommentForSerialization("baseConfigurationReference", xcID, projectName: projectName)}
-		mySerialization["name"]          = try name.getForSerialization("name", xcID)
-		mySerialization["buildSettings"] = try rawBuildSettings.getForSerialization("buildSettings", xcID)
+		mySerialization["name"]          = try getName()
+		mySerialization["buildSettings"] = try getRawBuildSettings()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getName()             throws -> String        {try PBXObject.getNonOptionalValue(name,             "name",             xcID)}
+	public func getRawBuildSettings() throws -> [String: Any] {try PBXObject.getNonOptionalValue(rawBuildSettings, "rawBuildSettings", xcID)}
 	
 }

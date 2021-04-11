@@ -32,12 +32,17 @@ public class PBXShellScriptBuildPhase : PBXBuildPhase {
 		if let v = alwaysOutOfDate?.boolValue  {mySerialization["alwaysOutOfDate"] = v ? "1" : "0"}
 		if let v = inputFileListPaths          {mySerialization["inputFileListPaths"] = v}
 		if let v = outputFileListPaths         {mySerialization["outputFileListPaths"] = v}
-		mySerialization["inputPaths"]  = try inputPaths.getForSerialization("inputPaths", xcID)
-		mySerialization["outputPaths"] = try outputPaths.getForSerialization("outputPaths", xcID)
-		mySerialization["shellPath"]   = try shellPath.getForSerialization("shellPath", xcID)
-		mySerialization["shellScript"] = try shellScript.getForSerialization("shellScript", xcID)
+		mySerialization["inputPaths"]  = try getInputPaths()
+		mySerialization["outputPaths"] = try getOutputPaths()
+		mySerialization["shellPath"]   = try getShellPath()
+		mySerialization["shellScript"] = try getShellScript()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getInputPaths()  throws -> [String] {try PBXObject.getNonOptionalValue(inputPaths,  "inputPaths",  xcID)}
+	public func getOutputPaths() throws -> [String] {try PBXObject.getNonOptionalValue(outputPaths, "outputPaths", xcID)}
+	public func getShellPath()   throws -> String   {try PBXObject.getNonOptionalValue(shellPath,   "shellPath",   xcID)}
+	public func getShellScript() throws -> String   {try PBXObject.getNonOptionalValue(shellScript, "shellScript", xcID)}
 	
 }

@@ -34,15 +34,19 @@ public class PBXContainerItemProxy : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["remoteInfo"] = try remoteInfo.getForSerialization("remoteInfo", xcID)
-		mySerialization["remoteGlobalIDString"] = try remoteGlobalIDString.getForSerialization("remoteGlobalIDString", xcID)
+		mySerialization["remoteInfo"] = try getRemoteInfo()
+		mySerialization["remoteGlobalIDString"] = try getRemoteGlobalIDString()
 		mySerialization["proxyType"] = String(proxyType)
 		
 		let fRequest: NSFetchRequest<PBXObject> = PBXObject.fetchRequest()
-		fRequest.predicate = try NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), containerPortalID.getForSerialization("containerPortalID", xcID))
+		fRequest.predicate = try NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), getContainerPortalID())
 		mySerialization["containerPortal"] = try managedObjectContext?.fetch(fRequest).onlyElement?.getIDAndCommentForSerialization("containerPortalID", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getContainerPortalID()    throws -> String {try PBXObject.getNonOptionalValue(containerPortalID,    "containerPortalID",    xcID)}
+	public func getRemoteGlobalIDString() throws -> String {try PBXObject.getNonOptionalValue(remoteGlobalIDString, "remoteGlobalIDString", xcID)}
+	public func getRemoteInfo()           throws -> String {try PBXObject.getNonOptionalValue(remoteInfo,           "remoteInfo",           xcID)}
 	
 }

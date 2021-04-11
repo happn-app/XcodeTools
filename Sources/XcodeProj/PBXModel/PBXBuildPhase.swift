@@ -42,9 +42,11 @@ public class PBXBuildPhase : PBXObject {
 		if let n = name                                          {mySerialization["name"] = n}
 		if let m = buildActionMask                               {mySerialization["buildActionMask"] = m.stringValue}
 		if let b = runOnlyForDeploymentPostprocessing?.boolValue {mySerialization["runOnlyForDeploymentPostprocessing"] = b ? "1" : "0"}
-		mySerialization["files"] = try files.getForSerialization("files", xcID).getIDsAndCommentsForSerialization("files", xcID, projectName: projectName)
+		mySerialization["files"] = try getFiles().getIDsAndCommentsForSerialization("files", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getFiles() throws -> [PBXBuildFile] {try PBXObject.getNonOptionalValue(files, "files", xcID)}
 	
 }

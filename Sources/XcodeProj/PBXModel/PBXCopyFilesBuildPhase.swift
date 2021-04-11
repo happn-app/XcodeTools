@@ -20,10 +20,12 @@ public class PBXCopyFilesBuildPhase : PBXBuildPhase {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["dstPath"] = try dstPath.getForSerialization("dstPath", xcID)
+		mySerialization["dstPath"] = try getDstPath()
 		mySerialization["dstSubfolderSpec"] = String(dstSubfolderSpec)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getDstPath() throws -> String {try PBXObject.getNonOptionalValue(dstPath, "dstPath", xcID)}
 	
 }

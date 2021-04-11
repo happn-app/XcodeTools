@@ -45,9 +45,11 @@ public class PBXNativeTarget : PBXTarget {
 		if let r = productReference           {mySerialization["productReference"]           = try r.getIDAndCommentForSerialization("productReference", xcID, projectName: projectName)}
 		if let p = productInstallPath         {mySerialization["productInstallPath"]         = p}
 		if let r = packageProductDependencies {mySerialization["packageProductDependencies"] = try r.getIDsAndCommentsForSerialization("packageProductDependencies", xcID, projectName: projectName)}
-		mySerialization["productType"] = try productType.getForSerialization("productType", xcID)
+		mySerialization["productType"] = try getProductType()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getProductType() throws -> String {try PBXObject.getNonOptionalValue(productType, "productType", xcID)}
 	
 }

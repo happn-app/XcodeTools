@@ -26,9 +26,11 @@ public class PBXGroup : PBXFileElement {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["children"] = try children.getForSerialization("children", xcID).getIDsAndCommentsForSerialization("children", xcID, projectName: projectName)
+		mySerialization["children"] = try getChildren().getIDsAndCommentsForSerialization("children", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getChildren() throws -> [PBXFileElement] {try PBXObject.getNonOptionalValue(children, "children", xcID)}
 	
 }

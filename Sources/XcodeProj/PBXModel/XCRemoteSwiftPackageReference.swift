@@ -19,10 +19,13 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["repositoryURL"] = try repositoryURL.getForSerialization("repositoryURL", xcID).absoluteString
-		mySerialization["requirement"] = try requirement.getForSerialization("requirement", xcID)
+		mySerialization["repositoryURL"] = try getRepositoryURL().absoluteString
+		mySerialization["requirement"] = try getRequirement()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getRepositoryURL() throws -> URL           {try PBXObject.getNonOptionalValue(repositoryURL, "repositoryURL", xcID)}
+	public func getRequirement()   throws -> [String: Any] {try PBXObject.getNonOptionalValue(requirement,   "requirement",   xcID)}
 	
 }

@@ -17,10 +17,13 @@ public class PBXReferenceProxy : PBXFileElement {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["fileType"]  = try fileType.getForSerialization("fileType", xcID)
-		mySerialization["remoteRef"] = try remoteRef.getIDAndCommentForSerialization("remoteRef", xcID, projectName: projectName)
+		mySerialization["fileType"]  = try getFileType()
+		mySerialization["remoteRef"] = try getRemoteRef().getIDAndCommentForSerialization("remoteRef", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getFileType()  throws -> String                {try PBXObject.getNonOptionalValue(fileType,  "fileType",  xcID)}
+	public func getRemoteRef() throws -> PBXContainerItemProxy {try PBXObject.getNonOptionalValue(remoteRef, "remoteRef", xcID)}
 	
 }

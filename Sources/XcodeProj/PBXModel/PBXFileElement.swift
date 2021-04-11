@@ -65,10 +65,12 @@ public class PBXFileElement : PBXObject {
 		if let v = indentWidth?.stringValue {mySerialization["indentWidth"] = v}
 		if let b = usesTabs?.boolValue      {mySerialization["usesTabs"] = b ? "1" : "0"}
 		if let b = wrapsLines?.boolValue    {mySerialization["wrapsLines"] = b ? "1" : "0"}
-		mySerialization["sourceTree"] = try rawSourceTree.getForSerialization("sourceTree", nil)
+		mySerialization["sourceTree"] = try getRawSourceTree()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getRawSourceTree() throws -> String {try PBXObject.getNonOptionalValue(rawSourceTree, "rawSourceTree", xcID)}
 	
 	/** Subclasses can override if needed. */
 	open var parent: PBXFileElement? {
@@ -104,7 +106,7 @@ public class PBXFileElement : PBXObject {
 						else                   {return (rootVar, path ?? "")}
 					}
 				} else {
-					guard let project = (self as? PBXGroup)?.projectForMainGroup else {
+					guard let project = (self as? PBXGroup)?.projectForMainGroup_ else {
 						XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}

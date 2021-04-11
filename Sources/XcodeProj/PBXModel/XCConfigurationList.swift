@@ -49,9 +49,11 @@ public class XCConfigurationList : PBXObject {
 		var mySerialization = [String: Any]()
 		if let n = defaultConfigurationName {mySerialization["defaultConfigurationName"] = n}
 		mySerialization["defaultConfigurationIsVisible"] = defaultConfigurationIsVisible ? "1" : "0"
-		mySerialization["buildConfigurations"]           = try buildConfigurations.getForSerialization("buildConfigurations", xcID).getIDsAndCommentsForSerialization("buildConfigurations", xcID, projectName: projectName)
+		mySerialization["buildConfigurations"]           = try getBuildConfigurations().getIDsAndCommentsForSerialization("buildConfigurations", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getBuildConfigurations() throws -> [XCBuildConfiguration] {try PBXObject.getNonOptionalValue(buildConfigurations, "buildConfigurations", xcID)}
 	
 }

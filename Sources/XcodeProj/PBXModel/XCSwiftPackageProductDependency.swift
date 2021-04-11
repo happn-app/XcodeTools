@@ -18,7 +18,7 @@ public class XCSwiftPackageProductDependency : PBXObject {
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
 		if let p = package {mySerialization["package"] = try p.getIDAndCommentForSerialization("package", xcID, projectName: projectName)}
-		mySerialization["productName"] = try productName.getForSerialization("productName", xcID)
+		mySerialization["productName"] = try getProductName()
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
@@ -26,5 +26,7 @@ public class XCSwiftPackageProductDependency : PBXObject {
 	public override func stringSerializationName(projectName: String) -> String? {
 		return productName
 	}
+	
+	public func getProductName() throws -> String {try PBXObject.getNonOptionalValue(productName, "productName", xcID)}
 	
 }

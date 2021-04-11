@@ -31,11 +31,15 @@ public class XCVersionGroup : PBXFileElement {
 	
 	open override func knownValuesSerialized(projectName: String) throws -> [String: Any] {
 		var mySerialization = [String: Any]()
-		mySerialization["versionGroupType"] = try versionGroupType.getForSerialization("versionGroupType", xcID)
-		mySerialization["currentVersion"] = try currentVersion.getIDAndCommentForSerialization("currentVersion", xcID, projectName: projectName)
-		mySerialization["children"] = try children.getForSerialization("children", xcID).getIDsAndCommentsForSerialization("children", xcID, projectName: projectName)
+		mySerialization["versionGroupType"] = try getVersionGroupType()
+		mySerialization["currentVersion"] = try getCurrentVersion().getIDAndCommentForSerialization("currentVersion", xcID, projectName: projectName)
+		mySerialization["children"] = try getChildren().getIDsAndCommentsForSerialization("children", xcID, projectName: projectName)
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
+	
+	public func getVersionGroupType() throws -> String             {try PBXObject.getNonOptionalValue(versionGroupType, "versionGroupType", xcID)}
+	public func getChildren()         throws -> [PBXFileReference] {try PBXObject.getNonOptionalValue(children,         "children",         xcID)}
+	public func getCurrentVersion()   throws -> PBXFileReference   {try PBXObject.getNonOptionalValue(currentVersion,   "currentVersion",   xcID)}
 	
 }

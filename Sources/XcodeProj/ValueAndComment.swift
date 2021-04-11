@@ -8,4 +8,8 @@ struct ValueAndComment {
 	var value: String
 	var comment: String?
 	
+	func asString() -> String {
+		return value.escapedForPBXProjValue() + (comment.flatMap{ " /* \($0) */" } ?? "")
+	}
+	
 }
