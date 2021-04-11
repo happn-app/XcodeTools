@@ -110,7 +110,7 @@ public struct CombinedBuildSettings {
 			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
-			throw XcodeProjError.invalidObjectGraph(.atLeastTwoConfigurationsHaveSameName, objectID: nil)
+			throw XcodeProjError.invalidPBXProjObjectGraph(.atLeastTwoConfigurationsHaveSameName, objectID: nil)
 		})
 	}
 	
@@ -228,9 +228,9 @@ public struct CombinedBuildSettings {
 		}
 		let plistData = try Result{ try Data(contentsOf: plistURL) }.mapError{ XcodeProjError.cannotReadFile(plistURL, $0) }.get()
 		let deserializedPlist = try Result{ try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) }
-			.mapError{ XcodeProjError.parseError(.infoPlistParseError($0), objectID: nil) }.get()
+			.mapError{ XcodeProjError.infoPlistParseError(.plistParseError($0)) }.get()
 		guard let deserializedPlistObject = deserializedPlist as? [String: Any] else {
-			throw XcodeProjError.parseError(.deserializedInfoPlistHasInvalidType, objectID: nil)
+			throw XcodeProjError.infoPlistParseError(.deserializedPlistHasInvalidType)
 		}
 		return deserializedPlistObject
 	}

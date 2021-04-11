@@ -12,19 +12,18 @@ public enum XcodeProjError : Error {
 	case unsupportedPBXProj(UnsupportedPBXProjError)
 	
 	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
-	case parseError(ParseError, objectID: String?)
+	case pbxProjParseError(PBXProjParseError, objectID: String?)
+	case infoPlistParseError(InfoPlistParseError)
+	
 	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
-	case invalidObjectGraph(ObjectGraphError, objectID: String?)
+	case invalidPBXProjObjectGraph(PBXProjObjectGraphError, objectID: String?)
 	
 	case internalError(InternalError)
 	
-	public enum ParseError : Error {
+	public enum PBXProjParseError : Error {
 		
-		case infoPlistParseError(Error)
-		case deserializedInfoPlistHasInvalidType
-		
-		case pbxprojPlistParseError(Error)
-		case deserializedPBXProjPlistHasInvalidType
+		case plistParseError(Error)
+		case deserializedPlistHasInvalidType
 		
 		case missingProperty(propertyName: String)
 		case unexpectedPropertyValueType(propertyName: String, value: Any)
@@ -41,7 +40,14 @@ public enum XcodeProjError : Error {
 		
 	}
 	
-	public enum ObjectGraphError : Error {
+	public enum InfoPlistParseError : Error {
+		
+		case plistParseError(Error)
+		case deserializedPlistHasInvalidType
+		
+	}
+	
+	public enum PBXProjObjectGraphError : Error {
 		
 		case missingProperty(propertyName: String)
 		case atLeastTwoConfigurationsHaveSameName
@@ -79,7 +85,7 @@ public enum XcodeProjError : Error {
 	
 	#warning("Line below exists just so the project compiles. Must be removed.")
 	init(message: String) {
-		self = .parseError(ParseError.unexpectedPropertyValueType(propertyName: "", value: ""), objectID: nil)
+		self = .pbxProjParseError(PBXProjParseError.unexpectedPropertyValueType(propertyName: "", value: ""), objectID: nil)
 	}
 	
 }

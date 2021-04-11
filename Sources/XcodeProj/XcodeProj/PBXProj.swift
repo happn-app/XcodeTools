@@ -32,14 +32,14 @@ public struct PBXProj {
 		
 		var format = PropertyListSerialization.PropertyListFormat.xml
 		let decodedUntyped = try Result{ try PropertyListSerialization.propertyList(from: data, options: [], format: &format) }
-			.mapError{ XcodeProjError.parseError(.pbxprojPlistParseError($0), objectID: nil) }.get()
+			.mapError{ XcodeProjError.pbxProjParseError(.plistParseError($0), objectID: nil) }.get()
 		
 		if format != .openStep {
 			XcodeProjConfig.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
 		}
 		
 		guard let decoded = decodedUntyped as? [String: Any] else {
-			throw XcodeProjError.parseError(.deserializedPBXProjPlistHasInvalidType, objectID: nil)
+			throw XcodeProjError.pbxProjParseError(.deserializedPlistHasInvalidType, objectID: nil)
 		}
 		
 		rawDecoded = decoded

@@ -69,7 +69,7 @@ public class PBXObject : NSManagedObject {
 	static func unsafeInstantiate(id: String, on context: NSManagedObjectContext, rawObjects: [String: [String: Any]], decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
-				throw XcodeProjError.parseError(.invalidObjectTypeInDecodedObjects(expectedType: self), objectID: id)
+				throw XcodeProjError.pbxProjParseError(.invalidObjectTypeInDecodedObjects(expectedType: self), objectID: id)
 			}
 			return result
 		}
@@ -81,10 +81,10 @@ public class PBXObject : NSManagedObject {
 			throw XcodeProjError.internalError(.managedContextHasNoModel)
 		}
 		guard let entity = model.entitiesByName[isa] ?? (XcodeProjConfig.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
-			throw XcodeProjError.parseError(.isaNotFoundInModel(isa), objectID: id)
+			throw XcodeProjError.pbxProjParseError(.isaNotFoundInModel(isa), objectID: id)
 		}
 		guard !entity.isAbstract || (XcodeProjConfig.allowPBXObjectAllocation && entity.name == "PBXObject") else {
-			throw XcodeProjError.parseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
+			throw XcodeProjError.pbxProjParseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
 			throw XcodeProjError.internalError(.tryingToInstantiateNonPBXObjectEntity(isa: isa, entity: entity))
@@ -106,7 +106,7 @@ public class PBXObject : NSManagedObject {
 		
 		guard let result = resultObject as? Self else {
 			if created {context.delete(resultObject)}
-			throw XcodeProjError.parseError(.invalidObjectTypeFetchedOrCreated(expectedType: self), objectID: id)
+			throw XcodeProjError.pbxProjParseError(.invalidObjectTypeFetchedOrCreated(expectedType: self), objectID: id)
 		}
 		
 		do {
@@ -124,7 +124,7 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	static func getNonOptionalValue<T>(_ cdValue: T?, _ propertyName: String, _ objectID: String?) throws -> T {
-		return try cdValue.get(orThrow: XcodeProjError.invalidObjectGraph(.missingProperty(propertyName: propertyName), objectID: objectID))
+		return try cdValue.get(orThrow: XcodeProjError.invalidPBXProjObjectGraph(.missingProperty(propertyName: propertyName), objectID: objectID))
 	}
 	
 	static func getOptionalToMany<T>(_ cdValue: NSOrderedSet?, _ isSetFlag: Bool) -> [T]? {

@@ -54,7 +54,7 @@ public class PBXProject : PBXObject {
 					let projectRefID = rawProjectReference["ProjectRef"],
 					rawProjectReference.count == 2
 				else {
-					throw XcodeProjError.parseError(.unknownOrInvalidProjectReference(rawProjectReference), objectID: xcID)
+					throw XcodeProjError.pbxProjParseError(.unknownOrInvalidProjectReference(rawProjectReference), objectID: xcID)
 				}
 				let projectReference = ProjectReference(context: context)
 				projectReference.productGroup = try PBXFileElement.unsafeInstantiate(id: productGroupID, on: context, rawObjects: rawObjects, decodedObjects: &decodedObjects)
