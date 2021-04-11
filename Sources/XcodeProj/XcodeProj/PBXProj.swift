@@ -30,11 +30,13 @@ public struct PBXProj {
 	public init(url: URL, context: NSManagedObjectContext) throws {
 		let data = try Data(contentsOf: url)
 		
-		//var format = PropertyListSerialization.PropertyListFormat.xml
-		guard let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: nil/*&format*/) as? [String: Any] else {
+		var format = PropertyListSerialization.PropertyListFormat.xml
+		guard let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Any] else {
 			throw XcodeProjError(message: "Got unexpected type for decoded pbxproj plist (not [String: Any]) in pbxproj.")
 		}
-		/* Now, "format" is (should be) PropertyListSerialization.PropertyListFormat.openStep */
+		if format != .openStep {
+			XcodeProjConfig.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
+		}
 		
 		rawDecoded = decoded
 		
