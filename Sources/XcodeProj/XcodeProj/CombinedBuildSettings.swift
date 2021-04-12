@@ -78,16 +78,16 @@ public struct CombinedBuildSettings {
 	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
 		let targets = try project.getTargets()
 		
-		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.getBuildConfigurationList().getBuildConfigurations(), targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
+		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.getBuildConfigurations(), targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
 			.mapValues{ $0.buildSettingsLevels }
 		
 		return try targets.flatMap{ target -> [CombinedBuildSettings] in
-			return try Array(allCombinedBuildSettings(for: try target.getBuildConfigurationList().getBuildConfigurations(), targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings).values)
+			return try Array(allCombinedBuildSettings(for: try target.getBuildConfigurations(), targetAndProjectSettingsPerConfigName: (target, projectSettingsPerConfigName), xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings).values)
 		}
 	}
 	
 	public static func allCombinedBuildSettingsForProject(_ project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
-		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.getBuildConfigurationList().getBuildConfigurations(), targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
+		let projectSettingsPerConfigName = try allCombinedBuildSettings(for: project.getBuildConfigurations(), targetAndProjectSettingsPerConfigName: nil, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings)
 		return Array(projectSettingsPerConfigName.values)
 	}
 	
@@ -103,7 +103,7 @@ public struct CombinedBuildSettings {
 			let targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
 				let (target, projectSettingsPerConfigName) = targetAndProjectSettingsPerConfigName
 				guard let projectSettings = projectSettingsPerConfigName[name] else {
-					throw XcodeProjError(message: "Asked to get combined build settings for target \(target.xcID ?? "<unknown>") but did not get project settings for configuration “\(name)” which is in the target’s configuration list.")
+					throw XcodeProjError.invalidPBXProjObjectGraph(.targetHasConfigurationNameProjectDoesNot(configName: name), objectID: target.xcID)
 				}
 				return (target, projectSettings)
 			}
@@ -133,7 +133,7 @@ public struct CombinedBuildSettings {
 		
 		if let baseConfigurationReference = config.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
-				throw XcodeProjError(message: "Got base configuration reference \(baseConfigurationReference.xcID ?? "<unknown>") for configuration \(configuration.xcID ?? "<unknown>") whose language specification index is not text.xcconfig. Don’t known how to handle this.")
+				throw XcodeProjError.invalidPBXProjObjectGraph(.baseConfigurationReferenceIsNotTextXCConfig(configurationID: configuration.xcID), objectID: baseConfigurationReference.xcID)
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: ["SOURCE_ROOT": xcodeprojURL.deletingLastPathComponent().absoluteURL.path])
 			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: config))

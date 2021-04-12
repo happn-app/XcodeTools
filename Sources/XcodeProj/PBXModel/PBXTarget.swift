@@ -60,4 +60,8 @@ public class PBXTarget : PBXObject {
 	public func getDependencies()           throws -> [PBXTargetDependency] {try PBXObject.getNonOptionalValue(dependencies,           "dependencies",           xcID)}
 	public func getBuildConfigurationList() throws -> XCConfigurationList   {try PBXObject.getNonOptionalValue(buildConfigurationList, "buildConfigurationList", xcID)}
 	
+	public func getBuildConfigurations() throws -> [XCBuildConfiguration] {
+		return try getBuildConfigurationList().getBuildConfigurations()
+	}
+	
 }

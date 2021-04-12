@@ -81,7 +81,7 @@ public struct PBXProj {
 				try context.save()
 			} catch {
 				XcodeProjConfig.logger?.debug("Error when saving PBXProj model: \(error)")
-				XcodeProjConfig.logger?.debug("   -> Validation errors: \(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"])")
+				XcodeProjConfig.logger?.debug("   -> Validation errors: \(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"] ?? "<none>")")
 				context.rollback()
 				throw XcodeProjError.invalidPBXProjObjectGraph(.coreDataSaveError(error), objectID: nil)
 			}

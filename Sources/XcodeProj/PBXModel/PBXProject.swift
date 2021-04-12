@@ -112,4 +112,8 @@ public class PBXProject : PBXObject {
 	public func getMainGroup()              throws -> PBXGroup            {try PBXObject.getNonOptionalValue(mainGroup,              "mainGroup",              xcID)}
 	public func getTargets()                throws -> [PBXTarget]         {try PBXObject.getNonOptionalValue(targets,                "targets",                xcID)}
 	
+	public func getBuildConfigurations() throws -> [XCBuildConfiguration] {
+		return try getBuildConfigurationList().getBuildConfigurations()
+	}
+	
 }

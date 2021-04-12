@@ -76,9 +76,9 @@ public struct XCConfig {
 				/* We should have a normal line (setting = value) */
 				let variableName: String
 				do {
-					guard let firstChar = scanner.scanCharacter() else {
-						throw XcodeProjError(message: "Internal error in \(#file), first char of line is nil, but line should not be empty.")
-					}
+					/* The line is not empty (checked before), so scanning a
+					 * character cannot return nil, hence the force-unwrap. */
+					let firstChar = scanner.scanCharacter()!
 					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettingKey.charactersValidForFirstVariableCharacter.contains(scalar) else {
 						throw XcodeProjError.xcconfigParseError(.invalidFirstCharInVar(firstChar))
 					}
@@ -156,7 +156,7 @@ public struct XCConfig {
 		
 		func lineString() throws -> String {
 			guard isValid else {
-				throw XcodeProjError(message: "Trying to get line string representation of invalid line \(self)")
+				throw XcodeProjError.xcconfigParseError(.invalidLine(self))
 			}
 			
 			switch self {

@@ -64,6 +64,8 @@ public enum XcodeProjError : Error {
 		case invalidFirstCharInVar(Character)
 		case unexpectedCharAfterVarName
 		
+		case invalidLine(XCConfig.Line)
+		
 	}
 	
 	/* Very few errors: it is practically impossible to get an invalid build
@@ -80,7 +82,16 @@ public enum XcodeProjError : Error {
 		case coreDataSaveError(Error)
 		
 		case missingProperty(propertyName: String)
+		
 		case atLeastTwoConfigurationsHaveSameName
+		/**
+		When retrieving combined settings of a target, we retrieve all the
+		settings in all the configuration names the target has. It is expected for
+		the project to have at least the same configuration names as the target.
+		This error is thrown if the target has a configuration name the project
+		does not have. */
+		case targetHasConfigurationNameProjectDoesNot(configName: String)
+		case baseConfigurationReferenceIsNotTextXCConfig(configurationID: String?)
 		
 	}
 	
@@ -113,11 +124,6 @@ public enum XcodeProjError : Error {
 		
 		case cannotGetDeveloperDir
 		
-	}
-	
-	#warning("Line below exists just so the project compiles. Must be removed.")
-	init(message: String) {
-		self = .pbxProjParseError(PBXProjParseError.unexpectedPropertyValueType(propertyName: "", value: ""), objectID: nil)
 	}
 	
 }

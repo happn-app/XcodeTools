@@ -10,9 +10,11 @@ class TestAllProjects : XCTestCase {
 	let testProjectsURL = URL(fileURLWithPath: #file, isDirectory: false).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("TestsData").appendingPathComponent("projects")
 	
 	func testReserialization() throws {
+		struct CannotGetDirEnumerator : Error {var url: URL}
+		
 		let fm = FileManager.default
 		guard let de = fm.enumerator(atPath: testProjectsURL.path) else {
-			throw XcodeProjError(message: "Cannot get dir enumerator at path \(testProjectsURL.path)")
+			throw CannotGetDirEnumerator(url: testProjectsURL)
 		}
 		
 		while let f = de.nextObject() as! String? {
