@@ -14,9 +14,11 @@ public enum XcodeProjError : Error {
 	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
 	case pbxProjParseError(PBXProjParseError, objectID: String?)
 	case infoPlistParseError(InfoPlistParseError)
+	case xcconfigParseError(XCConfigParseError)
 	
 	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
 	case invalidPBXProjObjectGraph(PBXProjObjectGraphError, objectID: String?)
+	case missingVariable(String)
 	
 	case internalError(InternalError)
 	
@@ -44,6 +46,22 @@ public enum XcodeProjError : Error {
 		
 		case plistParseError(Error)
 		case deserializedPlistHasInvalidType
+		
+	}
+	
+	public enum XCConfigParseError : Error {
+		
+		case cannotFindFile(URL)
+		
+		case unknownDirective(String)
+		case gotSpaceAfterSharpInDirective
+		case noSpaceAfterIncludeDirective
+		case expectedDoubleQuoteAfterIncludeDirective
+		case unterminatedIncludeFileName
+		case unexpectedCharAfterInclude
+		
+		case invalidFirstCharInVar(Character)
+		case unexpectedCharAfterVarName
 		
 	}
 	

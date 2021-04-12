@@ -90,8 +90,20 @@ public class PBXFileElement : PBXObject {
 	}
 	
 	/**
-	The given resolved path is relative to the xcodeproj path if the returned
-	`rootVar` is nil. */
+	Returns the necessary info to get the resolved path of the file element. You
+	can use `resolvedPathAsURL(xcodeprojURL:variables:)` to get the resolved URL
+	directly.
+	
+	The first element of the tuple (`rootVar`) is the name of the variable to
+	which the resolved path is relative to, and the second is the relative path.
+	
+	For instance, for a built product, you can get the result
+	`("BUILT_PRODUCTS_DIR", "The Awesome App.app")`. The full resolved path is
+	the concatenation of the `BUILT_PRODUCTS_DIR` value, `/`, and the relative
+	path. You should use `resolvedPathAsURL(xcodeprojURL:variables:)` to take
+	care of the edge cases…
+	
+	If `rootVar` is `nil`, the path is relative to the xcodeproj path. */
 	public var resolvedPathInfo: (rootVar: String?, path: String)? {
 		guard let sourceTree = sourceTree else {
 			return nil
@@ -107,7 +119,7 @@ public class PBXFileElement : PBXObject {
 					}
 				} else {
 					guard let project = (self as? PBXGroup)?.projectForMainGroup_ else {
-						XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
+						XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup_ property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
 					/* I don’t know the role of project.projectRoot. I tried
@@ -136,14 +148,18 @@ public class PBXFileElement : PBXObject {
 				}
 				return (nil, path)
 				
-			case .unknown:
-				XcodeProjConfig.logger?.warning("Asked resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
-				/* I guess? */
-				return nil
-				
 			case .variable(let variable):
 				return (variable, path ?? ".")
+				
+			case .unknown:
+				XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
+				/* I guess? */
+				return nil
 		}
+	}
+	
+	public func getResolvedPathInfo() throws -> (rootVar: String?, path: String) {
+		return try PBXObject.getNonOptionalValue(resolvedPathInfo, "resolvedPathInfo", xcID)
 	}
 	
 	public func resolvedPathAsURL(xcodeprojURL: URL, variables: [String: String]) throws -> URL {
@@ -154,19 +170,16 @@ public class PBXFileElement : PBXObject {
 			return URL(fileURLWithPath: path, relativeTo: projectURL)
 		}
 		
-		switch resolvedPathInfo {
-			case nil:
-				throw XcodeProjError(message: "Cannot get resolved path info.")
-				
-			case (let rootVar?, let path)?:
+		switch try getResolvedPathInfo() {
+			case (let rootVar?, let path):
 				guard let varValue = variables[rootVar] else {
-					throw XcodeProjError(message: "Cannot resolve the resovled path info because I do not have a value for variable \(rootVar).")
+					throw XcodeProjError.missingVariable(rootVar)
 				}
 				if varValue.isEmpty  {return relativeToXcodeproj(path)}
 				else if path.isEmpty {return relativeToXcodeproj(varValue)}
 				else                 {return relativeToXcodeproj(varValue + "/" + path)}
 				
-			case (_/*nil actually*/, let path)?:
+			case (_/*nil actually*/, let path):
 				return relativeToXcodeproj(path)
 		}
 	}
