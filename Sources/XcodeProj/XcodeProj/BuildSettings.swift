@@ -33,15 +33,24 @@ public struct BuildSettings {
 		
 		p.launch()
 		p.waitUntilExit()
-		
-		if #available(OSX 10.15.4, *) {
-			guard p.terminationStatus == 0, let output = try pipe.fileHandleForReading.readToEnd().flatMap({ String(data: $0, encoding: .utf8) }), !output.isEmpty else {
-				throw XcodeProjError(message: "Cannot get DEVELOPER_DIR")
-			}
-			return output.trimmingCharacters(in: .whitespacesAndNewlines)
-		} else {
-			throw XcodeProjError(message: "Cannot get DEVELOPER_DIR (because this program was not compiled on macOS 10.15.4)")
+		guard p.terminationReason == .exit, p.terminationStatus == 0 else {
+			throw XcodeProjError.internalError(.cannotGetDeveloperDir)
 		}
+		
+		let outputData: Data?
+		if #available(OSX 10.15.4, *) {
+			outputData = try Result{ try pipe.fileHandleForReading.readToEnd() }
+				.mapErrorAndGet{ _ in XcodeProjError.internalError(.cannotGetDeveloperDir) }
+		} else {
+			outputData = pipe.fileHandleForReading.readDataToEndOfFile()
+		}
+		let outputString = try outputData.flatMap{ String(data: $0, encoding: .utf8) }
+			.get(orThrow: XcodeProjError.internalError(.cannotGetDeveloperDir))
+			.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !outputString.isEmpty else {
+			throw XcodeProjError.internalError(.cannotGetDeveloperDir)
+		}
+		return outputString
 	}
 	
 	public static func standardDefaultSettings(xcodprojURL: URL) throws -> BuildSettings {

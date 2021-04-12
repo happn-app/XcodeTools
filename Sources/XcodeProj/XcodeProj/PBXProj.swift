@@ -28,11 +28,11 @@ public struct PBXProj {
 	public let rootObject: PBXProject
 	
 	public init(url: URL, context: NSManagedObjectContext) throws {
-		let data = try Result{ try Data(contentsOf: url) }.mapError{ XcodeProjError.cannotReadFile(url, $0) }.get()
+		let data = try Result{ try Data(contentsOf: url) }.mapErrorAndGet{ XcodeProjError.cannotReadFile(url, $0) }
 		
 		var format = PropertyListSerialization.PropertyListFormat.xml
 		let decodedUntyped = try Result{ try PropertyListSerialization.propertyList(from: data, options: [], format: &format) }
-			.mapError{ XcodeProjError.pbxProjParseError(.plistParseError($0), objectID: nil) }.get()
+			.mapErrorAndGet{ XcodeProjError.pbxProjParseError(.plistParseError($0), objectID: nil) }
 		
 		if format != .openStep {
 			XcodeProjConfig.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")

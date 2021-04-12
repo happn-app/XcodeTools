@@ -50,7 +50,7 @@ public struct XcodeProj {
 		
 		let pc = NSPersistentStoreCoordinator(managedObjectModel: managedObjectModel)
 		_ = try Result{ try pc.addPersistentStore(ofType: NSInMemoryStoreType, configurationName: nil, at: nil, options: nil) }
-			.mapError{ error in XcodeProjError.internalError(.cannotLoadModel(error)) }.get()
+			.mapErrorAndGet{ error in XcodeProjError.internalError(.cannotLoadModel(error)) }
 		
 		persistentCoordinator = pc
 		

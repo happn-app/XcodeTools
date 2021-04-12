@@ -111,6 +111,8 @@ public enum XcodeProjError : Error {
 		case unknownObjectTypeDuringSerialization(object: Any)
 		case tryingToInstantiateNonPBXObjectEntity(isa: String, entity: NSEntityDescription)
 		
+		case cannotGetDeveloperDir
+		
 	}
 	
 	#warning("Line below exists just so the project compiles. Must be removed.")

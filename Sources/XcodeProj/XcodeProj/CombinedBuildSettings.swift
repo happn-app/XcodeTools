@@ -226,9 +226,9 @@ public struct CombinedBuildSettings {
 		guard let plistURL = infoPlistURL(xcodeprojURL: xcodeprojURL) else {
 			return nil
 		}
-		let plistData = try Result{ try Data(contentsOf: plistURL) }.mapError{ XcodeProjError.cannotReadFile(plistURL, $0) }.get()
+		let plistData = try Result{ try Data(contentsOf: plistURL) }.mapErrorAndGet{ XcodeProjError.cannotReadFile(plistURL, $0) }
 		let deserializedPlist = try Result{ try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) }
-			.mapError{ XcodeProjError.infoPlistParseError(.plistParseError($0)) }.get()
+			.mapErrorAndGet{ XcodeProjError.infoPlistParseError(.plistParseError($0)) }
 		guard let deserializedPlistObject = deserializedPlist as? [String: Any] else {
 			throw XcodeProjError.infoPlistParseError(.deserializedPlistHasInvalidType)
 		}
