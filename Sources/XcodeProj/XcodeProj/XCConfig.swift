@@ -257,7 +257,7 @@ public struct XCConfig {
 		if path.starts(with: "<DEVELOPER_DIR>") {
 			let developerDir = try BuildSettings.getDeveloperDir()
 //			let a = "/<DEVELOPER_DIR>/<DEVELOPER_DIR>"
-//			print(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))
+//			XcodeProjConfig.logger?.debug("\(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))")
 			/* Tested (commented code above): The line below does indeed replace
 			 * the string only if it is the prefix of the var. */
 			path = path.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored)

@@ -27,6 +27,7 @@ struct SetMarketingVersion : ParsableCommand {
 				buildSettingKey: "MARKETING_VERSION"
 			)
 		} catch {
+			#warning("Evil NSLog!")
 			NSLog("%@", "There was an error setting the version of the project. Some files might have been modified.")
 			throw error
 		}

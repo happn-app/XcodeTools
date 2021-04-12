@@ -15,6 +15,7 @@ public enum XcodeProjError : Error {
 	case pbxProjParseError(PBXProjParseError, objectID: String?)
 	case infoPlistParseError(InfoPlistParseError)
 	case xcconfigParseError(XCConfigParseError)
+	case buildSettingParseError(BuildSettingParseError)
 	
 	/** `objectID` is `nil` if unknown or not applicable (root, etc.) */
 	case invalidPBXProjObjectGraph(PBXProjObjectGraphError, objectID: String?)
@@ -65,7 +66,18 @@ public enum XcodeProjError : Error {
 		
 	}
 	
+	/* Very few errors: it is practically impossible to get an invalid build
+	 * setting given the format it has. It is however very possible to get an
+	 * unexpected value, but that’s another story. */
+	public enum BuildSettingParseError : Error {
+		
+		case unfinishedKey(full: String, garbage: String)
+		
+	}
+	
 	public enum PBXProjObjectGraphError : Error {
+		
+		case coreDataSaveError(Error)
 		
 		case missingProperty(propertyName: String)
 		case atLeastTwoConfigurationsHaveSameName

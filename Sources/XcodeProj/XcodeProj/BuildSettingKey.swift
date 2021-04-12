@@ -58,8 +58,8 @@ public struct BuildSettingKey : Hashable {
 		key = scanner.scanUpToString("[") ?? ""
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		garbage = scanner.scanUpToCharacters(from: CharacterSet()) ?? ""
-		if !garbage.isEmpty {
-			throw XcodeProjError(message: "Got build setting key which seems invalid. Got garbage: “\(garbage)”. Raw key is: “\(serializedKey)”.")
+		guard garbage.isEmpty else {
+			throw XcodeProjError.buildSettingParseError(.unfinishedKey(full: serializedKey, garbage: garbage))
 		}
 	}
 	

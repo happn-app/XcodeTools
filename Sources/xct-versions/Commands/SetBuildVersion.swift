@@ -27,6 +27,7 @@ struct SetBuildVersion : ParsableCommand {
 				buildSettingKey: "CURRENT_PROJECT_VERSION"
 			)
 		} catch {
+			#warning("Evil NSLog!")
 			NSLog("%@", "There was an error setting the version of the project. Some files might have been modified.")
 			throw error
 		}
