@@ -209,7 +209,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 	
 	/**
 	Return a user readable description of the signal (always in English I think). */
-	public var asString: String? {
+	public var signalDescription: String? {
 		guard rawValue >= 0 && rawValue < NSIG else {
 			return nil
 		}
