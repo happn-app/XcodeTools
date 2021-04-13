@@ -201,7 +201,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 		}
 		
 		return withUnsafePointer(to: sys_signame, { siglistPtr in
-			return siglistPtr.withMemoryRebound(to: UnsafePointer<UInt8>?.self, capacity: 1, { siglistPtrAsPointerToCStrings in
+			return siglistPtr.withMemoryRebound(to: UnsafePointer<UInt8>?.self, capacity: Int(NSIG), { siglistPtrAsPointerToCStrings in
 				return siglistPtrAsPointerToCStrings.advanced(by: Int(rawValue)).pointee.flatMap{ String(cString: $0) }
 			})
 		})
@@ -215,7 +215,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 		}
 		
 		return withUnsafePointer(to: sys_siglist, { siglistPtr in
-			return siglistPtr.withMemoryRebound(to: UnsafePointer<UInt8>?.self, capacity: 1, { siglistPtrAsPointerToCStrings in
+			return siglistPtr.withMemoryRebound(to: UnsafePointer<UInt8>?.self, capacity: Int(NSIG), { siglistPtrAsPointerToCStrings in
 				return siglistPtrAsPointerToCStrings.advanced(by: Int(rawValue)).pointee.flatMap{ String(cString: $0) }
 			})
 		})
