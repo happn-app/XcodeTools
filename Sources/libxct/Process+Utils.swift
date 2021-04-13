@@ -80,7 +80,7 @@ extension Process {
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
-		signalsToForward: [Int32],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Process, DispatchGroup) {
 		let p = Process()
@@ -176,7 +176,7 @@ extension Process {
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
-		signalsToForward: [Int32],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
 		let (p, g) = try spawnedAndStreamedProcess(
