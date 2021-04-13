@@ -294,7 +294,7 @@ extension Process {
 	
 	/* https://stackoverflow.com/a/28005250 (last variant) */
 	private static func send(fd: CInt, to socket: Int32) throws {
-		var fd = fd /* Because we use a pointer to it at some point, but never actually modified */
+		var fd = fd /* A var because we use a pointer to it at some point, but never actually modified */
 		
 		var msg = msghdr()
 		let bufSize = XCT_CMSG_SPACE(MemoryLayout.size(ofValue: fd))
