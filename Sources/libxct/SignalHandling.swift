@@ -67,63 +67,107 @@ public struct SignalHandling {
 			throw LibXctError.systemError(Errno(rawValue: errno))
 		}
 		
-		if handlers[signal] == nil {
+		if let currentHandler = registrationsInfo[signal] {
+			assert(registrationsInfo[signal]!.handlerIDs.count >= 1)
+			/* Let’s check the handler has not been changed. */
+			guard areSigactionHandlersEqual(currentHandler.ourSigaction.__sigaction_u.__sa_handler, oldAction.__sigaction_u.__sa_handler) else {
+				throw LibXctError.signalHandlerChangedOutOfLib
+			}
+		} else {
 			/* No handlers were installed (by us) for this */
-			if !bypassIgnored {
-				/* Why going through the OpaquePointer hoop and not use directly the
-				 * unsafe bitcast to Int?
-				 * That way, if a pointer is not of size `MemoryLayout<Int>.size`,
-				 * the following line should not compile anymore. Without the
-				 * `OpaquePointer` they probably still would, but would probably not
-				 * be valid anymore. */
-				let sigIgnOpaque = OpaquePointer(bitPattern: unsafeBitCast(SIG_IGN, to: Int.self))
-				let oldActionHandlerOpaque = OpaquePointer(bitPattern: unsafeBitCast(oldAction.__sigaction_u.__sa_handler, to: Int.self))
-				guard oldActionHandlerOpaque != sigIgnOpaque else {
-					return nil
-				}
+			
+			/* Why going through the OpaquePointer hoop and not use directly the
+			 * unsafe bitcast to Int?
+			 * That way, if a pointer is not of size `MemoryLayout<Int>.size`, the
+			 * following line should not compile anymore. Without the OpaquePointer
+			 * they probably still would, but would probably not be valid anymore. */
+			let sigIgnOpaque = OpaquePointer(bitPattern: unsafeBitCast(SIG_IGN, to: Int.self))
+			let sigDflOpaque = OpaquePointer(bitPattern: unsafeBitCast(SIG_DFL, to: Int.self))
+			let oldActionHandlerOpaque = OpaquePointer(bitPattern: unsafeBitCast(oldAction.__sigaction_u.__sa_handler, to: Int.self))
+			let oldActionIsDefault = (oldActionHandlerOpaque != sigDflOpaque)
+			let oldActionIsIgnore = (oldActionHandlerOpaque != sigIgnOpaque)
+			/* There are no other possibilites AFAIK (and AFA the man tells) */
+			let oldActionIsCustom = !oldActionIsIgnore && !oldActionIsDefault
+			
+			guard bypassIgnored || !oldActionIsIgnore else {
+				return nil
 			}
 			
 			var newAction = sigaction()
-			/* We only block the signal being delivered during the execution of the
-			 * handler (default behaviour) */
-			newAction.sa_mask = 0
-			/* Other flags do not seem interesting to me at the moment. See
-			 * sigaction(2) for more info.
-			 * GNU version of the man here: https://man7.org/linux/man-pages/man2/sigaction.2.html */
-			newAction.sa_flags = SA_SIGINFO
+			if oldActionIsCustom {
+				/* If there already was a handler, we keep the same flags and mask,
+				 * except we remove the SA_NODEFER flag that we do need.
+				 * Is it the proper thing to do? I don’t know. But it’s what we do
+				 * for now. */
+				newAction.sa_mask = oldAction.sa_mask
+				newAction.sa_flags = oldAction.sa_flags & ~SA_NODEFER
+			} else {
+				/* We only block the signal being delivered during the execution of
+				 * the handler (default behaviour) */
+				newAction.sa_mask = 0
+				/* No flags seem interesting to me at the moment (SA_SIGINFO is set
+				 * later). See sigaction(2) for more info.
+				 * GNU version of the man here: https://man7.org/linux/man-pages/man2/sigaction.2.html */
+				newAction.sa_flags = 0
+			}
+			newAction.sa_flags = (newAction.sa_flags | SA_SIGINFO)
 			newAction.__sigaction_u.__sa_sigaction = handleSignal
-			sigaction(signal.rawValue, &newAction, nil)
+			guard sigaction(signal.rawValue, &newAction, nil) == 0 else {
+				throw LibXctError.systemError(Errno(rawValue: errno))
+			}
 			
-			handlers[signal] = [InstalledSignalHandlerID(signal: signal, handler: .extended({ signal, siginfo, userThreadContext in
+			let handlerID = InstalledSignalHandlerID(signal: signal, handler: .extended({ signal, siginfo, userThreadContext in
 				#warning("TODO: Call original handler (in oldAction)")
 				print("Must call original handler")
-			}))]
-		} else {
-			assert(handlers[signal]!.count >= 1)
-			#warning("TODO: Verify the current handler of the signal (in oldAction) is one of ours, throw if it is not.")
+			}))
+			registrationsInfo[signal] = RegistrationInfo(originalSigaction: oldAction, ourSigaction: newAction, handlerIDs: [handlerID])
 		}
 		
-		handlers[signal]!.append(InstalledSignalHandlerID(signal: signal, handler: handler))
+		registrationsInfo[signal]!.handlerIDs.append(InstalledSignalHandlerID(signal: signal, handler: handler))
 		return InstalledSignalHandlerID(signal: signal, handler: handler)
 	}
 	
-	public static func removeSignalHandler(_ handler: InstalledSignalHandlerID) -> Bool {
-		guard let idx = handlers[handler.signal]?.firstIndex(of: handler) else {
+	public static func removeSignalHandler(_ handler: InstalledSignalHandlerID) throws -> Bool {
+		guard var info = registrationsInfo[handler.signal], let idx = info.handlerIDs.firstIndex(of: handler) else {
 			return false
 		}
 		
-		handlers[handler.signal]?.remove(at: idx)
-		assert(handlers[handler.signal]!.count >= 1)
-		if handlers[handler.signal]?.count == 1 {
-			handlers.removeValue(forKey: handler.signal)
-			#warning("TODO: Reset the handler to the original value (probably default, but who knows? we have to keep the original action)")
+		info.handlerIDs.remove(at: idx)
+		assert(info.handlerIDs.count >= 1)
+		if info.handlerIDs.count == 1 {
+			registrationsInfo.removeValue(forKey: handler.signal)
+			guard sigaction(handler.signal.rawValue, &info.originalSigaction, nil) == 0 else {
+				throw LibXctError.systemError(Errno(rawValue: errno))
+			}
+		} else {
+			registrationsInfo[handler.signal] = info
 		}
 		
-		assert(handlers[handler.signal]?.firstIndex(of: handler) == nil)
+		assert(registrationsInfo[handler.signal]?.handlerIDs.firstIndex(of: handler) == nil)
 		return true
 	}
 	
-	fileprivate static var handlers = [Signal: [InstalledSignalHandlerID]]()
+	fileprivate struct RegistrationInfo {
+		
+		var originalSigaction: sigaction
+		var ourSigaction: sigaction
+		
+		var handlerIDs: [InstalledSignalHandlerID]
+		
+	}
+	
+	fileprivate static var registrationsInfo = [Signal: RegistrationInfo]()
+	
+	private static func areSigactionHandlersEqual(_ lhs: @escaping sig_t, _ rhs: @escaping sig_t) -> Bool {
+		/* Why going through the OpaquePointer hoop and not use directly the
+		 * unsafe bitcast to Int?
+		 * That way, if a pointer is not of size `MemoryLayout<Int>.size`, the
+		 * following line should not compile anymore. Without the OpaquePointer
+		 * they probably still would, but would probably not be valid anymore. */
+		let lhsOpaque = OpaquePointer(bitPattern: unsafeBitCast(lhs, to: Int.self))
+		let rhsOpaque = OpaquePointer(bitPattern: unsafeBitCast(rhs, to: Int.self))
+		return lhsOpaque == rhsOpaque
+	}
 	
 	private init() {}
 	
@@ -137,7 +181,7 @@ private func handleSignal(_ signalID: CInt, _ siginfo: UnsafeMutablePointer<__si
 	 * a method which would be considered unsafe to be used in a signal handler… */
 //	print("Got signal: \(signal.signalDescription ?? "Unknown signal!")")
 	
-	guard let signalHandlers = SignalHandling.handlers[signal], signalHandlers.count >= 1 else {
+	guard let signalHandlers = SignalHandling.registrationsInfo[signal]?.handlerIDs, signalHandlers.count >= 1 else {
 		LibXctConfig.logger?.error("Got nil or count < 1 signal handlers list for signal \(signal); this should not be possible! (If all handlers are removed, so should the sigaction handler.)")
 		return
 	}
