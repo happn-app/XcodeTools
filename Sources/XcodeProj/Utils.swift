@@ -173,7 +173,9 @@ extension String {
 public extension NSManagedObjectContext {
 	
 	/* Should be declared as rethrows instead of throws, but did not find a way
-	 * to do it sadly. */
+	 * to do it sadly.
+	 * It seems there will be an attribute to do it https://github.com/apple/swift-corelibs-libdispatch/pull/558/files */
+//	@_rethrowsUnchecked
 	func performAndWait<T>(_ block: () throws -> T) throws -> T {
 		var ret: T?
 		var err: Error?
