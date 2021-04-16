@@ -212,7 +212,9 @@ public struct SignalHandling {
 			#warning("TODO: No forced unwrap")
 			let back = try installSigaction(signal: signal, action: unsigactionedSignals[signal]!.originalSigaction)
 			/* Not caught by libdispatch because it uses kqueue which specifically
-			 * does not send signals sent to thread.
+			 * does not catch signals sent to threads.
+			 * Signals being process-wide (even those sent to threads), the
+			 * sigaction handler will still be executed.
 			 * TODO: Test this on Linux. If it does not work, I have no idea what
 			 *       to do in replacement though… */
 			/* TODO: Send signal to a thread we create ourself otherwise we get
