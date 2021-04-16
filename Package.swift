@@ -57,8 +57,16 @@ let package = Package(
 			.target(name: "Utils"),
 			.target(name: "XcodeProj")
 		]),
+		.target(name: "libxct-test-helper", dependencies: [
+			.product(name: "ArgumentParser", package: "swift-argument-parser"),
+			.product(name: "CLTLogger",      package: "clt-logger"),
+			.product(name: "Logging",       package: "swift-log"),
+			.target(name: "libxct"),
+			.target(name: "SignalHandling")
+		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
+			.target(name: "libxct-test-helper"),
 			.target(name: "xct"), /* libxct depends (indirectly) on xct to launch processes w/ additional fds. */
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
