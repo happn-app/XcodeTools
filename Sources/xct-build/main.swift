@@ -21,7 +21,6 @@ struct XctBuild : ParsableCommand {
 	)
 	
 	static var logger: Logger = {
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		var ret = Logger(label: "main")
 		ret.logLevel = .debug
 		return ret
@@ -31,6 +30,8 @@ struct XctBuild : ParsableCommand {
 	var xcodebuildPath: String = "/usr/bin/xcodebuild"
 	
 	func run() throws {
+		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		
 		let pipe = Pipe()
 		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 		let fhXcodeWriteOutput = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)

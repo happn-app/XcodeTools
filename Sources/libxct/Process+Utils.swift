@@ -4,6 +4,7 @@ import StreamReader
 import SystemPackage
 
 import CMacroExports
+import SignalHandling
 import Utils
 
 
@@ -123,6 +124,31 @@ extension Process {
 			p.arguments = ["internal-fd-get-launcher", executable] + args
 		}
 		
+		var readSources = [DispatchSourceRead]()
+		var signalSources = [DispatchSourceSignal]()
+		
+		var unsigactionIDs = [Signal: SignalHandling.UnsigactionID]()
+		for signal in signalsToForward {
+			let signalSource = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: nil)
+			signalSource.setEventHandler{
+				guard p.isRunning else {return}
+				kill(p.processIdentifier, signal.rawValue)
+			}
+			signalSource.setCancelHandler{
+				guard let id = unsigactionIDs[signal] else {
+					LibXctConfig.logger?.error("INTERNAL ERROR: In cancel handler, did not get an unsigaction id", metadata: ["signal": "\(signal)"])
+					return
+				}
+				do    {try SignalHandling.releaseUnsigactionedSignal(id)}
+				catch {LibXctConfig.logger?.error("Cannot release ignored signal \(signal): \(error)")}
+			}
+			signalSources.append(signalSource)
+		}
+		unsigactionIDs = try SignalHandling.unsigactionSignals(signalsToForward, originalHandlerAction: { (signal, handler) in
+			LibXctConfig.logger?.debug("Original handler action", metadata: ["signal": "\(signal)"])
+			handler(true)
+		})
+		
 		let streamGroup = DispatchGroup()
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
@@ -130,6 +156,7 @@ extension Process {
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
 			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
+			readSources.append(streamSource)
 			
 			streamSource.setRegistrationHandler(handler: streamGroup.enter)
 			streamSource.setCancelHandler(handler: streamGroup.leave)
@@ -147,17 +174,21 @@ extension Process {
 					timerRef: timerRef, fromTimer: false
 				)
 			}
-			
-			streamSource.activate()
+		}
+		
+		readSources.forEach{ $0.activate() }
+		signalSources.forEach{ $0.activate() }
+		
+		#warning("TODO: Doc: Do NOT set termination handler of Process!")
+		p.terminationHandler = { _ in
+			readSources.forEach{ $0.cancel() }
+			signalSources.forEach{ $0.cancel() }
 		}
 		
 		LibXctConfig.logger?.info("Launching process \(executable)")
 		try p.run()
 		for (fdToSend, fdInChild) in fileDescriptorsToSend {
 			
-		}
-		
-		for signal in signalsToForward {
 		}
 		
 		return (p, streamGroup)
@@ -224,6 +255,7 @@ extension Process {
 		 * to avoid blocking in an infinite read of the output stream in case the
 		 * dispatch source read “did not work” and we were never called in the
 		 * event handler.
+		 *
 		 * We thought about this case when closing the fd before reading the
 		 * stream ended (for tests). Turns out the dispatch source will not be
 		 * called, but the system read function will also block. Period. Whether
@@ -232,7 +264,10 @@ extension Process {
 		 * blocked, basically rendering this workaround useless.
 		 * We could probably time the read function and stop it (how?) if it took
 		 * too long, but 1/ how much is too long? 2/ if the user closes the file
-		 * descriptor while being used by someone else, he deserves to suffer. */
+		 * descriptor while being used by someone else, he deserves to suffer (doc
+		 * says “It is invalid to close a file descriptor or deallocate a mach
+		 * port that is currently being tracked by a dispatch source object before
+		 * the cancellation handler is invoked.”). */
 		let timer = DispatchSource.makeTimerSource(queue: streamQueue)
 		timerRef.value = timer
 		timer.setEventHandler(handler: {
@@ -335,4 +370,3 @@ extension Process {
 	}
 	
 }
-

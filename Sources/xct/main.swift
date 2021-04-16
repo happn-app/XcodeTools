@@ -19,7 +19,6 @@ struct Xct : ParsableCommand {
 	)
 	
 	static var logger: Logger = {
-		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		var ret = Logger(label: "main")
 		ret.logLevel = .debug
 		return ret
@@ -38,6 +37,8 @@ struct Xct : ParsableCommand {
 	var toolArguments: [String] = []
 	
 	func run() throws {
+		LoggingSystem.bootstrap{ _ in CLTLogger() }
+		
 		let absoluteExecPath = URL(fileURLWithPath: execPath).path
 		/* We force the XCT_EXEC_PATH env to the current exec path (used by some subcommands). */
 		guard setenv(Xct.execPathEnvVarName, absoluteExecPath, 1) == 0 else {

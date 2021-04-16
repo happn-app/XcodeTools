@@ -8,12 +8,18 @@ let package = Package(
 		.macOS(.v10_15)
 	],
 	products: [
+		/* A lib one can use to manipulate Xcode Projects. */
 		.library(name: "XcodeProj", targets: ["XcodeProj"]),
 		
+		/* The xct and xct-* executable, and the lib they use. */
 		.library(name: "libxct", targets: ["libxct"]),
 		.executable(name: "xct", targets: ["xct"]),
 		.executable(name: "xct-build", targets: ["xct-build"]),
 		.executable(name: "xct-versions", targets: ["xct-versions"]),
+		
+		/* Some re-usable utilities. */
+		.library(name: "SignalHandling", targets: ["SignalHandling"]),
+		.library(name: "XCTUtils", targets: ["Utils"]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
 		.executable(name: "hagvtool", targets: ["hagvtool"])
@@ -29,6 +35,10 @@ let package = Package(
 		.target(name: "CMacroExports"),
 		
 		.target(name: "Utils"),
+		.target(name: "SignalHandling", dependencies: [
+			.product(name: "Logging", package: "swift-log"),
+			.product(name: "SystemPackage", package: "swift-system")
+		]),
 		
 		.target(name: "XcodeProj", dependencies: [
 			.target(name: "Utils"),
@@ -43,6 +53,7 @@ let package = Package(
 			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
 			.target(name: "CMacroExports"),
+			.target(name: "SignalHandling"),
 			.target(name: "Utils"),
 			.target(name: "XcodeProj")
 		]),

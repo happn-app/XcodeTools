@@ -2,7 +2,8 @@ import Foundation
 
 
 
-/* Could be an enum? */
+/* Could be an enum? I’d say no to be able to represent signals we don’t know
+ * are a part of the system. */
 public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 	
 	/* Signal 0 is not considered. Because it does not exist. It is simply a
@@ -38,7 +39,7 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 			.interrupt  /* Ctrl-C */,
 			.quit       /* Like .interrupt, but with a Core Dump */,
 			.hangup     /* Not sure about that one but might be good: The user’s terminal is disconnected */,
-			.suspended  /* Forward Ctrl-Z, like bash */,
+			.suspended  /* Ctrl-Z */,
 			.continued  /* Resume stopped process (from .suspended forwarding for instance) when we are resumed */
 		)
 	}
