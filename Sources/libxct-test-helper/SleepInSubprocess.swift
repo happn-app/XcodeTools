@@ -17,8 +17,12 @@ struct SleepInSubprocess : ParsableCommand {
 		SignalHandlingConfig.logger = logger
 		LibXctConfig.logger = logger
 		
-		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/sleep", args: ["424242"], outputHandler: { _,_ in })
+		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/sleep", args: ["424242"]/*, signalsToForward: []*/, outputHandler: { _,_ in })
 		print(p.processIdentifier)
+		
+		let isTerminatedIgnored = try SignalHandling.isSignalIgnored(Signal.terminated)
+		logger.debug("\(isTerminatedIgnored)")
+		
 		p.waitUntilExit()
 		g.wait()
 	}

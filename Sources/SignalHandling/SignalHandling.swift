@@ -166,6 +166,7 @@ public struct SignalHandling {
 	private struct UnsigactionedSignal {
 		
 		static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.unsigactioned-signal-processing")
+//		static let threadForSignalResend = pthread_create(<#T##UnsafeMutablePointer<pthread_t?>!#>, <#T##UnsafePointer<pthread_attr_t>?#>, <#T##(UnsafeMutableRawPointer) -> UnsafeMutableRawPointer?#>, <#T##UnsafeMutableRawPointer?#>)
 		
 		var originalSigaction: Sigaction
 		
@@ -202,6 +203,27 @@ public struct SignalHandling {
 	
 	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
 	private static func processSignalFromDispatch(signal: Signal, count: UInt) {
+		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		/* Caught by libdispatch */
+//		raise(signal.rawValue)
+		do {
+			SignalHandlingConfig.logger?.debug("\(pthread_self())")
+			let back = try installSigaction(signal: signal, action: unsigactionedSignals[signal]!.originalSigaction)
+			/* Not caught by libdispatch because it uses kqueue which specifically
+			 * does not send signals sent to thread.
+			 * TODO: Test this on Linux. If it does not work, I have no idea what
+			 *       to do in replacement though… */
+			/* TODO: Send signal to a thread we create ourself otherwise we get
+			 *       error 45 (let’s hope it’ll work w/ thread we create).*/
+			let ret = pthread_kill(pthread_self(), 0)
+			if ret != 0 {
+				SignalHandlingConfig.logger?.debug("\(ENOTSUP)")
+				SignalHandlingConfig.logger?.error("Cannot send signal to thread: error \(Errno(rawValue: ret)).", metadata: ["signal": "\(signal)"])
+			}
+			if let back = back {try installSigaction(signal: signal, action: back)}
+		} catch {
+			SignalHandlingConfig.logger?.error("Error installing a sigaction when sending original signal back. Signal might have been dropped, or not set back to ignore.", metadata: ["signal": "\(signal)"])
+		}
 	}
 	
 	private init() {}
