@@ -4,7 +4,7 @@ import Foundation
 
 /* Could be an enum? I’d say no to be able to represent signals we don’t know
  * are a part of the system. */
-public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
+public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, CustomStringConvertible {
 	
 	/* Signal 0 is not considered. Because it does not exist. It is simply a
 	 * special value that can be used by kill to check if a signal can be sent to
@@ -220,6 +220,10 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable {
 				return siglistPtrAsPointerToCStrings.advanced(by: Int(rawValue)).pointee.flatMap{ String(cString: $0) }
 			})
 		})
+	}
+	
+	public var description: String {
+		return "SIG\((signalName ?? "\(rawValue)").uppercased())"
 	}
 	
 }
