@@ -204,10 +204,12 @@ public struct SignalHandling {
 	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
 	private static func processSignalFromDispatch(signal: Signal, count: UInt) {
 		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		#warning("TODO: Use the OriginalHandlerActions")
 		/* Caught by libdispatch */
 //		raise(signal.rawValue)
 		do {
 			SignalHandlingConfig.logger?.debug("\(pthread_self())")
+			#warning("TODO: No forced unwrap")
 			let back = try installSigaction(signal: signal, action: unsigactionedSignals[signal]!.originalSigaction)
 			/* Not caught by libdispatch because it uses kqueue which specifically
 			 * does not send signals sent to thread.
