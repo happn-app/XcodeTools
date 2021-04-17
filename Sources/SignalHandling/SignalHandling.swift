@@ -246,6 +246,13 @@ public struct SignalHandling {
 	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
 	private static func processSignalFromDispatch(signal: Signal, count: UInt) {
 		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		for _ in 0..<count {
+			processOneSignalFromDispatch(signal: signal)
+		}
+	}
+	
+	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
+	private static func processOneSignalFromDispatch(signal: Signal) {
 		#warning("TODO: Use the OriginalHandlerActions")
 		do {
 			/* Get the original sigaction for the given signal. */
@@ -366,7 +373,10 @@ private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> Unsafe
 	groupForSyncOfSignalResend.leave()
 	
 	repeat {
-		SignalHandlingConfig.logger?.trace("Pausing thread for signal resend")
+		/* Try and test possible race conditions. */
+//		sleep(3)
+		
+		SignalHandlingConfig.logger?.trace("sigsuspend starting in thread for signal resend")
 		/* We do want to use sigsuspend and not pause as we need all signals to be
 		 * unblocked. */
 		_ = sigsuspend(&emptyMask)

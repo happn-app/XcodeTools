@@ -27,7 +27,7 @@ struct SleepInSubprocess : ParsableCommand {
 		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/sleep", args: ["424242"]/*, signalsToForward: [.userDefinedSignal1]*/, outputHandler: { _,_ in })
 		logger.info("Sub-process launched w/ PID \(p.processIdentifier)")
 		
-		for _ in 0..<1 {
+		for _ in 0..<0 {
 			sleep(1)
 			logger.info("Sending signal 15 to myself")
 			kill(getpid(), 15)
