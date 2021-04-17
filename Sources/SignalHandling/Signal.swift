@@ -189,6 +189,18 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	public static let windowSizeChanges  = Signal(rawValue: SIGWINCH)
 	public static let informationRequest = Signal(rawValue: SIGINFO)
 	
+	public static func set(from sigset: sigset_t) -> Set<Signal> {
+		var sigset = sigset
+		return Set((1..<NSIG).filter{ sigismember(&sigset, $0) != 0 }.map{ Signal(rawValue: $0) })
+	}
+	
+	public static func sigset(from setOfSignals: Set<Signal>) -> sigset_t {
+		var sigset = sigset_t()
+		sigemptyset(&sigset)
+		for s in setOfSignals {sigaddset(&sigset, s.rawValue)}
+		return sigset
+	}
+	
 	public var rawValue: CInt
 	
 	public init(rawValue: CInt) {

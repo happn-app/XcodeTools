@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
 readonly LINUX_SWIFT_IMAGE="swift:5.3.3"
 

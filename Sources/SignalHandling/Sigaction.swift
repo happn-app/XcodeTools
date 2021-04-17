@@ -4,18 +4,6 @@ import Foundation
 
 public struct Sigaction : Equatable, RawRepresentable {
 	
-	public static func setOfSignals(from sigset: sigset_t) -> Set<Signal> {
-		var sigset = sigset
-		return Set((1..<NSIG).filter{ sigismember(&sigset, $0) != 0 }.map{ Signal(rawValue: $0) })
-	}
-	
-	public static func sigset(from setOfSignals: Set<Signal>) -> sigset_t {
-		var sigset = sigset_t()
-		sigemptyset(&sigset)
-		for s in setOfSignals {sigaddset(&sigset, s.rawValue)}
-		return sigset
-	}
-	
 	public static let ignoreAction = Sigaction(handler: .ignoreHandler)
 	public static let defaultAction = Sigaction(handler: .defaultHandler)
 	
@@ -40,7 +28,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 	`sa_flags` not to contains the `SA_SIGINFO` bit. If they do, we log an error,
 	as this is invalid. */
 	public init(rawValue: sigaction) {
-		self.mask = Sigaction.setOfSignals(from: rawValue.sa_mask)
+		self.mask = Signal.set(from: rawValue.sa_mask)
 		self.flags = SigactionFlags(rawValue: rawValue.sa_flags)
 		
 		switch OpaquePointer(bitPattern: unsafeBitCast(rawValue.__sigaction_u.__sa_handler, to: Int.self)) {
@@ -62,7 +50,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 		}
 		
 		var ret = sigaction()
-		ret.sa_mask = Sigaction.sigset(from: mask)
+		ret.sa_mask = Signal.sigset(from: mask)
 		ret.sa_flags = flags.rawValue
 		
 		switch handler {
