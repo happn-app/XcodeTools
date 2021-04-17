@@ -187,68 +187,41 @@ public struct SignalHandling {
 		static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.unsigactioned-signal-processing")
 		static var threadForSignalResend: pthread_t? = {
 			var threadAttr = pthread_attr_t()
-			pthread_attr_init(&threadAttr)
-			pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED)
-			pthread_attr_set_qos_class_np(&threadAttr, QOS_CLASS_BACKGROUND, QOS_MIN_RELATIVE_PRIORITY)
-			
-			var mutexAttr = pthread_mutexattr_t()
-			
-			let mutexAttrInitSuccess = (pthread_mutexattr_init(&mutexAttr) == 0)
+			let threadAttrInitSuccess = (pthread_attr_init(&threadAttr) == 0)
 			defer {
-				if mutexAttrInitSuccess {
-					if pthread_mutexattr_destroy(&mutexAttr) != 0 {
-						SignalHandlingConfig.logger?.error("Cannot destroy mutex attr for thread for signal resend. Leaking.")
+				if threadAttrInitSuccess {
+					if pthread_attr_destroy(&threadAttr) != 0 {
+						SignalHandlingConfig.logger?.error("Cannot destroy thread attr for thread for signal resend. Leaking.")
 					}
 				}
 			}
-			if !mutexAttrInitSuccess {
-				SignalHandlingConfig.logger?.error("Cannot init mutex attr for thread for signal resend. We will init mutex with default attrs.")
-			}
-			
-			/* Setting mutex attributes if attributes init succeeded. */
-			if mutexAttrInitSuccess {
-				if pthread_mutexattr_settype(&mutexAttr, PTHREAD_MUTEX_NORMAL) != 0 {
-					SignalHandlingConfig.logger?.error("Cannot mutex attr type to NORMAL for thread for signal resend. Leaving to default.")
+			/* Setting thread attributes if attributes init succeeded. */
+			if threadAttrInitSuccess {
+				if pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED) != 0 {
+					SignalHandlingConfig.logger?.error("Cannot set detached attribute on thread attr for thread for signal resend.")
+				}
+				if pthread_attr_set_qos_class_np(&threadAttr, QOS_CLASS_BACKGROUND, QOS_MIN_RELATIVE_PRIORITY) != 0 {
+					SignalHandlingConfig.logger?.error("Cannot set QOS attribute on thread attr for thread for signal resend.")
 				}
 			}
 			
-			var mutex = pthread_mutex_t()
-			let mutexInitResult = mutexAttrInitSuccess
-				? pthread_mutex_init(&mutex, &mutexAttr)
-				: pthread_mutex_init(&mutex, nil)
-			let mutexInitSuccess = (mutexInitResult == 0)
-			defer {
-				if mutexInitSuccess {
-					if pthread_mutex_destroy(&mutex) != 0 {
-						SignalHandlingConfig.logger?.error("Cannot destroy mutex. Leaking.")
-					}
-				}
-			}
-			if !mutexInitSuccess {
-				SignalHandlingConfig.logger?.error("Cannot init mutex for thread for signal resend. Not waiting on condition; first signal might not be resent.")
-			}
-			
-			waitOnConditionInThreadForSignalResendInit = mutexInitSuccess
+			/* Will be left in the thread */
+			groupForSyncOfSignalResend.enter()
 			
 			/* Create and start the thread */
 			var thread: pthread_t?
 			guard pthread_create(&thread, &threadAttr, threadForSignalResendMain, nil) == 0, thread != nil else {
 				SignalHandlingConfig.logger?.error("Cannot create thread for signal resend; resending signals will probably fail.")
+				/* Let’s not forget to leave the group as the thread did not start. */
+				groupForSyncOfSignalResend.leave()
 				return nil
 			}
 			
 			/* Let’s wait for the thread to be started. If we don’t, we might get a
 			 * race when signal is resent to this thread and signal might not be
-			 * processed. */
-			if waitOnConditionInThreadForSignalResendInit {
-				pthread_mutex_lock(&mutex);
-				if pthread_cond_wait(&conditionForThreadForSignalResendInit, &mutex) != 0 {
-					SignalHandlingConfig.logger?.error("Cannot wait on condition for thread for signal resend. We may get a block thread and a stuck program.")
-				}
-				pthread_mutex_unlock(&mutex);
-				SignalHandlingConfig.logger?.trace("Condition for thread for signal resend done.")
-			}
-			
+			 * processed. Note that even with this wait I think we might get a race
+			 * if the signal is sent before sigsuspend has not started. */
+			groupForSyncOfSignalResend.wait()
 			return thread
 		}()
 		
@@ -275,21 +248,35 @@ public struct SignalHandling {
 		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		#warning("TODO: Use the OriginalHandlerActions")
 		do {
+			/* Get the original sigaction for the given signal. */
 			guard let original = unsigactionedSignals[signal]?.originalSigaction else {
 				SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil original sigaction.", metadata: ["signal": "\(signal)"])
 				return
 			}
 			SignalHandlingConfig.logger?.debug("Original sigaction: \(original)")
+			
+			/* Install the original sigaction temporarily. */
 			let back = try installSigaction(signal: signal, action: original)
-			/* Not caught by libdispatch because it uses kqueue which specifically
-			 * does not catch signals sent to threads.
-			 * Signals being process-wide (even those sent to threads), the
-			 * sigaction handler will still be executed.
-			 * TODO: Test this. If it does not work, I have no idea what to do in
-			 *       replacement though… */
+			
+			/* Retrieve the thread to which to send the signal. See below why. */
 			let thread = UnsigactionedSignal.threadForSignalResend ?? pthread_self()
-			SignalHandlingConfig.logger?.debug("Sending kill signal to thread \(thread)")
-			/* Both work for raising the signal w/o being caught by libdispatch.
+			
+			/* Block the thread when it receives the signal. Unblock when action to
+			 * be done by the thread is set. */
+			semaphoreForSyncOfSignalResend.wait()
+			assert(signalResendAction.isNone)
+			
+			/* We send a signal to the thread directly. libdispatch uses kqueue (on
+			 * BSD, signalfd on Linux) and thus signals sent to threads are not
+			 * caught. Seems mostly true on Linux, but might require some tweaking.
+			 * These signals are not caught by libdispatch… but signals are process
+			 * wide! And the sigaction is still executed. So we can reset the
+			 * sigaction to the original value, send the signal to the thread, and
+			 * set it back to ignore after that. The original signal handler will
+			 * be executed.
+			 *
+			 * Both methods (raise and pthread_kill) work for raising the signal
+			 * w/o being caught by libdispatch.
 			 * pthread_kill might be safer, because it should really not be caught
 			 * by libdispatch, while raise might (it should not either, but it is
 			 * less clear; IIUC in a multithreaded env it should never be caught
@@ -297,24 +284,39 @@ public struct SignalHandling {
 			 * Anyway, we need to reinstall the sigaction handler after the signal
 			 * has been sent and processed, so we need to have some control, which
 			 * raise do not give. */
+			SignalHandlingConfig.logger?.debug("Sending kill signal to thread \(thread)", metadata: ["signal": "\(signal)"])
 //			let ret = raise(signal.rawValue)
 			let ret = pthread_kill(thread, signal.rawValue)
-			if ret != 0 {
+			guard ret == 0 else {
 				SignalHandlingConfig.logger?.error("Cannot send signal to thread: error \(Errno(rawValue: ret)).", metadata: ["signal": "\(signal)"])
+				/* We must reset the sigaction to the previous value as the thread
+				 * will probably not wake… */
+				if let back = back {
+					do    {try installSigaction(signal: signal, action: back)}
+					catch {SignalHandlingConfig.logger?.error("Error installing sigaction back to ignore after error sending signal to thread.", metadata: ["signal": "\(signal)"])}
+				}
+				/* And also signalling the semaphore for the thread. */
+				semaphoreForSyncOfSignalResend.wait()
+				return
 			}
-			/* Reinstalling the sigaction handler directly here does not work (the
-			 * signal will not be ignored before it will have time to be sent on
-			 * its thread by pthread_kill. We have to wait for pause to return.
-			 * We will want to wait here and use a pthread condition probably. We
-			 * could use a mutex and a global var to “send” the original sigaction
-			 * to the thread, and set the sigaction directly in the thread, but I
-			 * think it’s best this handling block do not finish until the resend
-			 * is done. */
-//			UnsigactionedSignal.signalProcessingQueue.asyncAfter(deadline: .now() + .milliseconds(500)){
-//				if let back = back {try! installSigaction(signal: signal, action: back)}
-//			}
+			
+			/* Reinstalling the sigaction handler directly here does not work: the
+			 * signal will be ignored before it will have time to be sent on its
+			 * thread by pthread_kill. We have to wait for sigsuspend to return.
+			 * We instruct the thread to do the installation, then we wait until
+			 * it’s done. */
+			if let back = back {
+				signalResendAction = .reinstallSigactionAndLeaveGroup(signal, back)
+				groupForSyncOfSignalResend.enter()
+			}
+			semaphoreForSyncOfSignalResend.signal()
+			
+			/* We wait for the thread to do its thing if needed. */
+			if back != nil {
+				groupForSyncOfSignalResend.wait()
+			}
 		} catch {
-			SignalHandlingConfig.logger?.error("Error installing a sigaction when sending original signal back. Signal might have been dropped, or not set back to ignore.", metadata: ["signal": "\(signal)"])
+			SignalHandlingConfig.logger?.error("Error installing a sigaction when sending original signal back. Signal is dropped.", metadata: ["signal": "\(signal)"])
 		}
 	}
 	
@@ -333,29 +335,62 @@ private extension OpaquePointer {
 
 
 
-private var waitOnConditionInThreadForSignalResendInit = false
-
-private var conditionForThreadForSignalResendInit: pthread_cond_t = {
-	var cond = pthread_cond_t()
-	guard pthread_cond_init(&cond, nil) == 0 else {
-		SignalHandlingConfig.logger?.error("Cannot init condition for thread for signal resend. We may get a block thread and a stuck program.")
-		#warning("TODO: Return nil")
-		return cond
+private enum SignalResendAction {
+	
+	case none
+	case reinstallSigactionAndLeaveGroup(Signal, Sigaction)
+	case end
+	
+	var isNone: Bool {
+		if case .none = self {
+			return true
+		}
+		return false
 	}
-	return cond
-}()
+	
+}
+
+private var signalResendAction: SignalResendAction = .none
+
+private let groupForSyncOfSignalResend = DispatchGroup()
+private let semaphoreForSyncOfSignalResend = DispatchSemaphore(value: 1)
 
 /* Must be out of SignalHandling struct because called by C */
 private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 	var emptyMask = Signal.sigset(from: [])
-	if waitOnConditionInThreadForSignalResendInit && pthread_cond_signal(&conditionForThreadForSignalResendInit) != 0 {
-		SignalHandlingConfig.logger?.error("Cannot signal init condition for thread for signal resend. We may get a block thread and a stuck program.")
-	}
+	
+	/* When we enter the thread, we let the caller know the thread has been
+	 * started and is ready. Not 100% certain this is needed, or even fully safe
+	 * (we could have the signal sent before the sigsupend is reached!), but it
+	 * seems to work with it. */
+	groupForSyncOfSignalResend.leave()
+	
 	repeat {
 		SignalHandlingConfig.logger?.trace("Pausing thread for signal resend")
 		/* We do want to use sigsuspend and not pause as we need all signals to be
 		 * unblocked. */
-		sigsuspend(&emptyMask)
-		SignalHandlingConfig.logger?.trace("Pause returned")
+		_ = sigsuspend(&emptyMask)
+		SignalHandlingConfig.logger?.trace("sigsuspend returned in thread for signal resend")
+		
+		semaphoreForSyncOfSignalResend.wait()
+		let action = signalResendAction
+		signalResendAction = .none
+		semaphoreForSyncOfSignalResend.signal()
+		
+		switch action {
+			case .none:
+				SignalHandlingConfig.logger?.trace("Doing nothing after having received signal in thread for resend.")
+				(/*nop*/)
+				
+			case .end:
+				SignalHandlingConfig.logger?.trace("Ending thread after having received signal in thread for resend.")
+				pthread_exit(nil) /* Or `return nil` (same) */
+				
+			case .reinstallSigactionAndLeaveGroup(let signal, let sigaction):
+				SignalHandlingConfig.logger?.trace("Installing sigaction back to ignore from thread.")
+				do    {try SignalHandling.installSigaction(signal: signal, action: sigaction)}
+				catch {SignalHandlingConfig.logger?.error("Error installing sigaction back to ignore from thread.", metadata: ["signal": "\(signal)"])}
+				groupForSyncOfSignalResend.leave()
+		}
 	} while true
 }

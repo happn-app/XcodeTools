@@ -21,7 +21,8 @@ struct SleepInSubprocess : ParsableCommand {
 		/* We must do this to be able to use the logger from the C handler. */
 		SleepInSubprocess.logger = logger
 		
-//		try SignalHandling.installSigaction(signal: .terminated, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler") })))
+		try SignalHandling.installSigaction(signal: .terminated, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for terminated") })))
+		try SignalHandling.installSigaction(signal: .interrupt, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })))
 		
 		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/sleep", args: ["424242"]/*, signalsToForward: [.userDefinedSignal1]*/, outputHandler: { _,_ in })
 		logger.info("Sub-process launched w/ PID \(p.processIdentifier)")
