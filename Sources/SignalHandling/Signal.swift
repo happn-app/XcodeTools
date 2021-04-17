@@ -194,6 +194,18 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 		return Set((1..<NSIG).filter{ sigismember(&sigset, $0) != 0 }.map{ Signal(rawValue: $0) })
 	}
 	
+	public static let emptySigset: sigset_t = {
+		var sigset = sigset_t()
+		sigemptyset(&sigset)
+		return sigset
+	}()
+	
+	public static let fullSigset: sigset_t = {
+		var sigset = sigset_t()
+		sigfillset(&sigset)
+		return sigset
+	}()
+	
 	public static func sigset(from setOfSignals: Set<Signal>) -> sigset_t {
 		var sigset = sigset_t()
 		sigemptyset(&sigset)

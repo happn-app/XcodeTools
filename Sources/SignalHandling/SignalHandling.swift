@@ -364,7 +364,12 @@ private let semaphoreForSyncOfSignalResend = DispatchSemaphore(value: 1)
 
 /* Must be out of SignalHandling struct because called by C */
 private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-	var emptyMask = Signal.sigset(from: [])
+	var fullMask = Signal.fullSigset
+	var emptyMask = Signal.emptySigset
+	
+	if pthread_sigmask(SIG_SETMASK, &fullMask, nil) != 0 {
+		SignalHandlingConfig.logger?.error("Cannot set sigmask of thread for signal resend to full mask. Some signal might behave funkily, or condition-racy.")
+	}
 	
 	/* When we enter the thread, we let the caller know the thread has been
 	 * started and is ready. Not 100% certain this is needed, or even fully safe
