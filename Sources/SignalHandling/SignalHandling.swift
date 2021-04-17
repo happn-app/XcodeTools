@@ -347,18 +347,15 @@ private var conditionForThreadForSignalResendInit: pthread_cond_t = {
 
 /* Must be out of SignalHandling struct because called by C */
 private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
-	var mask = Signal.sigset(from: [])
-	pthread_sigmask(SIG_SETMASK, &mask, nil)
+	var emptyMask = Signal.sigset(from: [])
 	if waitOnConditionInThreadForSignalResendInit && pthread_cond_signal(&conditionForThreadForSignalResendInit) != 0 {
 		SignalHandlingConfig.logger?.error("Cannot signal init condition for thread for signal resend. We may get a block thread and a stuck program.")
 	}
 	repeat {
 		SignalHandlingConfig.logger?.trace("Pausing thread for signal resend")
-		/* pause has been made obsolete by sigsuspend, but in our case I think we
-		 * do want pause and not sigsuspend. sigsuspend unblocks the signal it is
-		 * given, which is not what we want. We just want to wait until any signal
-		 * is received. */
-		pause()
+		/* We do want to use sigsuspend and not pause as we need all signals to be
+		 * unblocked. */
+		sigsuspend(&emptyMask)
 		SignalHandlingConfig.logger?.trace("Pause returned")
 	} while true
 }
