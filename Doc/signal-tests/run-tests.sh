@@ -15,7 +15,7 @@ rm signal-tests
 echo
 echo
 echo "*** RUNNING C TEST ON LINUX"
-docker run --rm -it -v "$(pwd):/tmp/cwd" --workdir /tmp/cwd --security-opt=seccomp:unconfined --entrypoint bash "$LINUX_SWIFT_IMAGE" -c 'make signal-tests && ./signal-tests && rm signal-tests'
+docker run --rm -it -v "$(pwd):/tmp/cwd" --workdir /tmp/cwd --security-opt=seccomp:unconfined --entrypoint bash "$LINUX_SWIFT_IMAGE" -c 'make signal-tests && ./signal-tests; rm signal-tests'
 
 echo
 echo
@@ -27,4 +27,4 @@ rm signal-tests-macos
 echo
 echo
 echo "*** RUNNING SWIFT TEST ON LINUX"
-docker run --rm -it -v "$(pwd):/tmp/cwd" --workdir /tmp/cwd --security-opt=seccomp:unconfined --entrypoint bash "$LINUX_SWIFT_IMAGE" -c 'swiftc -o ./signal-tests-linux ./signal-tests-linux.swift && ./signal-tests-linux && rm signal-tests-linux'
+docker run --rm -it -v "$(pwd):/tmp/cwd" --workdir /tmp/cwd --security-opt=seccomp:unconfined --entrypoint bash "$LINUX_SWIFT_IMAGE" -c 'swiftc -o ./signal-tests-linux ./signal-tests-linux.swift && ./signal-tests-linux; rm signal-tests-linux'
