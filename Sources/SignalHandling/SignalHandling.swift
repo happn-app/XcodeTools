@@ -326,8 +326,8 @@ public struct SignalHandling {
 					do    {try installSigaction(signal: signal, action: back)}
 					catch {SignalHandlingConfig.logger?.error("Error installing sigaction back to ignore after error sending signal to thread.", metadata: ["signal": "\(signal)"])}
 				}
-				/* And also signalling the semaphore for the thread. */
-				semaphoreForSyncOfSignalResend.wait()
+				/* And also signal the semaphore for the thread sync. */
+				semaphoreForSyncOfSignalResend.signal()
 				return
 			}
 			
@@ -395,13 +395,11 @@ private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> Unsafe
 	var emptyMask = Signal.emptySigset
 	
 	if pthread_sigmask(SIG_SETMASK, &fullMask, nil) != 0 {
-		SignalHandlingConfig.logger?.error("Cannot set sigmask of thread for signal resend to full mask. Some signal might behave funkily, or condition-racy.")
+		SignalHandlingConfig.logger?.error("Cannot set sigmask of thread for signal resend to full mask. The signal resending might dead-lock. Signal will still be received by your custom dispatch handler, but the original sigaction will not be delayed. This is highly improbable though.")
 	}
 	
 	/* When we enter the thread, we let the caller know the thread has been
-	 * started and is ready. Not 100% certain this is needed, or even fully safe
-	 * (we could have the signal sent before the sigsupend is reached!), but it
-	 * seems to work with it. */
+	 * started and is ready. */
 	groupForSyncOfSignalResend.leave()
 	
 	repeat {
@@ -417,6 +415,9 @@ private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> Unsafe
 		semaphoreForSyncOfSignalResend.wait()
 		let action = signalResendAction
 		signalResendAction = .none
+		if pthread_sigmask(SIG_SETMASK, &fullMask, nil) != 0 {
+			SignalHandlingConfig.logger?.error("Cannot set sigmask of thread for signal resend to full mask. The signal resending might not work sometimes. This is highly improbable though.")
+		}
 		semaphoreForSyncOfSignalResend.signal()
 		
 		switch action {

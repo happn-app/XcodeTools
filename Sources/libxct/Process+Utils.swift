@@ -131,6 +131,7 @@ extension Process {
 		for signal in signalsToForward {
 			let signalSource = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: nil)
 			signalSource.setEventHandler{
+				LibXctConfig.logger?.debug("Got signal in process signal source.", metadata: ["signal": "\(signal)"])
 				guard p.isRunning else {return}
 				kill(p.processIdentifier, signal.rawValue)
 			}
