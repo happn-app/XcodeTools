@@ -24,6 +24,10 @@ struct SleepInSubprocess : ParsableCommand {
 		try SignalHandling.installSigaction(signal: .terminated, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for terminated") })))
 		try SignalHandling.installSigaction(signal: .interrupt, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })))
 		
+		let s = DispatchSource.makeSignalSource(signal: Signal.terminated.rawValue)
+		s.setEventHandler(handler: { SleepInSubprocess.logger?.debug("In libxct-test-helper dispatch source handler for terminated") })
+		s.activate()
+		
 		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/sleep", args: ["424242"]/*, signalsToForward: [.userDefinedSignal1]*/, outputHandler: { _,_ in })
 		logger.info("Sub-process launched w/ PID \(p.processIdentifier)")
 		
