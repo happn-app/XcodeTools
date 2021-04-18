@@ -146,7 +146,7 @@ extension Process {
 			signalSources.append(signalSource)
 		}
 		unsigactionIDs = try SignalHandling.retainUnsigactionSignals(signalsToForward, originalHandlerAction: { (signal, handler) in
-			LibXctConfig.logger?.debug("Original handler action", metadata: ["signal": "\(signal)"])
+			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			handler(true)
 		})
 		
