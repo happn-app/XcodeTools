@@ -389,7 +389,7 @@ private let semaphoreForSyncOfSignalResend = DispatchSemaphore(value: 1)
 /* Must be out of SignalHandling struct because called by C */
 private func threadForSignalResendMain(_ arg: UnsafeMutableRawPointer) -> UnsafeMutableRawPointer? {
 	/* Set thread name. Can be useful for debug. We don’t care about failure. */
-	pthread_setname_np("com.xcode-actions.unsigactioned-signal-resend")
+	_ = pthread_setname_np("com.xcode-actions.unsigactioned-signal-resend")
 	
 	var fullMask = Signal.fullSigset
 	var emptyMask = Signal.emptySigset
