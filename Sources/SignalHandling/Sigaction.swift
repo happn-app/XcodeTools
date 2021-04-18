@@ -1,5 +1,7 @@
 import Foundation
 
+import SystemPackage
+
 
 
 public struct Sigaction : Equatable, RawRepresentable {
@@ -42,6 +44,14 @@ public struct Sigaction : Equatable, RawRepresentable {
 		if !isValid {
 			SignalHandlingConfig.logger?.warning("Initialized an invalid Sigaction.")
 		}
+	}
+	
+	public init(signal: Signal) throws {
+		var action = sigaction()
+		guard sigaction(signal.rawValue, nil, &action) == 0 else {
+			throw SignalHandlingError.systemError(Errno(rawValue: errno))
+		}
+		self.init(rawValue: action)
 	}
 	
 	public var rawValue: sigaction {
