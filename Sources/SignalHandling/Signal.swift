@@ -200,6 +200,10 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 		return sigset
 	}()
 	
+	/**
+	All the signals. Not exactly the same as `sigset(from: Set(allCases))`
+	because this property uses the sigfillset function. In theory the result
+	should be the same though. */
 	public static let fullSigset: sigset_t = {
 		var sigset = sigset_t()
 		sigfillset(&sigset)
