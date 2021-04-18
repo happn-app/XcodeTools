@@ -2,7 +2,7 @@ import Foundation
 
 
 
-/** Current flags listed come from `sigaction(2)` on macOS. */
+/** Flag list is from `sigaction(2)` on macOS. */
 public struct SigactionFlags : OptionSet {
 	
 	/**
