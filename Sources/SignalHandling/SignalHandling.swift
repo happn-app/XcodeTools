@@ -74,7 +74,7 @@ public struct SignalHandling {
 						SignalHandlingConfig.logger?.error("INTERNAL ERROR: Event handler called, but dispatch source is nil", metadata: ["signal": "\(signal)"])
 						return
 					}
-					SignalHandling.processSignalFromDispatch(signal: signal, count: dispatchSourceSignal.data)
+					SignalHandling.processSignalsFromDispatch(signal: signal, count: dispatchSourceSignal.data)
 				}
 				dispatchSourceSignal.activate()
 				unsigactionedSignal = UnsigactionedSignal(originalSigaction: oldSigaction ?? .ignoreAction, dispatchSource: dispatchSourceSignal)
@@ -244,26 +244,48 @@ public struct SignalHandling {
 	}
 	
 	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
-	private static func processSignalFromDispatch(signal: Signal, count: UInt) {
+	private static func processSignalsFromDispatch(signal: Signal, count: UInt) {
 		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
+		
+		/* Get the original sigaction for the given signal. */
+		guard let unsigactionedSignal = unsigactionedSignals[signal] else {
+			SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil unsigactioned signal.", metadata: ["signal": "\(signal)"])
+			return
+		}
+		SignalHandlingConfig.logger?.trace("Original sigaction: \(unsigactionedSignal.originalSigaction)", metadata: ["signal": "\(signal)"])
+		
 		for _ in 0..<count {
-			processOneSignalFromDispatch(signal: signal)
+			let group = DispatchGroup()
+			var runOriginalHandlerFinal = true
+			for (_, originalHandlerAction) in unsigactionedSignal.unsigactionInfo {
+				group.enter()
+				originalHandlerAction(signal, { runOriginalHandler in
+					runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
+					group.leave()
+				})
+			}
+			group.wait()
+			if runOriginalHandlerFinal {
+				SignalHandlingConfig.logger?.trace("Resending signal", metadata: ["signal": "\(signal)"])
+				resendSignalFromDispatch(signal: signal, originalSigaction: unsigactionedSignal.originalSigaction)
+			} else {
+				SignalHandlingConfig.logger?.trace("Signal resend skipped", metadata: ["signal": "\(signal)"])
+			}
 		}
 	}
 	
 	/** Must always be called on the `UnsigactionedSignal.signalProcessingQueue`. */
-	private static func processOneSignalFromDispatch(signal: Signal) {
-		#warning("TODO: Use the OriginalHandlerActions")
+	private static func resendSignalFromDispatch(signal: Signal, originalSigaction: Sigaction) {
 		do {
-			/* Get the original sigaction for the given signal. */
-			guard let original = unsigactionedSignals[signal]?.originalSigaction else {
-				SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil original sigaction.", metadata: ["signal": "\(signal)"])
+			/* Let’s make sure resending the signal is worth it. If the original
+			 * sigaction is to ignore the signal, we don’t resend it. */
+			guard originalSigaction != .ignoreAction else {
+				SignalHandlingConfig.logger?.trace("Original sigaction is ignore; not resending signal", metadata: ["signal": "\(signal)"])
 				return
 			}
-			SignalHandlingConfig.logger?.debug("Original sigaction: \(original)")
 			
 			/* Install the original sigaction temporarily. */
-			let back = try installSigaction(signal: signal, action: original)
+			let back = try installSigaction(signal: signal, action: originalSigaction)
 			
 			/* Retrieve the thread to which to send the signal. See below why. */
 			let thread = UnsigactionedSignal.threadForSignalResend ?? pthread_self()
@@ -291,7 +313,7 @@ public struct SignalHandling {
 			 * Anyway, we need to reinstall the sigaction handler after the signal
 			 * has been sent and processed, so we need to have some control, which
 			 * raise do not give. */
-			SignalHandlingConfig.logger?.debug("Sending kill signal to thread \(thread)", metadata: ["signal": "\(signal)"])
+			SignalHandlingConfig.logger?.trace("Sending kill signal to thread \(thread)", metadata: ["signal": "\(signal)"])
 //			let ret = raise(signal.rawValue)
 			let ret = pthread_kill(thread, signal.rawValue)
 			guard ret == 0 else {
