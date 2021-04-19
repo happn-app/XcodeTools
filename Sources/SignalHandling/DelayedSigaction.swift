@@ -316,15 +316,25 @@ public struct DelayedSigaction : Hashable {
 						
 					case .suspend(for: let signal):
 						loggerLessThreadSafeDebugLog("🧵 Processing suspend action for \(signal)")
+						let isIgnored = try Sigaction.isSignalIgnored(signal)
 						var sigset = sigset_t()
-						let ret = pthread_sigmask(SIG_SETMASK, nil /* new signals */, &sigset)
-						if ret != 0 {
-							throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: ret))
+						if !isIgnored {
+							/* We update the sigset only when signal is not ignored
+							 * because it is used only in that case and this is getting
+							 * the current sigmask can fail. */
+							let ret = pthread_sigmask(SIG_SETMASK, nil /* new signals */, &sigset)
+							if ret != 0 {
+								throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: ret))
+							}
+							sigdelset(&sigset, signal.rawValue)
 						}
-						sigdelset(&sigset, signal.rawValue)
 						/* WHYYYYYYY??? */
 						pthread_kill(pthread_self(), signal.rawValue)
-						sigsuspend(&sigset)
+						if !isIgnored {
+							/* Only suspend process if signal is not ignored or
+							 * sigsuspend would not return. */
+							sigsuspend(&sigset)
+						}
 						
 					case .drop(let signal):
 						loggerLessThreadSafeDebugLog("🧵 Processing drop action for \(signal)")
@@ -336,9 +346,8 @@ public struct DelayedSigaction : Hashable {
 						sigdelset(&sigset, signal.rawValue)
 						
 						let oldAction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false)
-						/* WHYYYYYYY??? */
 						pthread_kill(pthread_self(), signal.rawValue)
-						sigsuspend(&sigset)
+						/* No sigsuspend. Would block because signal is ignored. */
 						if let oldAction = oldAction {
 							do {try oldAction.install(on: signal, revertIfIgnored: false)}
 							catch let error as SignalHandlingError {
