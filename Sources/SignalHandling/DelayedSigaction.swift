@@ -329,11 +329,20 @@ public struct DelayedSigaction : Hashable {
 							}
 							sigdelset(&sigset, signal.rawValue)
 						}
-						/* WHYYYYYYY??? */
-						pthread_kill(pthread_self(), signal.rawValue)
+						/* Let’s get the pending signals on this thread. */
+						var pendingSignals = sigset_t()
+						let ret = sigpending(&pendingSignals)
+						/* If sigpending failed, we assume the signal is pending. */
+						if ret != 0 || !Signal.set(from: pendingSignals).contains(signal) {
+							/* The signal is not pending on our thread. Which mean it
+							 * is probably pending on sone other thread, forever. */
+//							loggerLessThreadSafeDebugLog("🧵 Resending signal to manager thread \(signal)")
+							pthread_kill(pthread_self(), signal.rawValue)
+						}
 						if !isIgnored {
 							/* Only suspend process if signal is not ignored or
-							 * sigsuspend would not return. */
+							 * sigsuspend would not return. I know there is a race
+							 * condition. */
 							sigsuspend(&sigset)
 						}
 						
@@ -347,6 +356,8 @@ public struct DelayedSigaction : Hashable {
 						sigdelset(&sigset, signal.rawValue)
 						
 						let oldAction = try Sigaction.ignoreAction.install(on: signal, revertIfIgnored: false)
+						/* Will not hurt, the signal is ignore anyway (yes, there is a
+						 * race condition, I know). */
 						pthread_kill(pthread_self(), signal.rawValue)
 						/* No sigsuspend. Would block because signal is ignored. */
 						if let oldAction = oldAction {
