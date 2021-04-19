@@ -9,6 +9,18 @@ public struct Sigaction : Equatable, RawRepresentable {
 	public static let ignoreAction = Sigaction(handler: .ignoreHandler)
 	public static let defaultAction = Sigaction(handler: .defaultHandler)
 	
+	/**
+	Check if the given signal is ignored using `sigaction`. */
+	public static func isSignalIgnored(_ signal: Signal) throws -> Bool {
+		return try Sigaction(signal: signal).handler == .ignoreHandler
+	}
+	
+	/**
+	Check if the given signal is handled with default action using `sigaction`. */
+	public static func isSignalDefaultAction(_ signal: Signal) throws -> Bool {
+		return try Sigaction(signal: signal).handler == .defaultHandler
+	}
+	
 	public var mask: Set<Signal> = []
 	public var flags: SigactionFlags = []
 	
@@ -49,7 +61,7 @@ public struct Sigaction : Equatable, RawRepresentable {
 	public init(signal: Signal) throws {
 		var action = sigaction()
 		guard sigaction(signal.rawValue, nil, &action) == 0 else {
-			throw SignalHandlingError.systemError(Errno(rawValue: errno))
+			throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: errno))
 		}
 		self.init(rawValue: action)
 	}
@@ -78,6 +90,29 @@ public struct Sigaction : Equatable, RawRepresentable {
 	`.ignoreHandler` or `.defaultHandler`. */
 	public var isValid: Bool {
 		return !flags.contains(.siginfo) || (handler != .ignoreHandler && handler != .defaultHandler)
+	}
+	
+	/**
+	Installs the sigaction and returns the old one if different.
+	
+	It is impossible for a sigaction handler to be `nil`. If the method returns
+	`nil`, the previous handler was exactly the same as the one you installed.
+	Note however the sigaction function is always called in this method. */
+	@discardableResult
+	public func install(on signal: Signal, revertIfIgnored: Bool = true) throws -> Sigaction? {
+		var oldCAction = sigaction()
+		var newCAction = self.rawValue
+		guard sigaction(signal.rawValue, &newCAction, &oldCAction) == 0 else {
+			throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: errno))
+		}
+		let oldSigaction = Sigaction(rawValue: oldCAction)
+		if revertIfIgnored && oldSigaction == .ignoreAction {
+			guard sigaction(signal.rawValue, &newCAction, &oldCAction) == 0 else {
+				throw SignalHandlingError.destructiveSystemError(Errno(rawValue: errno))
+			}
+		}
+		if oldSigaction != self {return oldSigaction}
+		else                    {return nil}
 	}
 	
 }

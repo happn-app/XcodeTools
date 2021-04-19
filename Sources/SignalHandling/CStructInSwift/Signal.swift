@@ -219,6 +219,13 @@ public struct Signal : RawRepresentable, Hashable, Codable, CaseIterable, Custom
 	
 	public var rawValue: CInt
 	
+	public var sigset: sigset_t {
+		var sigset = sigset_t()
+		sigemptyset(&sigset)
+		sigaddset(&sigset, rawValue)
+		return sigset
+	}
+	
 	public init(rawValue: CInt) {
 		self.rawValue = rawValue
 	}

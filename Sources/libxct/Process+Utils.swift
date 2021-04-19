@@ -127,7 +127,7 @@ extension Process {
 		var readSources = [DispatchSourceRead]()
 		var signalSources = [DispatchSourceSignal]()
 		
-		var unsigactionIDs = [Signal: SignalHandling.UnsigactionID]()
+		var delayedSigations = [Signal: DelayedSigaction]()
 		for signal in signalsToForward {
 			let signalSource = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: nil)
 			signalSource.setEventHandler{
@@ -136,16 +136,16 @@ extension Process {
 				kill(p.processIdentifier, signal.rawValue)
 			}
 			signalSource.setCancelHandler{
-				guard let id = unsigactionIDs[signal] else {
+				guard let delayedSigaction = delayedSigations[signal] else {
 					LibXctConfig.logger?.error("INTERNAL ERROR: In cancel handler, did not get an unsigaction id", metadata: ["signal": "\(signal)"])
 					return
 				}
-				do    {try SignalHandling.releaseUnsigactionedSignal(id)}
+				do    {try delayedSigaction.unregister()}
 				catch {LibXctConfig.logger?.error("Cannot release ignored signal \(signal): \(error)")}
 			}
 			signalSources.append(signalSource)
 		}
-		unsigactionIDs = try SignalHandling.retainUnsigactionSignals(signalsToForward, originalHandlerAction: { (signal, handler) in
+		delayedSigations = try DelayedSigaction.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
 			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			handler(true)
 		})

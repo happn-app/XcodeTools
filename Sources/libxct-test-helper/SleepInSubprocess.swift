@@ -14,15 +14,17 @@ struct SleepInSubprocess : ParsableCommand {
 	static var logger: Logger?
 	
 	func run() throws {
+		try DelayedSigaction.bootstrap()
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
-		var logger = Logger(label: "main"); logger.logLevel = .trace
-		SignalHandlingConfig.logger = logger
-		LibXctConfig.logger = logger
-		/* We must do this to be able to use the logger from the C handler. */
-		SleepInSubprocess.logger = logger
 		
-		try SignalHandling.installSigaction(signal: .terminated, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for terminated") })))
-		try SignalHandling.installSigaction(signal: .interrupt, action: Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })))
+		var logger = Logger(label: "main")
+		logger.logLevel = .trace
+		SleepInSubprocess.logger = logger /* We must do this to be able to use the logger from the C handler. */
+		LibXctConfig.logger?.logLevel = .trace
+		SignalHandlingConfig.logger?.logLevel = .trace
+		
+		try Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for interrupt") })).install(on: .interrupt)
+		try Sigaction(handler: .ansiC({ _ in SleepInSubprocess.logger?.debug("In libxct-test-helper sigaction handler for terminated") })).install(on: .terminated)
 		
 		let s = DispatchSource.makeSignalSource(signal: Signal.terminated.rawValue)
 		s.setEventHandler(handler: { SleepInSubprocess.logger?.debug("In libxct-test-helper dispatch source handler for terminated") })
