@@ -14,7 +14,7 @@ struct SleepInSubprocess : ParsableCommand {
 	static var logger: Logger?
 	
 	func run() throws {
-		try DelayedSigaction.bootstrap()
+		try DelayedSigaction.bootstrap(for: Signal.toForwardToSubprocesses)
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		
 		var logger = Logger(label: "main")

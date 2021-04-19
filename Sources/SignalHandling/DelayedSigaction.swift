@@ -38,13 +38,13 @@ public struct DelayedSigaction : Hashable {
 	- Important: Must be called before any thread is spawned.
 	- Important: You should not use pthread_sigmask to sigprocmask (nor anything
 	to unblock signals) after calling this method. */
-	public static func bootstrap() throws {
+	public static func bootstrap(for signals: Set<Signal>) throws {
 		guard !bootstrapDone else {
 			fatalError("DelayedSigaction can be bootstrapped only once")
 		}
 		
-		var allSignals = Signal.fullSigset
-		let ret = pthread_sigmask(SIG_SETMASK, &allSignals, nil /* old signals */)
+		var signalsSigset = Signal.sigset(from: signals)
+		let ret = pthread_sigmask(SIG_SETMASK, &signalsSigset, nil /* old signals */)
 		if ret != 0 {
 			throw SignalHandlingError.nonDestructiveSystemError(Errno(rawValue: ret))
 		}
@@ -278,7 +278,7 @@ public struct DelayedSigaction : Hashable {
 	
 	private static func delayedSigactionThreadLoop() {
 		runLoop: repeat {
-			loggerLessThreadSafeDebugLog("🧵 New delayed sigaction thread loop")
+//			loggerLessThreadSafeDebugLog("🧵 New delayed sigaction thread loop")
 			
 			DelayedSignalSync.lock.lock(whenCondition: DelayedSignalSync.actionInThread.rawValue)
 			defer {
@@ -292,14 +292,15 @@ public struct DelayedSigaction : Hashable {
 				switch DelayedSignalSync.action {
 					case .nop:
 						(/*nop*/)
+//						loggerLessThreadSafeDebugLog("🧵 Processing nop action")
 						assertionFailure("nop action while being locked w/ action in thread")
 						
 					case .endThread:
-						loggerLessThreadSafeDebugLog("🧵 Processing endThread action")
+//						loggerLessThreadSafeDebugLog("🧵 Processing endThread action")
 						break runLoop
 						
 					case .block(let signal):
-						loggerLessThreadSafeDebugLog("🧵 Processing block action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing block action for \(signal)")
 						var sigset = signal.sigset
 						let ret = pthread_sigmask(SIG_BLOCK, &sigset, nil /* old signals */)
 						if ret != 0 {
@@ -307,7 +308,7 @@ public struct DelayedSigaction : Hashable {
 						}
 						
 					case .unblock(let signal):
-						loggerLessThreadSafeDebugLog("🧵 Processing unblock action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing unblock action for \(signal)")
 						var sigset = signal.sigset
 						let ret = pthread_sigmask(SIG_UNBLOCK, &sigset, nil /* old signals */)
 						if ret != 0 {
@@ -315,7 +316,7 @@ public struct DelayedSigaction : Hashable {
 						}
 						
 					case .suspend(for: let signal):
-						loggerLessThreadSafeDebugLog("🧵 Processing suspend action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing suspend action for \(signal)")
 						let isIgnored = try Sigaction.isSignalIgnored(signal)
 						var sigset = sigset_t()
 						if !isIgnored {
@@ -337,7 +338,7 @@ public struct DelayedSigaction : Hashable {
 						}
 						
 					case .drop(let signal):
-						loggerLessThreadSafeDebugLog("🧵 Processing drop action for \(signal)")
+//						loggerLessThreadSafeDebugLog("🧵 Processing drop action for \(signal)")
 						var sigset = sigset_t()
 						let ret = pthread_sigmask(SIG_SETMASK, nil /* new signals */, &sigset)
 						if ret != 0 {
