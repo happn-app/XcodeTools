@@ -4,6 +4,41 @@ import SystemPackage
 
 
 
+/**
+A way to delay the sigaction for a given signal until arbitrary handlers have
+allowed it. Use with care. You should understand how the delaying works before
+using this.
+
+First, to delay a sigaction, you have to bootstrap the signals you’ll want to
+delay, **before any other threads are created**. Technically you can bootstrap
+any signals you want, including those you won’t need to delay, but to avoid some
+potentially nasty side-effects, you should only ever bootstrap the signals you
+will need to delay.
+
+At bootstrap time, all the bootstrapped signals are blocked on the calling
+thread (which should be the main thread as the bootstrap must be called before
+any other thread are created). Then a thread is spawned, in which the
+bootstrapped signals are unblocked. These signals can now only be processed by
+this thread.
+
+When the first handler is registered for a given signal, we instruct the thread
+to block the given signal. Whenever the signal is received, we are notified via
+GCD, and then tell the thread to receive the signal via `sigsuspend`.
+
+A (big) caveat: _From what I understand_, when all threads are blocking a given
+signal, the system has to choose which thread to send the signal to. And it
+might not be the one we have chosen to process signals… so we sometimes have to
+re-send the signal to our thread! In which case we lose the info in `siginfo_t`,
+and a thread is stuck with a pending signal forever…
+
+- Important: An important side-effect of this technique is if a bootstrapped
+signal is then sent to a specific thread, the signal will be blocked. Forever.
+Because of this, you really should not bootstrap whatever signal you want. For
+example, the `SIGILL` signal (illegal instruction) is sent to the offending
+thread, not the process. If you use it for a delayed sigaction, when the signal
+is sent, the thread that triggered that signal will blocked forever (all signals
+bootstrapped are blocked on all threads except the internal thread). */
+@available(*, deprecated, message: "Dangerous.")
 public struct DelayedSigaction : Hashable {
 	
 	/**
