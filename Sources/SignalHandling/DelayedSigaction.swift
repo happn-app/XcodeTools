@@ -38,7 +38,6 @@ example, the `SIGILL` signal (illegal instruction) is sent to the offending
 thread, not the process. If you use it for a delayed sigaction, when the signal
 is sent, the thread that triggered that signal will blocked forever (all signals
 bootstrapped are blocked on all threads except the internal thread). */
-@available(*, deprecated, message: "Dangerous.")
 public struct DelayedSigaction : Hashable {
 	
 	/**
