@@ -140,12 +140,12 @@ extension Process {
 					LibXctConfig.logger?.error("INTERNAL ERROR: In cancel handler, did not get an unsigaction id", metadata: ["signal": "\(signal)"])
 					return
 				}
-				do    {try delayedSigaction.unregister()}
+				do    {try SigactionDelayer_Unsig.unregisterDelayedSigaction(delayedSigaction)}
 				catch {LibXctConfig.logger?.error("Cannot release ignored signal \(signal): \(error)")}
 			}
 			signalSources.append(signalSource)
 		}
-		delayedSigations = try DelayedSigaction.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
+		delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
 			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			handler(true)
 		})

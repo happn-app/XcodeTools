@@ -36,24 +36,9 @@ signal is then sent to a specific thread, the signal will be blocked. Forever.
 Because of this, you really should not bootstrap whatever signal you want. For
 example, the `SIGILL` signal (illegal instruction) is sent to the offending
 thread, not the process. If you use it for a delayed sigaction, when the signal
-is sent, the thread that triggered that signal will blocked forever (all signals
+is sent, the thread that triggered that signal will block forever (all signals
 bootstrapped are blocked on all threads except the internal thread). */
-public struct DelayedSigaction : Hashable {
-	
-	/**
-	Handler called when a delayed sigaction signal is received. Handler shall
-	call the passed handler when sigaction is ready to be called, or dropped.
-	
-	- Note: The sigaction might not be called as soon as the handler is called,
-	or not at all. Multiple clients can delay the sigaction, and all clients must
-	allow it to be sent for the sigaction to be sent.
-	
-	- Parameter signal: The signal that triggered the delayed sigaction.
-	- Parameter sigactionAllowedHandler: The handler to call when the sigaction
-	can be triggered or dropped.
-	- Parameter allowSigaction: Whether the sigaction handler should be called,
-	or the signal should be dropped. */
-	public typealias DelayedSigactionHandler = (_ signal: Signal, _ sigactionAllowedHandler: (_ allowSigaction: Bool) -> Void) -> Void
+public enum SigactionDelayer_Block {
 	
 	/**
 	Prepare the process for delayed sigaction by blocking all signals on the main
@@ -87,7 +72,7 @@ public struct DelayedSigaction : Hashable {
 		let group = DispatchGroup()
 		group.enter()
 		Thread.detachNewThread{
-			Thread.current.name = "com.xcode-actions.signal-handler-thread"
+			Thread.current.name = "com.xcode-actions.blocked-signals-thread"
 			
 			/* Unblock all signals in this thread. */
 			var noSignals = Signal.emptySigset
@@ -98,7 +83,7 @@ public struct DelayedSigaction : Hashable {
 			group.leave()
 			
 			if ret == 0 {
-				delayedSigactionThreadLoop()
+				blockedSignalsThreadLoop()
 			}
 		}
 		group.wait()
@@ -142,22 +127,11 @@ public struct DelayedSigaction : Hashable {
 		}
 	}
 	
-	public func unregister() throws {
-		try DelayedSigaction.unregisterDelayedSigaction(self)
-	}
-	
 	/* ***************
 	   MARK: - Private
 	   *************** */
 	
-	private struct DelayedSignal {
-		
-		var dispatchSource: DispatchSourceSignal
-		var handlers = [DelayedSigaction: DelayedSigactionHandler]()
-		
-	}
-	
-	private enum DelayedSignalSync : Int {
+	private enum ThreadSync : Int {
 		
 		enum Action {
 			case nop
@@ -184,30 +158,35 @@ public struct DelayedSigaction : Hashable {
 		
 	}
 	
-	private static var nextID = 0
+	private struct BlockedSignal {
+		
+		var dispatchSource: DispatchSourceSignal
+		var handlers = [DelayedSigaction: DelayedSigactionHandler]()
+		
+	}
+	
+	private static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.blocked-signals-processing-queue")
+	
 	private static var bootstrapDone = false
+	private static var blockedSignals = [Signal: BlockedSignal]()
 	
-	private static var delayedSignals = [Signal: DelayedSignal]()
-	
-	private static let signalProcessingQueue = DispatchQueue(label: "com.xcode-actions.signal-processing-queue")
-	
-	private static func executeOnThread(_ action: DelayedSignalSync.Action) throws {
+	private static func executeOnThread(_ action: ThreadSync.Action) throws {
 		do {
-			DelayedSignalSync.lock.lock(whenCondition: DelayedSignalSync.nothingToDo.rawValue)
-			defer {DelayedSignalSync.lock.unlock(withCondition: DelayedSignalSync.actionInThread.rawValue)}
-			assert(DelayedSignalSync.error == nil, "non-nil error but acquired lock in nothingToDo state.")
-			assert(DelayedSignalSync.action.isNop, "non-nop action but acquired lock in nothingToDo state.")
-			DelayedSignalSync.action = action
+			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
+			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
+			assert(ThreadSync.error == nil, "non-nil error but acquired lock in nothingToDo state.")
+			assert(ThreadSync.action.isNop, "non-nop action but acquired lock in nothingToDo state.")
+			ThreadSync.action = action
 		}
 		
 		do {
-			DelayedSignalSync.lock.lock(whenCondition: DelayedSignalSync.waitActionCompletion.rawValue)
+			ThreadSync.lock.lock(whenCondition: ThreadSync.waitActionCompletion.rawValue)
 			defer {
-				DelayedSignalSync.error = nil
-				DelayedSignalSync.lock.unlock(withCondition: DelayedSignalSync.nothingToDo.rawValue)
+				ThreadSync.error = nil
+				ThreadSync.lock.unlock(withCondition: ThreadSync.nothingToDo.rawValue)
 			}
-			assert(DelayedSignalSync.action.isNop, "non-nop action but acquired lock in waitActionCompletion state.")
-			if let e = DelayedSignalSync.error {
+			assert(ThreadSync.action.isNop, "non-nop action but acquired lock in waitActionCompletion state.")
+			if let e = ThreadSync.error {
 				throw e
 			}
 		}
@@ -216,9 +195,9 @@ public struct DelayedSigaction : Hashable {
 	private static func registerDelayedSigactionOnQueue(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
 		let delayedSigaction = DelayedSigaction(signal: signal)
 		
-		var delayedSignal: DelayedSignal
-		if let ds = delayedSignals[signal] {
-			delayedSignal = ds
+		var blockedSignal: BlockedSignal
+		if let ds = blockedSignals[signal] {
+			blockedSignal = ds
 		} else {
 			try executeOnThread(.block(signal))
 			
@@ -232,12 +211,12 @@ public struct DelayedSigaction : Hashable {
 			}
 			dispatchSourceSignal.activate()
 			
-			delayedSignal = DelayedSignal(dispatchSource: dispatchSourceSignal)
+			blockedSignal = BlockedSignal(dispatchSource: dispatchSourceSignal)
 		}
 		
-		assert(delayedSignal.handlers[delayedSigaction] == nil)
-		delayedSignal.handlers[delayedSigaction] = handler
-		delayedSignals[signal] = delayedSignal
+		assert(blockedSignal.handlers[delayedSigaction] == nil)
+		blockedSignal.handlers[delayedSigaction] = handler
+		blockedSignals[signal] = blockedSignal
 		
 		return delayedSigaction
 	}
@@ -245,38 +224,38 @@ public struct DelayedSigaction : Hashable {
 	private static func unregisterDelayedSigactionOnQueue(_ delayedSigaction: DelayedSigaction) throws {
 		let signal = delayedSigaction.signal
 		
-		guard var delayedSignal = delayedSignals[signal] else {
+		guard var blockedSignal = blockedSignals[signal] else {
 			/* We trust our source not to have an internal logic error. If the
 			 * delayed sigaction is not found, it is because the callee called
 			 * unregister twice on the same delayed sigaction. */
 			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once", metadata: ["signal": "\(signal)"])
 			return
 		}
-		assert(!delayedSignal.handlers.isEmpty, "INTERNAL ERROR: handlers should never be empty because when it is, the whole delayed signal should be removed.")
+		assert(!blockedSignal.handlers.isEmpty, "INTERNAL ERROR: handlers should never be empty because when it is, the whole delayed signal should be removed.")
 		
-		guard delayedSignal.handlers.removeValue(forKey: delayedSigaction) != nil else {
+		guard blockedSignal.handlers.removeValue(forKey: delayedSigaction) != nil else {
 			/* Same here. If the delayed sigaction was not in the handlers, it can
 			 * only be because the callee called unregister twice with the object. */
 			SignalHandlingConfig.logger?.error("Delayed sigaction unregistered more than once", metadata: ["signal": "\(signal)"])
 			return
 		}
 		
-		if !delayedSignal.handlers.isEmpty {
+		if !blockedSignal.handlers.isEmpty {
 			/* We have nothing more to do except update the delayed signals: there
 			 * are more delayed signals that have been registered for this signal,
 			 * so we cannot unblock the signal. */
-			delayedSignals[signal] = delayedSignal
+			blockedSignals[signal] = blockedSignal
 			return
 		}
 		
 		/* Now we have removed **all** delayed sigactions on the given signal.
 		 * Let’s unblock the signal! */
 		try executeOnThread(.unblock(signal))
-		delayedSignal.dispatchSource.cancel()
+		blockedSignal.dispatchSource.cancel()
 		
 		/* Finally, once the sigaction has been restored to the original value, we
 		 * can remove the unsigactioned signal from the list. */
-		delayedSignals.removeValue(forKey: signal)
+		blockedSignals.removeValue(forKey: signal)
 	}
 	
 	/** Must always be called on the `signalProcessingQueue`. */
@@ -284,7 +263,7 @@ public struct DelayedSigaction : Hashable {
 		SignalHandlingConfig.logger?.debug("Processing signals, called from libdispatch", metadata: ["signal": "\(signal)", "count": "\(count)"])
 		
 		/* Get the delayed signal for the given signal. */
-		guard let delayedSignal = delayedSignals[signal] else {
+		guard let blockedSignal = blockedSignals[signal] else {
 			SignalHandlingConfig.logger?.error("INTERNAL ERROR: nil delayed signal.", metadata: ["signal": "\(signal)"])
 			return
 		}
@@ -292,7 +271,7 @@ public struct DelayedSigaction : Hashable {
 		for _ in 0..<count {
 			let group = DispatchGroup()
 			var runOriginalHandlerFinal = true
-			for (_, handler) in delayedSignal.handlers {
+			for (_, handler) in blockedSignal.handlers {
 				group.enter()
 				handler(signal, { runOriginalHandler in
 					runOriginalHandlerFinal = runOriginalHandlerFinal && runOriginalHandler
@@ -310,20 +289,20 @@ public struct DelayedSigaction : Hashable {
 		}
 	}
 	
-	private static func delayedSigactionThreadLoop() {
+	private static func blockedSignalsThreadLoop() {
 		runLoop: repeat {
-//			loggerLessThreadSafeDebugLog("🧵 New delayed sigaction thread loop")
+//			loggerLessThreadSafeDebugLog("🧵 New blocked signals thread loop")
 			
-			DelayedSignalSync.lock.lock(whenCondition: DelayedSignalSync.actionInThread.rawValue)
+			ThreadSync.lock.lock(whenCondition: ThreadSync.actionInThread.rawValue)
 			defer {
-				DelayedSignalSync.action = .nop
-				DelayedSignalSync.lock.unlock(withCondition: DelayedSignalSync.waitActionCompletion.rawValue)
+				ThreadSync.action = .nop
+				ThreadSync.lock.unlock(withCondition: ThreadSync.waitActionCompletion.rawValue)
 			}
 			
-			assert(DelayedSignalSync.error == nil, "non-nil error but acquired lock in actionInThread state.")
+			assert(ThreadSync.error == nil, "non-nil error but acquired lock in actionInThread state.")
 			
 			do {
-				switch DelayedSignalSync.action {
+				switch ThreadSync.action {
 					case .nop:
 						(/*nop*/)
 //						loggerLessThreadSafeDebugLog("🧵 Processing nop action")
@@ -402,37 +381,9 @@ public struct DelayedSigaction : Hashable {
 						}
 				}
 			} catch {
-				DelayedSignalSync.error = error
+				ThreadSync.error = error
 			}
 		} while true
-	}
-	
-	/**
-	Best effort log to stderr using write (no retry on signal). For debug only.
-	Marked as deprecated to force a warning if used. */
-	@available(*, deprecated, message: "This method should never be called in production.")
-	private static func loggerLessThreadSafeDebugLog(_ str: String) {
-		(str + "\n").utf8CString.withUnsafeBytes{ buffer in
-			guard buffer.count > 0 else {return}
-			_ = write(2, buffer.baseAddress! /* buffer size > 0, so !-safe */, buffer.count)
-		}
-	}
-	
-	private var id: Int
-	private var signal: Signal
-	
-	private init(signal: Signal) {
-		defer {Self.nextID += 1}
-		self.id = Self.nextID
-		self.signal = signal
-	}
-	
-	public static func ==(_ lhs: DelayedSigaction, _ rhs: DelayedSigaction) -> Bool {
-		return lhs.id == rhs.id
-	}
-	
-	public func hash(into hasher: inout Hasher) {
-		hasher.combine(id)
 	}
 	
 }
