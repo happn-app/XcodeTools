@@ -38,6 +38,15 @@
         }
       },
       {
+        "package": "swift-signal-handling",
+        "repositoryURL": "https://github.com/xcode-actions/swift-signal-handling.git",
+        "state": {
+          "branch": null,
+          "revision": "b7664877920f7e8a794010cd239b5d3b4a0a8f0f",
+          "version": "0.0.1"
+        }
+      },
+      {
         "package": "swift-system",
         "repositoryURL": "https://github.com/apple/swift-system.git",
         "state": {

@@ -18,7 +18,6 @@ let package = Package(
 		.executable(name: "xct-versions", targets: ["xct-versions"]),
 		
 		/* Some re-usable utilities. */
-		.library(name: "SignalHandling", targets: ["SignalHandling"]),
 		.library(name: "XCTUtils", targets: ["Utils"]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
@@ -29,16 +28,13 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.1"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.2.0"),
-		.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.2.1")
+		.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.2.1"),
+		.package(url: "https://github.com/xcode-actions/swift-signal-handling.git", from: "0.0.1")
 	],
 	targets: [
 		.target(name: "CMacroExports"),
 		
 		.target(name: "Utils"),
-		.target(name: "SignalHandling", dependencies: [
-			.product(name: "Logging", package: "swift-log"),
-			.product(name: "SystemPackage", package: "swift-system")
-		]),
 		
 		.target(name: "XcodeProj", dependencies: [
 			.target(name: "Utils"),
@@ -50,23 +46,23 @@ let package = Package(
 		
 		.target(name: "libxct", dependencies: [
 			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "SignalHandling", package: "swift-signal-handling"),
 			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
 			.target(name: "CMacroExports"),
-			.target(name: "SignalHandling"),
 			.target(name: "Utils"),
 			.target(name: "XcodeProj")
 		]),
-		.target(name: "libxct-test-helper", dependencies: [
+		.target(name: "libxct-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
-			.product(name: "Logging",       package: "swift-log"),
-			.target(name: "libxct"),
-			.target(name: "SignalHandling")
+			.product(name: "Logging",        package: "swift-log"),
+			.product(name: "SignalHandling", package: "swift-signal-handling"),
+			.target(name: "libxct")
 		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
-			.target(name: "libxct-test-helper"),
+			.target(name: "libxct-tests-helper"),
 			.target(name: "xct"), /* libxct depends (indirectly) on xct to launch processes w/ additional fds. */
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
