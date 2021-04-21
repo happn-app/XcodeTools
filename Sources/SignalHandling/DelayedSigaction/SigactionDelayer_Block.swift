@@ -92,7 +92,7 @@ public enum SigactionDelayer_Block {
 	
 	public static func registerDelayedSigaction(_ signal: Signal, handler: @escaping DelayedSigactionHandler) throws -> DelayedSigaction {
 		return try signalProcessingQueue.sync{
-			try registerDelayedSigaction(signal, handler: handler)
+			try registerDelayedSigactionOnQueue(signal, handler: handler)
 		}
 	}
 	
