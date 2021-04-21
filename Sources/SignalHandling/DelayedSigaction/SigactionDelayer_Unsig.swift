@@ -125,6 +125,8 @@ public enum SigactionDelayer_Unsig {
 	private static var unsigactionedSignals = [Signal: UnsigactionedSignal]()
 	
 	private static func executeOnThread(_ action: ThreadSync.Action) throws {
+		try createProcessingThreadIfNeededOnQueue()
+		
 		do {
 			ThreadSync.lock.lock(whenCondition: ThreadSync.nothingToDo.rawValue)
 			defer {ThreadSync.lock.unlock(withCondition: ThreadSync.actionInThread.rawValue)}
