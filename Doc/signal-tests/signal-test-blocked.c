@@ -42,6 +42,9 @@ static void *threadMain(void *info) {
 		pthread_mutex_unlock(&mutex);
 		
 		sigset_t set;
+		sigpending(&set);
+		fprintf(stderr, "✊ Other thread pending: %d\n", sigismember(&set, s));
+		
 		sigemptyset(&set);
 		sigaddset(&set, s);
 		pthread_sigmask(SIG_UNBLOCK, &set, NULL);
@@ -98,10 +101,11 @@ int main(int argc, const char * argv[]) {
 	fprintf(stderr, "✊ Main thread pending: %d\n", sigismember(&set, s));
 	
 	sleep(3);
-	/* On macOS, signal stays blocked on main thread after unblock in separate
-	 * thread;
-	 * On Linux, signal is “moved” to separate thread and sigaction is correctly
-	 * triggerred. */
+	/* On macOS, when all threads block the signal, the system chooses one thread
+	 * and assigns the signal to it. Unblocking in another thread won’t move the
+	 * signal to it, and we won’t be able to access it.
+	 * On Linux, when a process-wide signal is pending, it is pending on all
+	 * the threads. If a thread unblocks the signal, it will handle it. */
 	fprintf(stderr, "✊ Unblocking signal\n");
 	pthread_mutex_lock(&mutex);
 	thread_action = UNBLOCK_SIGNAL;
