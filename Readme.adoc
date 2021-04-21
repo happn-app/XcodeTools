@@ -1,5 +1,5 @@
 = XcodeTools
-François Lamboley <francois.lamboley@happn.com>
+François Lamboley <francois.lamboley@frostland.fr>
 
 == What Is This?
 A collection of utilities to work with Xcode files. Currently there are two
