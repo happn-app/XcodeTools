@@ -8,6 +8,8 @@
 // CC=clang CFLAGS='-I/usr/lib/swift -fblocks' LDFLAGS='-L/usr/lib/swift/linux -lpthread -ldispatch -lBlocksRuntime' make signal-test-blocked
 // LD_LIBRARY_PATH=/usr/lib/swift/linux ./signal-test-blocked
 
+#define SETUP_DISPATCH 0
+
 static int s = SIGTERM;
 
 typedef enum thread_action_e {
@@ -80,13 +82,15 @@ int main(int argc, const char * argv[]) {
 	
 	fprintf(stderr, "✊ Thread is inited\n");
 	
+#if SETUP_DISPATCH
 	/* On Linux, eat signals */
-//	dispatch_queue_t signal_queue = dispatch_queue_create("signal-dispatch", NULL);
-//	dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, s, 0, signal_queue);
-//	dispatch_source_set_event_handler(source, ^{
-//		fprintf(stderr, "🪡 Event from dispatch!\n");
-//	});
-//	dispatch_activate(source);
+	dispatch_queue_t signal_queue = dispatch_queue_create("signal-dispatch", NULL);
+	dispatch_source_t source = dispatch_source_create(DISPATCH_SOURCE_TYPE_SIGNAL, s, 0, signal_queue);
+	dispatch_source_set_event_handler(source, ^{
+		fprintf(stderr, "🪡 Event from dispatch!\n");
+	});
+	dispatch_activate(source);
+#endif
 	
 	struct sigaction act = {};
 	act.sa_flags = 0;
@@ -116,9 +120,11 @@ int main(int argc, const char * argv[]) {
 	sigpending(&set);
 	fprintf(stderr, "✊ Main thread pending: %d\n", sigismember(&set, s));
 	
-//	dispatch_source_cancel(source);
-//	dispatch_release(source);
-//	dispatch_release(signal_queue);
+#if SETUP_DISPATCH
+	dispatch_source_cancel(source);
+	dispatch_release(source);
+	dispatch_release(signal_queue);
+#endif
 	
 	return 0;
 }
