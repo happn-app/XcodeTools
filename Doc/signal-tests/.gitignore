@@ -1,3 +1,4 @@
-./signal-tests
-./signal-tests-macos
-./signal-tests-linux
+/signal-test-blocked
+/signal-test-sigaction
+/signal-tests-macos
+/signal-tests-linux
