@@ -128,7 +128,7 @@ extension Process {
 			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			guard p.isRunning else {return handler(true)}
 			kill(p.processIdentifier, signal.rawValue)
-			handler(false)
+			handler(true)
 		})
 		
 		let streamGroup = DispatchGroup()
