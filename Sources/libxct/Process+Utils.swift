@@ -126,9 +126,10 @@ extension Process {
 		
 		let delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
 			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
-			guard p.isRunning else {return handler(true)}
+			defer {handler(true)}
+			
+			guard p.isRunning else {return}
 			kill(p.processIdentifier, signal.rawValue)
-			handler(true)
 		})
 		
 		let streamGroup = DispatchGroup()
