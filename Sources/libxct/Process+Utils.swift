@@ -124,33 +124,15 @@ extension Process {
 			p.arguments = ["internal-fd-get-launcher", executable] + args
 		}
 		
-		var readSources = [DispatchSourceRead]()
-		var signalSources = [DispatchSourceSignal]()
-		
-		var delayedSigations = [Signal: DelayedSigaction]()
-		for signal in signalsToForward {
-			let signalSource = DispatchSource.makeSignalSource(signal: signal.rawValue, queue: nil)
-			signalSource.setEventHandler{
-				LibXctConfig.logger?.debug("Got signal in process signal source.", metadata: ["signal": "\(signal)"])
-				guard p.isRunning else {return}
-				kill(p.processIdentifier, signal.rawValue)
-			}
-			signalSource.setCancelHandler{
-				guard let delayedSigaction = delayedSigations[signal] else {
-					LibXctConfig.logger?.error("INTERNAL ERROR: In cancel handler, did not get an unsigaction id", metadata: ["signal": "\(signal)"])
-					return
-				}
-				do    {try SigactionDelayer_Unsig.unregisterDelayedSigaction(delayedSigaction)}
-				catch {LibXctConfig.logger?.error("Cannot release ignored signal \(signal): \(error)")}
-			}
-			signalSources.append(signalSource)
-		}
-		delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
+		let delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
 			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
-			handler(true)
+			guard p.isRunning else {return handler(true)}
+			kill(p.processIdentifier, signal.rawValue)
+			handler(false)
 		})
 		
 		let streamGroup = DispatchGroup()
+		var readSources = [DispatchSourceRead]()
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
@@ -178,12 +160,14 @@ extension Process {
 		}
 		
 		readSources.forEach{ $0.activate() }
-		signalSources.forEach{ $0.activate() }
 		
 		#warning("TODO: Doc: Do NOT set termination handler of Process!")
 		p.terminationHandler = { _ in
 			readSources.forEach{ $0.cancel() }
-			signalSources.forEach{ $0.cancel() }
+			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
+			for (signal, error) in errors {
+				LibXctConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
+			}
 		}
 		
 		LibXctConfig.logger?.info("Launching process \(executable)")

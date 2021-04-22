@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "831ed5e860a70e745bc1337830af4786b2576881",
-          "version": "0.4.1"
+          "revision": "47bd06ebeff8146ecd0020809e186218b46f465f",
+          "version": "0.4.2"
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/xcode-actions/swift-signal-handling.git",
         "state": {
           "branch": null,
-          "revision": "13ee4bde37b40816c85b6eec3cbbeab8a6c4e57a",
-          "version": "0.1.0"
+          "revision": "1fd84e624b31161307490e454347ce1535b646bb",
+          "version": "0.2.0"
         }
       },
       {

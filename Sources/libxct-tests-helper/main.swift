@@ -8,6 +8,7 @@ struct LibxctTestHelper : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(
 		subcommands: [
+			SleepInSubprocess.self
 		]
 	)
 	
