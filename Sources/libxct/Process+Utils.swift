@@ -84,7 +84,7 @@ extension Process {
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Process, DispatchGroup) {
-		let p = Process()
+		let p = LibXctProcess()
 		p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
 		
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
@@ -162,8 +162,7 @@ extension Process {
 		
 		readSources.forEach{ $0.activate() }
 		
-		#warning("TODO: Doc: Do NOT set termination handler of Process!")
-		p.terminationHandler = { _ in
+		p.privateTerminationHandler = { _ in
 			readSources.forEach{ $0.cancel() }
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
@@ -352,6 +351,46 @@ extension Process {
 		
 		guard sendmsg(socket, &msg, 0) >= 0 else {
 			throw LibXctError.systemError(Errno(rawValue: errno))
+		}
+	}
+	
+}
+
+
+/**
+A subclass of Process whose termination handler is overridden, in order for
+libxct to set its own termination handler and still let clients use it. */
+private class LibXctProcess : Process {
+	
+	var privateTerminationHandler: ((Process) -> Void)? {
+		didSet {updateTerminationHandler()}
+	}
+	
+	override init() {
+		super.init()
+		
+		publicTerminationHandler = super.terminationHandler
+		updateTerminationHandler()
+	}
+	
+	override var terminationHandler: ((Process) -> Void)? {
+		get {publicTerminationHandler}
+		set {publicTerminationHandler = newValue; updateTerminationHandler()}
+	}
+	
+	private var publicTerminationHandler: ((Process) -> Void)?
+	
+	/**
+	Sets super’s terminationHandler to nil if both private and public termination
+	handlers are nil, otherwise set it to call them. */
+	private func updateTerminationHandler() {
+		if privateTerminationHandler == nil && publicTerminationHandler == nil {
+			super.terminationHandler = nil
+		} else {
+			super.terminationHandler = { [weak self] process in
+				self?.privateTerminationHandler?(process)
+				self?.publicTerminationHandler?(process)
+			}
 		}
 	}
 	
