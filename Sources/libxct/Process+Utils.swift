@@ -171,9 +171,14 @@ extension Process {
 		}
 		
 		LibXctConfig.logger?.info("Launching process \(executable)")
-		try p.run()
-		for (fdToSend, fdInChild) in fileDescriptorsToSend {
-			
+		do {
+			try p.run()
+			for (fdToSend, fdInChild) in fileDescriptorsToSend {
+				
+			}
+		} catch {
+			/* We must call theh termination handler manually then… */
+			p.privateTerminationHandler?(p)
 		}
 		
 		return (p, streamGroup)
