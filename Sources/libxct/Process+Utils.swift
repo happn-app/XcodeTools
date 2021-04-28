@@ -387,9 +387,9 @@ private class LibXctProcess : Process {
 		if privateTerminationHandler == nil && publicTerminationHandler == nil {
 			super.terminationHandler = nil
 		} else {
-			super.terminationHandler = { [weak self] process in
-				self?.privateTerminationHandler?(process)
-				self?.publicTerminationHandler?(process)
+			super.terminationHandler = { process in
+				(process as! LibXctProcess).privateTerminationHandler?(process)
+				(process as! LibXctProcess).publicTerminationHandler?(process)
 			}
 		}
 	}
