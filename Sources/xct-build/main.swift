@@ -31,6 +31,8 @@ struct XctBuild : ParsableCommand {
 	
 	func run() throws {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
+//		LibXctConfig.logger?.logLevel = .trace
+		XctBuild.logger.logLevel = .trace
 		
 		let pipe = Pipe()
 		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
@@ -50,12 +52,14 @@ struct XctBuild : ParsableCommand {
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
 			additionalOutputFileDescriptors: [fhXcodeReadOutput],
-			signalsToForward: [],
 			outputHandler: { line, fd in
-				print(line)
+				guard fd == fhXcodeReadOutput else {return}
+				var line = line
+				if line.last == "\n" {line.removeLast()}
+				XctBuild.logger.trace("\(line)")
 			}
 		)
-		print("\(terminationStatus), \(terminationReason.rawValue)")
+		XctBuild.logger.trace("termination: \(terminationStatus), \(terminationReason.rawValue)")
 	}
 	
 }

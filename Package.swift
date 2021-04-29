@@ -52,18 +52,22 @@ let package = Package(
 			.target(name: "CMacroExports"),
 			.target(name: "Utils"),
 			.target(name: "XcodeProj")
+			/* libxct depends (indirectly) on xct to launch processes w/ additional
+			 * fds. To avoid a cyclic dependency, we do not add it in the deps. */
+//			.target(name: "xct")
 		]),
 		.target(name: "libxct-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SignalHandling", package: "swift-signal-handling"),
-			.target(name: "libxct")
+			.target(name: "libxct"),
+			/* This dep is technically related to libxct. See libxct deps. */
+			.target(name: "xct")
 		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
 			.target(name: "libxct-tests-helper"),
-			.target(name: "xct"), /* libxct depends (indirectly) on xct to launch processes w/ additional fds. */
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "StreamReader",  package: "stream-reader"),
@@ -77,7 +81,12 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "CMacroExports"),
-			.target(name: "libxct")
+			.target(name: "libxct"),
+			
+			/* Not _actual_ dependencies, but it is easier to have these recompiled
+			 * when modified and current scheme is xct (when it works). */
+			.target(name: "xct-build"),
+			.target(name: "xct-versions")
 		]),
 		
 		.target(name: "xct-build", dependencies: [
@@ -86,14 +95,14 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "StreamReader",   package: "stream-reader"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "XcodeProj"),
-			.target(name: "libxct")
+			.target(name: "libxct"),
+			.target(name: "XcodeProj")
 		]),
 		
 		.target(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.target(name: "XcodeProj"),
-			.target(name: "libxct")
+			.target(name: "libxct"),
+			.target(name: "XcodeProj")
 		]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */

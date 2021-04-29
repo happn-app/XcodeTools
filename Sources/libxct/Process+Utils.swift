@@ -65,8 +65,8 @@ extension Process {
 	
 	- Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
 	`stdout` and `stderr`, which are handled and differently) to clone in the
-	child process. The key is the file descriptor to clone (from the parent
-	process to the child), the value is the descriptor you’ll get in the child
+	child process. The **value** is the file descriptor to clone (from the parent
+	process to the child), the key is the descriptor you’ll get in the child
 	process.
 	- Parameter additionalOutputFileDescriptors: Additional output file
 	descriptors to stream from the process. Usually used with
@@ -79,13 +79,12 @@ extension Process {
 		stdin: FileDescriptor? = FileDescriptor.xctStdin,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
-		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
+		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Process, DispatchGroup) {
-		let p = LibXctProcess()
-		p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
+		let p = Process()
 		
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
 		var outputFileDescriptors = additionalOutputFileDescriptors
@@ -112,16 +111,39 @@ extension Process {
 				fdRedirects[fd] = FileDescriptor.xctStderr
 		}
 		
+		let fdToSendFds: FileDescriptor?
+		/* We will modify it later to add stdin if needed */
+		var fileDescriptorsToSend = fileDescriptorsToSend
+		
 		if fileDescriptorsToSend.isEmpty {
+			p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
 			p.executableURL = URL(fileURLWithPath: executable)
 			p.arguments = args
+			fdToSendFds = nil
 		} else {
 			guard let execBaseURL = getenv(LibXctConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
 				LibXctConfig.logger?.error("Cannot launch process and send its fd if \(LibXctConstants.envVarNameExecPath) is not set.")
 				throw LibXctError.envVarXctExecPathNotSet
 			}
+			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
+			 * equivalent to the C version `int sv[2] = {-1, -1};`.
+			 * https://forums.swift.org/t/guarantee-in-memory-tuple-layout-or-dont/40122
+			 * Stride and alignment should be the equal for CInt. */
+			var sv: (CInt, CInt) = (-1, -1)
+			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */&sv.0) == 0 else {
+				/* TODO: Throw a more informative error? */
+				throw LibXctError.systemError(Errno(rawValue: errno))
+			}
+			
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
 			p.arguments = ["internal-fd-get-launcher", executable] + args
+			p.standardInput = FileHandle(fileDescriptor: sv.1)
+			fdToSendFds = FileDescriptor(rawValue: sv.0)
+			
+			if fileDescriptorsToSend[FileDescriptor.xctStdin] == nil {
+				/* We must add stdin in the list of file descriptors to send. */
+				fileDescriptorsToSend[FileDescriptor.xctStdin] = FileDescriptor.xctStdin
+			}
 		}
 		
 		let delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
@@ -162,23 +184,30 @@ extension Process {
 		
 		readSources.forEach{ $0.activate() }
 		
-		p.privateTerminationHandler = { _ in
+		#warning("TODO")
+		p.terminationHandler = { _ in
 			readSources.forEach{ $0.cancel() }
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
 				LibXctConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
 			}
+			/* Close fd to send fds if needed, and maybe others */
 		}
 		
-		LibXctConfig.logger?.info("Launching process \(executable)")
+		LibXctConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
 		do {
 			try p.run()
-			for (fdToSend, fdInChild) in fileDescriptorsToSend {
-				
+			if !fileDescriptorsToSend.isEmpty {
+				let fdToSendFds = fdToSendFds!
+				for (fdInChild, fdToSend) in fileDescriptorsToSend {
+					try send(fd: fdToSend.rawValue, destfd: fdInChild.rawValue, to: fdToSendFds.rawValue)
+				}
+				LibXctConfig.logger?.trace("Closing fd to send fds")
+				try fdToSendFds.close()
 			}
 		} catch {
-			/* We must call theh termination handler manually then… */
-			p.privateTerminationHandler?(p)
+			/* We must call the termination handler manually then… */
+			p.terminationHandler?(p)
 		}
 		
 		return (p, streamGroup)
@@ -317,46 +346,48 @@ extension Process {
 		}
 	}
 	
-	/* https://stackoverflow.com/a/28005250 (last variant) */
-	private static func send(fd: CInt, to socket: Int32) throws {
+	/* Based on https://stackoverflow.com/a/28005250 (last variant) */
+	private static func send(fd: CInt, destfd: CInt, to socket: CInt) throws {
 		var fd = fd /* A var because we use a pointer to it at some point, but never actually modified */
+		let sizeOfFd = MemoryLayout.size(ofValue: fd) /* We’ll need this later */
+		let sizeOfDestfd = MemoryLayout.size(ofValue: destfd) /* We’ll need this later */
 		
 		var msg = msghdr()
-		let bufSize = XCT_CMSG_SPACE(MemoryLayout.size(ofValue: fd))
 		
-		let buf = UnsafeMutablePointer<Int8>.allocate(capacity: bufSize)
-		defer {buf.deallocate()}
-		buf.assign(repeating: 0, count: bufSize)
-		
-		/* The struct iovec is needed, even if it points to minimal data. */
-		let empty = UnsafeMutableRawPointer.allocate(byteCount: 1, alignment: MemoryLayout<Int8>.alignment)
-		defer {empty.deallocate()}
-		empty.initializeMemory(as: Int8.self, from: "", count: 1)
+		/* We’ll place the destination fd (a simple CInt) in an iovec. */
+		let iovBase = UnsafeMutablePointer<CInt>.allocate(capacity: 1)
+		defer {iovBase.deallocate()}
+		iovBase.initialize(to: destfd)
 		
 		let ioPtr = UnsafeMutablePointer<iovec>.allocate(capacity: 1)
 		defer {ioPtr.deallocate()}
-		ioPtr.initialize(to: iovec(iov_base: empty, iov_len: 1))
+		ioPtr.initialize(to: iovec(iov_base: iovBase, iov_len: sizeOfDestfd))
 		
 		msg.msg_iov = ioPtr
 		msg.msg_iovlen = 1
+		
+		/* Ancillary data. This is where we send the actual fd. */
+		let buf = UnsafeMutablePointer<CInt>.allocate(capacity: 1)
+		defer {buf.deallocate()}
+		buf.initialize(to: -1)
+		
 		msg.msg_control = UnsafeMutableRawPointer(buf)
-		msg.msg_controllen = socklen_t(bufSize)
+		msg.msg_controllen = socklen_t(XCT_CMSG_SPACE(sizeOfFd))
 		
 		guard let cmsg = XCT_CMSG_FIRSTHDR(&msg) else {
 			throw LibXctError.internalError("CMSG_FIRSTHDR returned nil.")
 		}
-		cmsg.pointee.cmsg_level = SOL_SOCKET
+		
 		cmsg.pointee.cmsg_type = SCM_RIGHTS
-		cmsg.pointee.cmsg_len = socklen_t(XCT_CMSG_LEN(MemoryLayout.size(ofValue: fd)))
+		cmsg.pointee.cmsg_level = SOL_SOCKET
 		
-		memmove(XCT_CMSG_DATA(cmsg), &fd, MemoryLayout.size(ofValue: fd))
-		LibXctConfig.logger?.debug("sent fd \(fd) through socket to child process")
+		cmsg.pointee.cmsg_len = socklen_t(XCT_CMSG_LEN(sizeOfFd))
+		memmove(XCT_CMSG_DATA(cmsg), &fd, sizeOfFd)
 		
-		msg.msg_controllen = socklen_t(XCT_CMSG_SPACE(MemoryLayout.size(ofValue: fd)))
-		
-		guard sendmsg(socket, &msg, 0) >= 0 else {
+		guard sendmsg(socket, &msg, /*flags: */0) != -1 else {
 			throw LibXctError.systemError(Errno(rawValue: errno))
 		}
+		LibXctConfig.logger?.debug("sent fd \(fd) through socket to child process")
 	}
 	
 }
