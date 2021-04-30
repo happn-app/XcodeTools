@@ -5,7 +5,6 @@ import SystemPackage
 
 import CMacroExports
 import SignalHandling
-import Utils
 
 
 
@@ -158,9 +157,6 @@ extension Process {
 		var readSources = [DispatchSourceRead]()
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
-			/* TODO: Cleanup if this fails! */
-			try setRequireNonBlockingIO(on: fd, logChange: (fdRedirects[fd] == nil))
-			
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
@@ -170,7 +166,6 @@ extension Process {
 			streamSource.setRegistrationHandler(handler: streamGroup.enter)
 			streamSource.setCancelHandler(handler: streamGroup.leave)
 			
-			let timerRef = Ref<DispatchSourceTimer?>(nil)
 			streamSource.setEventHandler{
 				/* `source.data`: see doc of dispatch_source_get_data in objc */
 				/* `source.mask`: see doc of dispatch_source_get_mask in objc (is always 0 for read source) */
@@ -179,8 +174,7 @@ extension Process {
 					streamQueue: streamQueue,
 					outputHandler: { str in outputHandler(str, fdRedirects[fd] ?? fd) },
 					streamReader: streamReader,
-					estimatedBytesAvailable: streamSource.data,
-					timerRef: timerRef, fromTimer: false
+					estimatedBytesAvailable: streamSource.data
 				)
 			}
 		}
@@ -269,52 +263,11 @@ extension Process {
 		}
 	}
 	
-	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (String) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt, timerRef: Ref<DispatchSourceTimer?>, fromTimer: Bool) {
-		timerRef.value?.setEventHandler(handler: nil)
-		timerRef.value?.cancel()
-		
-		/* This timer thingy is probably not needed at all. The general idea was
-		 * to avoid blocking in an infinite read of the output stream in case the
-		 * dispatch source read “did not work” and we were never called in the
-		 * event handler.
-		 *
-		 * We thought about this case when closing the fd before reading the
-		 * stream ended (for tests). Turns out the dispatch source will not be
-		 * called, but the system read function will also block. Period. Whether
-		 * the fd was set non-blocking or not.
-		 * So the timer will indeed call this method, but we will still be
-		 * blocked, basically rendering this workaround useless.
-		 * We could probably time the read function and stop it (how?) if it took
-		 * too long, but 1/ how much is too long? 2/ if the user closes the file
-		 * descriptor while being used by someone else, he deserves to suffer (doc
-		 * says “It is invalid to close a file descriptor or deallocate a mach
-		 * port that is currently being tracked by a dispatch source object before
-		 * the cancellation handler is invoked.”). */
-		let timer = DispatchSource.makeTimerSource(queue: streamQueue)
-		timerRef.value = timer
-		timer.setEventHandler(handler: {
-			Process.handleProcessOutput(
-				streamSource: streamSource,
-				streamQueue: streamQueue,
-				outputHandler: outputHandler,
-				streamReader: streamReader,
-				estimatedBytesAvailable: 1,
-				timerRef: timerRef, fromTimer: true
-			)
-		})
-		timer.schedule(deadline: .now() + .seconds(3))
-		timer.activate()
-		
-		let cancelAllSources = {
-			timerRef.value?.cancel()
-			timerRef.value = nil
-			streamSource.cancel()
-		}
-		
+	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (String) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
 		do {
 			/* A bit more than estimates to get everything. */
 			let toRead = Int(estimatedBytesAvailable * 2 + 1)
-			LibXctConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream), triggered by timer: \(fromTimer)")
+			LibXctConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
 			/* We do not need to check the number of bytes actually read. If EOF
 			 * was reached (nothing was read), the stream reader will remember it,
 			 * and the readLine method will properly return nil without even trying
@@ -333,7 +286,7 @@ extension Process {
 			}
 			/* We have read all the stream, we can stop */
 			LibXctConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
-			cancelAllSources()
+			streamSource.cancel()
 			
 		} catch StreamReaderError.streamReadForbidden {
 			LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
@@ -345,7 +298,7 @@ extension Process {
 			LibXctConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
 			/* We stop everything at first error. Most likely the error is bad fd
 			 * because process exited and we were too long to read from the stream. */
-			cancelAllSources()
+			streamSource.cancel()
 		}
 	}
 	
