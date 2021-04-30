@@ -53,10 +53,14 @@ struct XctBuild : ParsableCommand {
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
 			additionalOutputFileDescriptors: [fhXcodeReadOutput],
 			outputHandler: { line, fd in
-				guard fd == fhXcodeReadOutput else {return}
 				var line = line
 				if line.last == "\n" {line.removeLast()}
-				XctBuild.logger.trace("\(line)")
+				switch fd {
+					case fhXcodeReadOutput:        XctBuild.logger.trace("json: \(line)")
+					case FileDescriptor.xctStdout: XctBuild.logger.trace("stdout: \(line)")
+					case FileDescriptor.xctStderr: XctBuild.logger.trace("stderr: \(line)")
+					default:                       XctBuild.logger.trace("unknown 😱: \(line)")
+				}
 			}
 		)
 		XctBuild.logger.trace("termination: \(terminationStatus), \(terminationReason.rawValue)")
