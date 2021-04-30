@@ -159,7 +159,7 @@ extension Process {
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
 			/* TODO: Cleanup if this fails! */
-			try setRequireNonBlockingIO(on: fd, logChange: additionalOutputFileDescriptors.contains(fd))
+			try setRequireNonBlockingIO(on: fd, logChange: (fdRedirects[fd] == nil))
 			
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			streamReader.underlyingStreamReadSizeLimit = 0
