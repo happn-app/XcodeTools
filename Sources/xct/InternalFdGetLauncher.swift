@@ -6,6 +6,9 @@ import CMacroExports
 import Logging
 import SystemPackage
 
+/* For xctStdin; we can remove when available in SystemPackage. */
+import libxct
+
 
 
 struct InternalFdGetLauncher : ParsableCommand {
@@ -21,35 +24,73 @@ struct InternalFdGetLauncher : ParsableCommand {
 	var toolArguments: [String] = []
 	
 	func run() throws {
-		Xct.logger.logLevel = .trace
+//		Xct.logger.logLevel = .trace
 		
-		let fd = FileHandle.standardInput.fileDescriptor
-		var fdDup = [CInt: CInt]()
-		while let (receivedFd, expectedDestinationFd) = try receiveFd(from: fd) {
-			Xct.logger.debug("fd received: \(receivedFd), \(expectedDestinationFd))")
-			guard fdDup[expectedDestinationFd] == nil else {
-				/* TODO: Use an actual error */
-				throw ExitCode(rawValue: 1)
+		/* We need a bidirectionary dictionary… */
+		var destinationFdToReceivedFd = [CInt: CInt]()
+		var receivedFdToDestinationFd = [CInt: CInt]()
+		while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.xctStdin.rawValue) {
+			Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
+			/* As we have not closed any received fd yet, it should not be possible
+			 * to received the same fd twice. */
+			assert(receivedFdToDestinationFd[receivedFd] == nil)
+			
+			if let oldReceivedFd = destinationFdToReceivedFd[destinationFd] {
+				Xct.logger.warning("Internal Launcher: Received expected destination fd \(destinationFd) more than once! Caller did a mistake. Latest received fd (\(receivedFd) for now) wins.")
+				
+				/* We should close the old fd as we won’t be using it at all. */
+				try FileDescriptor(rawValue: oldReceivedFd).close()
+				
+				/* Then remove it from the receivedFdToDestinationFd dictionary.
+				 * No need to remove from destinationFdToReceivedFd (will be done
+				 * just after this if). */
+				assert(receivedFdToDestinationFd[oldReceivedFd] == destinationFd)
+				receivedFdToDestinationFd.removeValue(forKey: oldReceivedFd)
 			}
-			fdDup[expectedDestinationFd] = receivedFd
+			
+			receivedFdToDestinationFd[receivedFd] = destinationFd
+			destinationFdToReceivedFd[destinationFd] = receivedFd
 		}
-		try FileDescriptor(rawValue: fd).close()
+		try FileDescriptor.xctStdin.close()
 		
-		#warning("TODO: Check overlapping fds…")
-		for (destinationFd, fd) in fdDup {
+		/* We may modify destinationFdToReceivedFd values, so no (key, value)
+		 * iteration type. */
+		for destinationFd in destinationFdToReceivedFd.keys {
+			let receivedFd = destinationFdToReceivedFd[destinationFd]!
+			defer {
+				assert(receivedFdToDestinationFd[receivedFd] == destinationFd)
+				receivedFdToDestinationFd.removeValue(forKey: receivedFd)
+			}
+			
 			/* dup2 takes care of this case, but needed later. */
-			guard destinationFd != fd else {continue}
-			guard dup2(fd, destinationFd) != -1 else {
+			guard destinationFd != receivedFd else {continue}
+			
+			if let destinationFdToUpdate = receivedFdToDestinationFd[destinationFd] {
+				/* If the current destination fd is in the received fds, we must dup
+				 * the destination fd. */
+				let newReceivedFd = dup(destinationFd)
+				guard newReceivedFd != -1 else {
+					/* TODO: Use an actual error */
+					throw ExitCode(rawValue: 1)
+				}
+				/* No need to close the destination fd as dup2 will do it. */
+				receivedFdToDestinationFd.removeValue(forKey: destinationFd)
+				receivedFdToDestinationFd[newReceivedFd] = destinationFdToUpdate
+				destinationFdToReceivedFd[destinationFdToUpdate] = newReceivedFd
+			}
+			
+			guard dup2(receivedFd, destinationFd) != -1 else {
 				/* TODO: Use an actual error */
 				throw ExitCode(rawValue: 1)
 			}
-			guard close(fd) == 0 else {
+			guard close(receivedFd) == 0 else {
 				/* TODO: Use an actual error */
 				throw ExitCode(rawValue: 1)
 			}
 		}
 		
 		try withCStrings([toolName] + toolArguments, scoped: { cargs in
+			Xct.logger.trace("exec’ing \(toolName)")
 			/* The v means we pass an array to exec (as opposed to the variadic
 			 * exec variant, which is not available in Swift anyway). */
 			let ret = execv(toolName, cargs)

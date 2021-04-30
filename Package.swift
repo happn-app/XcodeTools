@@ -45,10 +45,10 @@ let package = Package(
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
 		.target(name: "libxct", dependencies: [
-			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SignalHandling", package: "swift-signal-handling"),
-			.product(name: "StreamReader",  package: "stream-reader"),
-			.product(name: "SystemPackage", package: "swift-system"),
+			.product(name: "StreamReader",   package: "stream-reader"),
+			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "CMacroExports"),
 			.target(name: "Utils"),
 			.target(name: "XcodeProj")
@@ -84,7 +84,9 @@ let package = Package(
 			.target(name: "libxct"),
 			
 			/* Not _actual_ dependencies, but it is easier to have these recompiled
-			 * when modified and current scheme is xct (when it works). */
+			 * when modified and current scheme is xct. This is the theory, but it
+			 * does not work (Xcode 12.5). One can add the targets in the xct
+			 * scheme manually though. */
 			.target(name: "xct-build"),
 			.target(name: "xct-versions")
 		]),
