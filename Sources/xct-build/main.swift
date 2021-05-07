@@ -43,7 +43,7 @@ struct XctBuild : ParsableCommand {
 		let resultStreamPath = "/dev/fd/\(fhXcodeWriteOutput.rawValue)"
 		
 		let args = [
-			"-scheme", "GPS Stone",
+			"-scheme", "XibLoc",
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath
 		]
