@@ -1,4 +1,4 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.4
 import PackageDescription
 
 
@@ -40,7 +40,7 @@ let package = Package(
 			.target(name: "Utils"),
 			.product(name: "Logging", package: "swift-log")
 		], resources: [
-			Resource.process("PBXModel.xcdatamodeld")
+			.process("PBXModel.xcdatamodeld")
 		]),
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
@@ -56,7 +56,7 @@ let package = Package(
 			 * fds. To avoid a cyclic dependency, we do not add it in the deps. */
 //			.target(name: "xct")
 		]),
-		.target(name: "libxct-tests-helper", dependencies: [
+		.executableTarget(name: "libxct-tests-helper", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
@@ -75,7 +75,7 @@ let package = Package(
 		]),
 		
 		/* A launcher for xcode tools binaries (xct-*) */
-		.target(name: "xct", dependencies: [
+		.executableTarget(name: "xct", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
@@ -91,7 +91,7 @@ let package = Package(
 			.target(name: "xct-versions")
 		]),
 		
-		.target(name: "xct-build", dependencies: [
+		.executableTarget(name: "xct-build", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
@@ -101,14 +101,14 @@ let package = Package(
 			.target(name: "XcodeProj")
 		]),
 		
-		.target(name: "xct-versions", dependencies: [
+		.executableTarget(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.target(name: "libxct"),
 			.target(name: "XcodeProj")
 		]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
-		.target(name: "hagvtool", dependencies: [
+		.executableTarget(name: "hagvtool", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),

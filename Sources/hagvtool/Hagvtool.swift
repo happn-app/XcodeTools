@@ -7,6 +7,7 @@ import SystemPackage
 
 
 
+@main
 struct Hagvtool : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(
@@ -40,6 +41,3 @@ struct Hagvtool : ParsableCommand {
 	}
 	
 }
-
-
-Hagvtool.main()

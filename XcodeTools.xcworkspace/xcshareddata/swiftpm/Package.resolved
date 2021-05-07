@@ -6,8 +6,17 @@
         "repositoryURL": "https://github.com/xcode-actions/clt-logger.git",
         "state": {
           "branch": null,
-          "revision": "82a6abd73db2459af474baff6e0fed3634897a15",
-          "version": "0.1.1"
+          "revision": "654b94141e65cac7abd7b0792f424628a088e8f3",
+          "version": "0.3.0"
+        }
+      },
+      {
+        "package": "stream-reader",
+        "repositoryURL": "https://github.com/xcode-actions/stream-reader.git",
+        "state": {
+          "branch": null,
+          "revision": "c929a9700ed0592b6ba05cd631722694657b4e45",
+          "version": "3.2.1"
         }
       },
       {
@@ -26,6 +35,15 @@
           "branch": null,
           "revision": "5d66f7ba25daf4f94100e7022febf3c75e37a6c7",
           "version": "1.4.2"
+        }
+      },
+      {
+        "package": "swift-signal-handling",
+        "repositoryURL": "https://github.com/xcode-actions/swift-signal-handling.git",
+        "state": {
+          "branch": null,
+          "revision": "1fd84e624b31161307490e454347ce1535b646bb",
+          "version": "0.2.0"
         }
       },
       {

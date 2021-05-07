@@ -4,6 +4,7 @@ import ArgumentParser
 
 
 
+@main
 struct LibxctTestHelper : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(
@@ -13,5 +14,3 @@ struct LibxctTestHelper : ParsableCommand {
 	)
 	
 }
-
-LibxctTestHelper.main()
