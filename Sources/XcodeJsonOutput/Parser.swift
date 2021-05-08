@@ -21,11 +21,28 @@ public enum Parser {
 	
 	public static func parse(dictionary: [String: Any?]) throws -> Object {
 		let objectType = try ObjectType(dictionary: dictionary)
-		for type: _Object.Type in [String.self, StreamedEvent.self] {
+		for type: _Object.Type in allObjectTypes {
 			guard objectType == type.type else {continue}
 			return try type.init(dictionary: dictionary)
 		}
 		throw Err.unknownObjectType(objectType.name)
+	}
+	
+	static var allObjectTypes: [_Object.Type] = [
+		LogMessageEmittedEventPayload.self,
+		
+		ActivityLogMessage.self,
+		Int.self,
+		StreamedActionResultInfo.self,
+		StreamedEvent.self,
+		String.self
+	]
+	
+	static func parsePayload(dictionary: [String: Any?]) throws -> AnyStreamedEventPayload {
+		guard let object = try parse(dictionary: dictionary) as? AnyStreamedEventPayload else {
+			throw Err.invalidObjectType
+		}
+		return object
 	}
 	
 }

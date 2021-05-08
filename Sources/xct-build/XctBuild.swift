@@ -60,7 +60,11 @@ struct XctBuild : ParsableCommand {
 				var line = line
 				if line.last == "\n" {line.removeLast()}
 				switch fd {
-					case fhXcodeReadOutput:        XctBuild.logger.trace("json: \(line)"); XctBuild.logger.trace("\(try? Parser.parse(jsonString: line))")
+					case fhXcodeReadOutput:
+						XctBuild.logger.trace("json: \(line)")
+						do    {let o = try Parser.parse(jsonString: line); XctBuild.logger.trace("\(o)")}
+						catch {XctBuild.logger.trace("\(error)")}
+						
 					case FileDescriptor.xctStdout: ()//XctBuild.logger.trace("stdout: \(line)")
 					case FileDescriptor.xctStderr: ()//XctBuild.logger.trace("stderr: \(line)")
 					default:                       XctBuild.logger.trace("unknown 😱: \(line)")
