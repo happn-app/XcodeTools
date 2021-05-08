@@ -39,7 +39,7 @@ struct XctBuild : ParsableCommand {
 		let pipe = Pipe()
 		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 		let fhXcodeWriteOutput = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
-		let resultBundlePath = URL(fileURLWithPath: "/Users/frizlab/Downloads").appendingPathComponent(UUID().uuidString).appendingPathExtension("xcresult").path
+		let resultBundlePath = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("xcresult").path
 		/* TODO: When SystemPackage is updated, use FilePath (not interesting to
 		 * use in version 0.0.1) */
 		let resultStreamPath = "/dev/fd/\(fhXcodeWriteOutput.rawValue)"

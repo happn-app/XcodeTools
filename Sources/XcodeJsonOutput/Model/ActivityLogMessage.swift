@@ -13,22 +13,24 @@ struct ActivityLogMessage : _Object {
 	var category: String
 	
 	init(dictionary: [String : Any?]) throws {
-		try Self.validateTypeFor(dictionary: dictionary)
+		var dictionary = dictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
 		guard
-			dictionary.count == 5,
-			let titleDic      = dictionary["title"]      as? [String: Any?],
-			let shortTitleDic = dictionary["shortTitle"] as? [String: Any?],
-			let typeDic       = dictionary["type"]       as? [String: Any?],
-			let categoryDic   = dictionary["category"]   as? [String: Any?]
+			let titleDic      = dictionary.removeValue(forKey: "title")      as? [String: Any?],
+			let shortTitleDic = dictionary.removeValue(forKey: "shortTitle") as? [String: Any?],
+			let typeDic       = dictionary.removeValue(forKey: "type")       as? [String: Any?],
+			let categoryDic   = dictionary.removeValue(forKey: "category")   as? [String: Any?]
 		else {
 			throw Err.malformedObject
 		}
 		
-		self.title      = try String(dictionary: titleDic)
-		self.shortTitle = try String(dictionary: shortTitleDic)
-		self.type       = try String(dictionary: typeDic)
-		self.category   = try String(dictionary: categoryDic)
+		self.title      = try .init(dictionary: titleDic)
+		self.shortTitle = try .init(dictionary: shortTitleDic)
+		self.type       = try .init(dictionary: typeDic)
+		self.category   = try .init(dictionary: categoryDic)
+		
+		Self.logUnknownKeys(from: dictionary)
 	}
 	
 }

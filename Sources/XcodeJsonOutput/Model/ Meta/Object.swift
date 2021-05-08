@@ -18,10 +18,17 @@ extension _Object {
 	/**
 	Convenience one can call at start of concrete init implementations to
 	validate the type of the dictionary that has been passed in. */
-	static func validateTypeFor(dictionary: [String: Any?]) throws {
+	static func consumeAndValidateTypeFor(dictionary: inout [String: Any?]) throws {
 		guard try ObjectType(dictionary: dictionary) == Self.type else {
 			throw Err.invalidObjectType
 		}
+		assert(dictionary.keys.contains("_type"))
+		dictionary.removeValue(forKey: "_type")
+	}
+	
+	static func logUnknownKeys(from dictionary: [String: Any?]) {
+		guard !dictionary.isEmpty else {return}
+		Conf.logger?.warning("Got unknown keys in object of type \(Self.type): \(dictionary)")
 	}
 	
 }

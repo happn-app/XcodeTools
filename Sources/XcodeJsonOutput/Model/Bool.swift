@@ -2,9 +2,9 @@ import Foundation
 
 
 
-extension Int : _Object {
+extension Bool : _Object {
 	
-	static let type = ObjectType(name: "Int")
+	static let type = ObjectType(name: "Bool")
 	
 	init(dictionary: [String: Any?]) throws {
 		var dictionary = dictionary
@@ -12,7 +12,7 @@ extension Int : _Object {
 		
 		guard
 			let valueStr = dictionary.removeValue(forKey: "_value") as? String,
-			let value = Int(valueStr)
+			let value = Bool(valueStr)
 		else {
 			throw Err.malformedObject
 		}

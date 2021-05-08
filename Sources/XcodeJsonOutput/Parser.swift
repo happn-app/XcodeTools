@@ -29,12 +29,25 @@ public enum Parser {
 	}
 	
 	static var allObjectTypes: [_Object.Type] = [
+		ActionStartedEventPayload.self,
+		InvocationStartedEventPayload.self,
 		LogMessageEmittedEventPayload.self,
 		
+		ActionDeviceRecord.self,
+		ActionPlatformRecord.self,
+		ActionRecordHead.self,
+		ActionRunDestinationRecord.self,
+		ActionSDKRecord.self,
+		ActionsInvocationMetadata.self,
 		ActivityLogMessage.self,
-		Int.self,
+		EntityIdentifier.self,
+		StreamedActionInfo.self,
 		StreamedActionResultInfo.self,
 		StreamedEvent.self,
+		
+		Bool.self,
+		Date.self,
+		Int.self,
 		String.self
 	]
 	

@@ -2,9 +2,9 @@ import Foundation
 
 
 
-struct StreamedActionResultInfo : _Object {
+struct StreamedActionInfo : _Object {
 	
-	static var type: ObjectType = .init(name: "StreamedActionResultInfo")
+	static var type: ObjectType = .init(name: "StreamedActionInfo")
 	
 	init(dictionary: [String : Any?]) throws {
 		var dictionary = dictionary

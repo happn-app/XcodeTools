@@ -10,18 +10,20 @@ public struct StreamedEvent : _Object {
 	public var structuredPayload: AnyStreamedEventPayload
 	
 	init(dictionary: [String: Any?]) throws {
-		try Self.validateTypeFor(dictionary: dictionary)
+		var dictionary = dictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
 		guard
-			dictionary.count == 3,
-			let nameDic    = dictionary["name"]              as? [String: Any?],
-			let payloadDic = dictionary["structuredPayload"] as? [String: Any?]
+			let nameDic    = dictionary.removeValue(forKey: "name")              as? [String: Any?],
+			let payloadDic = dictionary.removeValue(forKey: "structuredPayload") as? [String: Any?]
 		else {
 			throw Err.malformedObject
 		}
 		
-		self.name = try String(dictionary: nameDic)
+		self.name              = try .init(dictionary: nameDic)
 		self.structuredPayload = try Parser.parsePayload(dictionary: payloadDic)
+		
+		Self.logUnknownKeys(from: dictionary)
 	}
 	
 }

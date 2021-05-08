@@ -16,6 +16,18 @@ public extension Dictionary {
 		return t
 	}
 	
+	mutating func getAndRemove<T>(_ key: Key, notFoundError: @autoclosure () -> Error, wrongTypeError: @autoclosure () -> Error) throws -> T {
+		let v: T = try get(key, notFoundError: notFoundError(), wrongTypeError: wrongTypeError())
+		removeValue(forKey: key)
+		return v
+	}
+	
+	mutating func getIfExistsAndRemove<T>(_ key: Key, wrongTypeError: @autoclosure () -> Error) throws -> T? {
+		let v: T? = try getIfExists(key, wrongTypeError: wrongTypeError())
+		removeValue(forKey: key)
+		return v
+	}
+	
 }
 
 

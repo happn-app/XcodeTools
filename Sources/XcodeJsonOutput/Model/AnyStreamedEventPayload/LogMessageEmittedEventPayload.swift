@@ -11,20 +11,22 @@ struct LogMessageEmittedEventPayload : _AnyStreamedEventPayload {
 	var sectionIndex: Int
 	
 	init(dictionary: [String : Any?]) throws {
-		try Self.validateTypeFor(dictionary: dictionary)
+		var dictionary = dictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
 		guard
-			dictionary.count == 4,
-			let messageDic      = dictionary["message"]      as? [String: Any?],
-			let resultInfoDic   = dictionary["resultInfo"]   as? [String: Any?],
-			let sectionIndexDic = dictionary["sectionIndex"] as? [String: Any?]
+			let messageDic      = dictionary.removeValue(forKey: "message")      as? [String: Any?],
+			let resultInfoDic   = dictionary.removeValue(forKey: "resultInfo")   as? [String: Any?],
+			let sectionIndexDic = dictionary.removeValue(forKey: "sectionIndex") as? [String: Any?]
 		else {
 			throw Err.malformedObject
 		}
 		
-		self.message = try ActivityLogMessage(dictionary: messageDic)
-		self.resultInfo = try StreamedActionResultInfo(dictionary: resultInfoDic)
-		self.sectionIndex = try Int(dictionary: sectionIndexDic)
+		self.message      = try .init(dictionary: messageDic)
+		self.resultInfo   = try .init(dictionary: resultInfoDic)
+		self.sectionIndex = try .init(dictionary: sectionIndexDic)
+		
+		Self.logUnknownKeys(from: dictionary)
 	}
 	
 }

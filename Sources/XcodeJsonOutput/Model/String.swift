@@ -7,16 +7,18 @@ extension String : _Object {
 	static let type = ObjectType(name: "String")
 	
 	init(dictionary: [String: Any?]) throws {
-		try Self.validateTypeFor(dictionary: dictionary)
+		var dictionary = dictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
 		guard
-			dictionary.count == 2,
-			let value = dictionary["_value"] as? String
+			let value = dictionary.removeValue(forKey: "_value") as? String
 		else {
 			throw Err.malformedObject
 		}
 		
 		self = value
+		
+		Self.logUnknownKeys(from: dictionary)
 	}
 	
 }
