@@ -20,7 +20,7 @@ extension _Object {
 	validate the type of the dictionary that has been passed in. */
 	static func validateTypeFor(dictionary: [String: Any?]) throws {
 		guard try ObjectType(dictionary: dictionary) == Self.type else {
-			throw NSError() // Internal error probably
+			throw Err.invalidObjectType
 		}
 	}
 	

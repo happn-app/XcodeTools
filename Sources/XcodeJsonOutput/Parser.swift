@@ -1,5 +1,7 @@
 import Foundation
 
+import Utils
+
 
 
 public enum Parser {
@@ -9,9 +11,10 @@ public enum Parser {
 	}
 	
 	public static func parse(json: Data) throws -> Object {
-		// TODO: Catch error, map to own module error
-		guard let dictionary = try JSONSerialization.jsonObject(with: json, options: []) as? [String: Any?] else {
-			throw NSError()
+		let jsonObject = try Result{ try JSONSerialization.jsonObject(with: json, options: []) }
+			.mapErrorAndGet{ Err.invalidJSON($0) }
+		guard let dictionary = jsonObject as? [String: Any?] else {
+			throw Err.invalidJSONType
 		}
 		return try self.parse(dictionary: dictionary)
 	}
@@ -22,7 +25,7 @@ public enum Parser {
 			guard objectType == type.type else {continue}
 			return try type.init(dictionary: dictionary)
 		}
-		throw NSError() // Unknown object type
+		throw Err.unknownObjectType(objectType.name)
 	}
 	
 }

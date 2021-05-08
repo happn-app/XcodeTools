@@ -45,7 +45,8 @@ let package = Package(
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
 		.target(name: "XcodeJsonOutput", dependencies: [
-			.product(name: "Logging", package: "swift-log")
+			.product(name: "Logging", package: "swift-log"),
+			.target(name: "Utils")
 		]),
 		
 		.target(name: "libxct", dependencies: [

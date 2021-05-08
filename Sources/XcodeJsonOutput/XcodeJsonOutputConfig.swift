@@ -14,3 +14,5 @@ public struct XcodeJsonOutputConfig {
 	private init() {}
 	
 }
+
+typealias Conf = XcodeJsonOutputConfig

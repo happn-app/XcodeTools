@@ -9,12 +9,13 @@ extension String : _Object {
 	init(dictionary: [String: Any?]) throws {
 		try Self.validateTypeFor(dictionary: dictionary)
 		
-		guard dictionary.count == 2 else {
-			throw NSError()
+		guard
+			dictionary.count == 2,
+			let value = dictionary["_value"] as? String
+		else {
+			throw Err.malformedObject
 		}
-		guard let value = dictionary["_value"] as? String else {
-			throw NSError()
-		}
+		
 		self = value
 	}
 	

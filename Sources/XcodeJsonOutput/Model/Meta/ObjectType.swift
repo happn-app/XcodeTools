@@ -14,24 +14,24 @@ class ObjectType : Equatable, CustomStringConvertible {
 	
 	convenience init(dictionary: [String: Any?]) throws {
 		guard let typeDic = dictionary["_type"] as? [String: Any?] else {
-			throw NSError()
+			throw Err.noObjectType
 		}
 		try self.init(typeDictionary: typeDic)
 	}
 	
 	convenience init(typeDictionary: [String: Any?]) throws {
 		guard let name = typeDictionary["_name"] as? String else {
-			throw NSError()
+			throw Err.malformedObjectType
 		}
 		let supertype: ObjectType?
 		if let supertypeDictionary = typeDictionary["_supertype"] as? [String: Any?] {
 			guard typeDictionary.count == 2 else {
-				throw NSError()
+				throw Err.malformedObjectType
 			}
 			supertype = try ObjectType(typeDictionary: supertypeDictionary)
 		} else {
 			guard typeDictionary.count == 1 else {
-				throw NSError()
+				throw Err.malformedObjectType
 			}
 			supertype = nil
 		}
@@ -42,7 +42,7 @@ class ObjectType : Equatable, CustomStringConvertible {
 		return "ObjectType<\(name)\((supertype.flatMap{ ", \($0)" } ?? ""))>"
 	}
 	
-	static func == (lhs: ObjectType, rhs: ObjectType) -> Bool {
+	static func ==(lhs: ObjectType, rhs: ObjectType) -> Bool {
 		return lhs.name == rhs.name && lhs.supertype == rhs.supertype
 	}
 	

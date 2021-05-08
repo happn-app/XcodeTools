@@ -42,6 +42,7 @@ public struct BuildSettings {
 			outputData = try Result{ try pipe.fileHandleForReading.readToEnd() }
 				.mapErrorAndGet{ _ in XcodeProjError.internalError(.cannotGetDeveloperDir) }
 		} else {
+			/* Note: This can throw an (uncatchable objc) exception! */
 			outputData = pipe.fileHandleForReading.readDataToEndOfFile()
 		}
 		let outputString = try outputData.flatMap{ String(data: $0, encoding: .utf8) }

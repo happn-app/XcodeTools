@@ -12,13 +12,15 @@ public struct StreamedEvent : _Object {
 	init(dictionary: [String: Any?]) throws {
 		try Self.validateTypeFor(dictionary: dictionary)
 		
-		guard dictionary.count == 3 else {
-			throw NSError()
+		guard
+			dictionary.count == 3,
+			let nameDic = dictionary["name"] as? [String: Any?],
+			let payloadDic = dictionary["structuredPayload"] as? [String: Any?]
+		else {
+			throw Err.malformedObject
 		}
-		guard let nameJson = dictionary["name"] as? [String: Any?] else {
-			throw NSError()
-		}
-		self.name = try String(dictionary: nameJson)
+		
+		self.name = try String(dictionary: nameDic)
 	}
 	
 }
