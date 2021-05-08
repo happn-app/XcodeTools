@@ -7,6 +7,7 @@ import StreamReader
 import SystemPackage
 
 import libxct
+import XcodeJsonOutput
 
 
 
@@ -38,13 +39,15 @@ struct XctBuild : ParsableCommand {
 		let pipe = Pipe()
 		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 		let fhXcodeWriteOutput = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
-		let resultBundlePath = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("xcresult").path
+		let resultBundlePath = URL(fileURLWithPath: "/Users/frizlab/Downloads").appendingPathComponent(UUID().uuidString).appendingPathExtension("xcresult").path
 		/* TODO: When SystemPackage is updated, use FilePath (not interesting to
 		 * use in version 0.0.1) */
 		let resultStreamPath = "/dev/fd/\(fhXcodeWriteOutput.rawValue)"
 		
 		let args = [
-			"-scheme", "XibLoc",
+			"-verbose",// "-json",
+			"-disableAutomaticPackageResolution",
+			"-scheme", "GPS Stone",
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath
 		]
@@ -57,9 +60,9 @@ struct XctBuild : ParsableCommand {
 				var line = line
 				if line.last == "\n" {line.removeLast()}
 				switch fd {
-					case fhXcodeReadOutput:        XctBuild.logger.trace("json: \(line)")
-					case FileDescriptor.xctStdout: XctBuild.logger.trace("stdout: \(line)")
-					case FileDescriptor.xctStderr: XctBuild.logger.trace("stderr: \(line)")
+					case fhXcodeReadOutput:        XctBuild.logger.trace("json: \(line)"); XctBuild.logger.trace("\(try? Parser.parse(jsonString: line))")
+					case FileDescriptor.xctStdout: ()//XctBuild.logger.trace("stdout: \(line)")
+					case FileDescriptor.xctStderr: ()//XctBuild.logger.trace("stderr: \(line)")
 					default:                       XctBuild.logger.trace("unknown 😱: \(line)")
 				}
 			}

@@ -44,6 +44,10 @@ let package = Package(
 		]),
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
 		
+		.target(name: "XcodeJsonOutput", dependencies: [
+			.product(name: "Logging", package: "swift-log")
+		]),
+		
 		.target(name: "libxct", dependencies: [
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SignalHandling", package: "swift-signal-handling"),
@@ -98,6 +102,7 @@ let package = Package(
 			.product(name: "StreamReader",   package: "stream-reader"),
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "libxct"),
+			.target(name: "XcodeJsonOutput"),
 			.target(name: "XcodeProj")
 		]),
 		
