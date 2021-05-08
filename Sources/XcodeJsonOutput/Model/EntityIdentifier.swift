@@ -15,19 +15,10 @@ struct EntityIdentifier : _Object {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let containerNameDic = dictionary.removeValue(forKey: "containerName") as? [String: Any?],
-			let entityNameDic    = dictionary.removeValue(forKey: "entityName")    as? [String: Any?],
-			let entityTypeDic    = dictionary.removeValue(forKey: "entityType")    as? [String: Any?],
-			let sharedStateDic   = dictionary.removeValue(forKey: "sharedState")   as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.containerName = try .init(dictionary: containerNameDic)
-		self.entityName    = try .init(dictionary: entityNameDic)
-		self.entityType    = try .init(dictionary: entityTypeDic)
-		self.sharedState   = try .init(dictionary: sharedStateDic)
+		self.containerName = try dictionary.getParsedAndRemove("containerName")
+		self.entityName    = try dictionary.getParsedAndRemove("entityName")
+		self.entityType    = try dictionary.getParsedAndRemove("entityType")
+		self.sharedState   = try dictionary.getParsedAndRemove("sharedState")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

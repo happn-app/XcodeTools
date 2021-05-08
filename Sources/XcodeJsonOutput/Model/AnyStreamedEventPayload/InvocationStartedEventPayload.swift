@@ -12,13 +12,7 @@ struct InvocationStartedEventPayload : _AnyStreamedEventPayload {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let metadataDic = dictionary.removeValue(forKey: "metadata") as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.metadata = try .init(dictionary: metadataDic)
+		self.metadata = try dictionary.getParsedAndRemove("metadata")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

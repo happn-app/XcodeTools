@@ -13,18 +13,15 @@ class ObjectType : Equatable, CustomStringConvertible {
 	}
 	
 	convenience init(dictionary: [String: Any?]) throws {
-		guard let typeDic = dictionary["_type"] as? [String: Any?] else {
-			throw Err.noObjectType
-		}
+		let typeDic: [String: Any?] = try dictionary.get("_type", notFoundError: Err.noObjectType, wrongTypeError: Err.malformedObjectType)
 		try self.init(typeDictionary: typeDic)
 	}
 	
 	convenience init(typeDictionary: [String: Any?]) throws {
-		guard let name = typeDictionary["_name"] as? String else {
-			throw Err.malformedObjectType
-		}
+		let name: String = try typeDictionary.get("_name", notFoundError: Err.malformedObjectType, wrongTypeError: Err.malformedObjectType)
+		
 		let supertype: ObjectType?
-		if let supertypeDictionary = typeDictionary["_supertype"] as? [String: Any?] {
+		if let supertypeDictionary: [String: Any?] = try typeDictionary.getIfExists("_supertype", wrongTypeError: Err.malformedObjectType) {
 			guard typeDictionary.count == 2 else {
 				throw Err.malformedObjectType
 			}
@@ -35,6 +32,7 @@ class ObjectType : Equatable, CustomStringConvertible {
 			}
 			supertype = nil
 		}
+		
 		self.init(name: name, supertype: supertype)
 	}
 	

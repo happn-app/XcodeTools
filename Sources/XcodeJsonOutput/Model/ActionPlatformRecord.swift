@@ -13,15 +13,8 @@ struct ActionPlatformRecord : _Object {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let identifierDic      = dictionary.removeValue(forKey: "identifier")    as? [String: Any?],
-			let userDescriptionDic = dictionary.removeValue(forKey: "userDescription") as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.identifier      = try String(dictionary: identifierDic)
-		self.userDescription = try String(dictionary: userDescriptionDic)
+		self.identifier      = try dictionary.getParsedAndRemove("identifier")
+		self.userDescription = try dictionary.getParsedAndRemove("userDescription")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

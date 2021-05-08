@@ -14,17 +14,9 @@ struct ActionsInvocationMetadata : _Object {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let creatingWorkspaceFilePathDic = dictionary.removeValue(forKey: "creatingWorkspaceFilePath") as? [String: Any?],
-			let schemeIdentifierDic          = dictionary.removeValue(forKey: "schemeIdentifier")          as? [String: Any?],
-			let uniqueIdentifierDic          = dictionary.removeValue(forKey: "uniqueIdentifier")          as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.creatingWorkspaceFilePath = try .init(dictionary: creatingWorkspaceFilePathDic)
-		self.schemeIdentifier          = try .init(dictionary: schemeIdentifierDic)
-		self.uniqueIdentifier          = try .init(dictionary: uniqueIdentifierDic)
+		self.creatingWorkspaceFilePath = try dictionary.getParsedAndRemove("creatingWorkspaceFilePath")
+		self.schemeIdentifier          = try dictionary.getParsedAndRemove("schemeIdentifier")
+		self.uniqueIdentifier          = try dictionary.getParsedAndRemove("uniqueIdentifier")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

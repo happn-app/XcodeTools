@@ -13,15 +13,8 @@ public struct StreamedEvent : _Object {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let nameDic    = dictionary.removeValue(forKey: "name")              as? [String: Any?],
-			let payloadDic = dictionary.removeValue(forKey: "structuredPayload") as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.name              = try .init(dictionary: nameDic)
-		self.structuredPayload = try Parser.parsePayload(dictionary: payloadDic)
+		self.name              = try dictionary.getParsedAndRemove("name")
+		self.structuredPayload = try Parser.parsePayload(dictionary: dictionary.getAndRemove("structuredPayload", notFoundError: Err.malformedObject, wrongTypeError: Err.malformedObject))
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

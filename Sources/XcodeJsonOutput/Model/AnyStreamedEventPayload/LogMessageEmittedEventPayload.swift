@@ -14,17 +14,9 @@ struct LogMessageEmittedEventPayload : _AnyStreamedEventPayload {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let messageDic      = dictionary.removeValue(forKey: "message")      as? [String: Any?],
-			let resultInfoDic   = dictionary.removeValue(forKey: "resultInfo")   as? [String: Any?],
-			let sectionIndexDic = dictionary.removeValue(forKey: "sectionIndex") as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.message      = try .init(dictionary: messageDic)
-		self.resultInfo   = try .init(dictionary: resultInfoDic)
-		self.sectionIndex = try .init(dictionary: sectionIndexDic)
+		self.message      = try dictionary.getParsedAndRemove("message")
+		self.resultInfo   = try dictionary.getParsedAndRemove("resultInfo")
+		self.sectionIndex = try dictionary.getParsedAndRemove("sectionIndex")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

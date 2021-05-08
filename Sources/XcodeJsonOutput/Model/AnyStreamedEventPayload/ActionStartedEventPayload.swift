@@ -13,15 +13,8 @@ struct ActionStartedEventPayload : _AnyStreamedEventPayload {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
 		
-		guard
-			let actionInfoDic = dictionary.removeValue(forKey: "actionInfo") as? [String: Any?],
-			let headDic       = dictionary.removeValue(forKey: "head")       as? [String: Any?]
-		else {
-			throw Err.malformedObject
-		}
-		
-		self.actionInfo = try .init(dictionary: actionInfoDic)
-		self.head       = try .init(dictionary: headDic)
+		self.actionInfo = try dictionary.getParsedAndRemove("actionInfo")
+		self.head       = try dictionary.getParsedAndRemove("head")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}
