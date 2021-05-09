@@ -29,9 +29,15 @@ public enum Parser {
 	}
 	
 	static var allObjectTypes: [_Object.Type] = [
+		ActivityLogCommandInvocationSectionHead.self,
+		ActivityLogSectionHead.self,
+		
 		ActionStartedEventPayload.self,
 		InvocationStartedEventPayload.self,
 		LogMessageEmittedEventPayload.self,
+		LogSectionAttachedEventPayload.self,
+		LogSectionCreatedEventPayload.self,
+		LogTextAppendedEventPayload.self,
 		
 		ActionDeviceRecord.self,
 		ActionPlatformRecord.self,
@@ -53,6 +59,13 @@ public enum Parser {
 	
 	static func parsePayload(dictionary: [String: Any?]) throws -> AnyStreamedEventPayload {
 		guard let object = try parse(dictionary: dictionary) as? AnyStreamedEventPayload else {
+			throw Err.invalidObjectType
+		}
+		return object
+	}
+	
+	static func parseActivityLogSectionHead(dictionary: [String: Any?]) throws -> AnyActivityLogSectionHead {
+		guard let object = try parse(dictionary: dictionary) as? AnyActivityLogSectionHead else {
 			throw Err.invalidObjectType
 		}
 		return object
