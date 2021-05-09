@@ -71,6 +71,8 @@ struct XctBuild : ParsableCommand {
 				}
 			}
 		)
+		/* TODO: spawnedAndStreamedProcess should close the file descriptor to
+		 *       send, maybe w/ an option not to. For now we close it manually. */
 		try fhXcodeWriteOutput.close()
 		process.waitUntilExit()
 		outputGroup.wait()
