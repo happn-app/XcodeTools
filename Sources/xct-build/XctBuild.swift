@@ -62,8 +62,8 @@ struct XctBuild : ParsableCommand {
 				switch fd {
 					case fhXcodeReadOutput:
 						XctBuild.logger.trace("json: \(line)")
-						do    {let o = try Parser.parse(jsonString: line); XctBuild.logger.trace("\(o)")}
-						catch {XctBuild.logger.trace("\(error)")}
+						do    {let o = try Parser.parse(jsonString: line); XctBuild.logger.debug("\(o)")}
+						catch {XctBuild.logger.error("\(error)")}
 						
 					case FileDescriptor.xctStdout: ()//XctBuild.logger.trace("stdout: \(line)")
 					case FileDescriptor.xctStderr: ()//XctBuild.logger.trace("stderr: \(line)")

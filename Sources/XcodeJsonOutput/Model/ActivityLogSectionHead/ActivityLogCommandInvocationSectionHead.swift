@@ -9,6 +9,7 @@ struct ActivityLogCommandInvocationSectionHead : _AnyActivityLogSectionHead {
 	var commandDetails: String
 	
 	var domainType: String
+	var location: DocumentLocation?
 	var startTime: Date
 	var title: String
 	
@@ -19,6 +20,7 @@ struct ActivityLogCommandInvocationSectionHead : _AnyActivityLogSectionHead {
 		self.commandDetails = try dictionary.getParsedAndRemove("commandDetails")
 		
 		self.domainType = try dictionary.getParsedAndRemove("domainType")
+		self.location   = try dictionary.getParsedIfExistsAndRemove("location")
 		self.startTime  = try dictionary.getParsedAndRemove("startTime")
 		self.title      = try dictionary.getParsedAndRemove("title")
 		

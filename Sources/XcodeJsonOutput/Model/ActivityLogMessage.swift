@@ -12,6 +12,8 @@ struct ActivityLogMessage : _Object {
 	var type: String
 	var category: String
 	
+	var location: DocumentLocation?
+	
 	init(dictionary: [String : Any?]) throws {
 		var dictionary = dictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
@@ -20,6 +22,7 @@ struct ActivityLogMessage : _Object {
 		self.shortTitle = try dictionary.getParsedAndRemove("shortTitle")
 		self.type       = try dictionary.getParsedAndRemove("type")
 		self.category   = try dictionary.getParsedAndRemove("category")
+		self.location   = try dictionary.getParsedIfExistsAndRemove("location")
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

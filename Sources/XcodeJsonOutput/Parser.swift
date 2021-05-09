@@ -32,27 +32,42 @@ public enum Parser {
 		ActivityLogCommandInvocationSectionHead.self,
 		ActivityLogSectionHead.self,
 		
+		ActivityLogCommandInvocationSectionTail.self,
+		ActivityLogSectionTail.self,
+		
+		ActionFinishedEventPayload.self,
 		ActionStartedEventPayload.self,
+		InvocationFinishedEventPayload.self,
 		InvocationStartedEventPayload.self,
 		LogMessageEmittedEventPayload.self,
 		LogSectionAttachedEventPayload.self,
+		LogSectionClosedEventPayload.self,
 		LogSectionCreatedEventPayload.self,
 		LogTextAppendedEventPayload.self,
 		
 		ActionDeviceRecord.self,
 		ActionPlatformRecord.self,
 		ActionRecordHead.self,
+		ActionRecordTail.self,
+		ActionResult.self,
 		ActionRunDestinationRecord.self,
 		ActionSDKRecord.self,
 		ActionsInvocationMetadata.self,
 		ActivityLogMessage.self,
+		CodeCoverageInfo.self,
+		DocumentLocation.self,
 		EntityIdentifier.self,
+		Reference.self,
+		ResultIssueSummaries.self,
+		ResultMetrics.self,
 		StreamedActionInfo.self,
 		StreamedActionResultInfo.self,
 		StreamedEvent.self,
+		TypeDefinition.self,
 		
 		Bool.self,
 		Date.self,
+		Double.self,
 		Int.self,
 		String.self
 	]
@@ -66,6 +81,13 @@ public enum Parser {
 	
 	static func parseActivityLogSectionHead(dictionary: [String: Any?]) throws -> AnyActivityLogSectionHead {
 		guard let object = try parse(dictionary: dictionary) as? AnyActivityLogSectionHead else {
+			throw Err.invalidObjectType
+		}
+		return object
+	}
+	
+	static func parseActivityLogSectionTail(dictionary: [String: Any?]) throws -> AnyActivityLogSectionTail {
+		guard let object = try parse(dictionary: dictionary) as? AnyActivityLogSectionTail else {
 			throw Err.invalidObjectType
 		}
 		return object
