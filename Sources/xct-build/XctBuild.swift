@@ -51,7 +51,7 @@ struct XctBuild : ParsableCommand {
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath
 		]
-		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
+		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
 			"/usr/bin/xcodebuild", args: args,
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
@@ -71,7 +71,10 @@ struct XctBuild : ParsableCommand {
 				}
 			}
 		)
-		XctBuild.logger.trace("termination: \(terminationStatus), \(terminationReason.rawValue)")
+		try fhXcodeWriteOutput.close()
+		process.waitUntilExit()
+		outputGroup.wait()
+		XctBuild.logger.trace("termination: \(process.terminationStatus), \(process.terminationReason.rawValue)")
 	}
 	
 }

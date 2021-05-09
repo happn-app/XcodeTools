@@ -59,7 +59,7 @@ final class ProcessTests : XCTestCase {
 		struct ReadError : Error {}
 		let scriptURL = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("slow_and_interleaved_output.swift")
+			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("slow-and-interleaved-output.swift")
 		
 		let n = 3 /* Not lower than 2 to get fdSwitchCount high enough */
 		let t = 0.25
@@ -89,6 +89,57 @@ final class ProcessTests : XCTestCase {
 		
 		XCTAssertEqual(linesByFd[FileDescriptor.xctStdout, default: []].joined(), expectedStdout)
 		XCTAssertEqual(linesByFd[FileDescriptor.xctStderr, default: []].joined(), expectedStderr)
+	}
+	
+	@available(macOS 10.15.4, *)
+	func testNonStandardFdCapture() throws {
+		struct ReadError : Error {}
+		let scriptURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("write-500-lines.swift")
+		
+		let n = 50
+		
+		let pipe = Pipe()
+		let fdRead = pipe.fileHandleForReading.fileDescriptor
+		let fdWrite = pipe.fileHandleForWriting.fileDescriptor
+		
+		var count = 0
+		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
+			scriptURL.path, args: ["\(n)", "\(fdWrite)"], stdin: nil,
+			stdoutRedirect: .none, stderrRedirect: .none,
+			fileDescriptorsToSend: [FileDescriptor(rawValue: fdWrite): FileDescriptor(rawValue: fdWrite)],
+			additionalOutputFileDescriptors: [FileDescriptor(rawValue: fdRead)],
+			signalsToForward: [],
+			outputHandler: { line, fd in
+				guard fd.rawValue != FileHandle.standardError.fileDescriptor else {
+					/* When a Swift script is launched, swift can output some shit on
+					 * stderr… */
+					NSLog("%@", "Got err from script: \(line)")
+					return
+				}
+				
+				XCTAssertEqual(fd.rawValue, fdRead)
+				XCTAssertEqual(line, "I will not leave books on the ground.\n")
+				Thread.sleep(forTimeInterval: 0.05) /* Greater than wait time in script. */
+				if count == 0 {
+					Thread.sleep(forTimeInterval: 3)
+				}
+				
+				count += 1
+			}
+		)
+		
+		try FileDescriptor(rawValue: fdWrite).close()
+		process.waitUntilExit()
+		
+		XCTAssertLessThan(count, n)
+		/* Apparently the fd should **NOT** be closed! It makes sense tbh. */
+//		try FileDescriptor(rawValue: fdRead).close()
+		
+		let r = outputGroup.wait(timeout: .now() + .seconds(7))
+		XCTAssertEqual(r, .success)
+		XCTAssertEqual(count, n)
 	}
 	
 	/** Returns the path to the built products directory. */

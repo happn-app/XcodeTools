@@ -183,12 +183,12 @@ extension Process {
 		
 		#warning("TODO")
 		p.terminationHandler = { _ in
-			readSources.forEach{ $0.cancel() }
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
 				LibXctConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
 			}
-			/* Close fd to send fds if needed, and maybe others */
+			/* Close fd to send fds if needed, and maybe others.
+			 * Do **not** cancel read sources. */
 		}
 		
 		LibXctConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")

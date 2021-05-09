@@ -61,22 +61,15 @@ let package = Package(
 			 * fds. To avoid a cyclic dependency, we do not add it in the deps. */
 //			.target(name: "xct")
 		]),
-		.executableTarget(name: "libxct-tests-helper", dependencies: [
-			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.product(name: "CLTLogger",      package: "clt-logger"),
-			.product(name: "Logging",        package: "swift-log"),
-			.product(name: "SignalHandling", package: "swift-signal-handling"),
-			.target(name: "libxct"),
-			/* This dep is technically related to libxct. See libxct deps. */
-			.target(name: "xct")
-		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
-			.target(name: "libxct-tests-helper"),
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "StreamReader",  package: "stream-reader"),
-			.product(name: "SystemPackage", package: "swift-system")
+			.product(name: "SystemPackage", package: "swift-system"),
+			
+			/* This dep is technically related to libxct. See libxct deps. */
+			.target(name: "xct")
 		]),
 		
 		/* A launcher for xcode tools binaries (xct-*) */
