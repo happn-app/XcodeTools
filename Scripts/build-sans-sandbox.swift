@@ -53,7 +53,7 @@ func setupCleanupSigaction() throws {
 	newAction.__sigaction_u.__sa_handler = { signal in
 		/* In theory we shouldn’t handle the cleanup in the handler directly, but
 		 * here we won’t care… Using swift-signal-handling wouldv’e been handy! */
-		waitForProcessesAndCleanup()
+		waitForProcessesAndCleanup(fromSignal: true)
 		exit(signal)
 	}
 	sigaction(2,  &newAction, nil)
@@ -61,8 +61,10 @@ func setupCleanupSigaction() throws {
 }
 
 
-func waitForProcessesAndCleanup() {
-	_ = try? FileHandle.standardError.write(contentsOf: Data("Waiting on launched Processes, and cleaning up...\n".utf8))
+func waitForProcessesAndCleanup(fromSignal: Bool) {
+	if fromSignal {
+		_ = try? FileHandle.standardError.write(contentsOf: Data("\n***** SIGNAL CAUGHT\nCleaning up...\n".utf8))
+	}
 	
 	let fm = FileManager.default
 	
@@ -73,6 +75,10 @@ func waitForProcessesAndCleanup() {
 		 * also a possibility the interrupt was caught when the list was in the
 		 * process of being modified, thus being invalid in memory, so… but we do
 		 * not really care about all of that in a script, do we?) */
+		if p.isRunning {
+			_ = try? FileHandle.standardError.write(contentsOf: Data("Killing sub-process pid \(p.processIdentifier)\n".utf8))
+			kill(p.processIdentifier, 15)
+		}
 		p.waitUntilExit()
 	}
 	
@@ -146,6 +152,8 @@ func processModel(xcdatamodeldURL: URL, moduleName: String, tokenInPackageFile: 
 
 
 do {
+	try setupCleanupSigaction()
+	
 	let fm = FileManager.default
 	/* cd to package root so the script can be launched from wherever */
 	fm.changeCurrentDirectoryPath(URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().path)
@@ -156,9 +164,9 @@ do {
 	/* Run swift */
 	try shell("swift", ["build"] + CommandLine.arguments.dropFirst())
 	
-	waitForProcessesAndCleanup()
+	waitForProcessesAndCleanup(fromSignal: false)
 } catch {
 	_ = try? FileHandle.standardError.write(contentsOf: Data("Error: \(error)\n".utf8))
-	waitForProcessesAndCleanup()
+	waitForProcessesAndCleanup(fromSignal: false)
 	exit(1)
 }
