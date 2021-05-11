@@ -24,6 +24,7 @@ struct Xct : ParsableCommand {
 		return ret
 	}()
 	
+	#warning("TODO: Assignation below might be wrong (to check) if program is launched directly `xct blabla` (usual case)")
 	@Option(help: "Set the path to the core xct programs.")
 	var execPath: String = getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().path
 	
