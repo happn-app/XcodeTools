@@ -127,17 +127,21 @@ extension Process {
 			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
 			 * equivalent to the C version `int sv[2] = {-1, -1};`.
 			 * https://forums.swift.org/t/guarantee-in-memory-tuple-layout-or-dont/40122
-			 * Stride and alignment should be the equal for CInt. */
-			var sv: (CInt, CInt) = (-1, -1)
-			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */&sv.0) == 0 else {
+			 * Stride and alignment should be the equal for CInt.
+			 * Funnily, it seems to only work in debug compilation, not in release…
+			 * var sv: (CInt, CInt) = (-1, -1) */
+			let sv = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
+			sv.initialize(repeating: -1, count: 2)
+			defer {sv.deallocate()}
+			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */sv) == 0 else {
 				/* TODO: Throw a more informative error? */
 				throw LibXctError.systemError(Errno(rawValue: errno))
 			}
 			
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
 			p.arguments = ["internal-fd-get-launcher", executable] + args
-			p.standardInput = FileHandle(fileDescriptor: sv.1)
-			fdToSendFds = FileDescriptor(rawValue: sv.0)
+			p.standardInput = FileHandle(fileDescriptor: sv.advanced(by: 1).pointee)
+			fdToSendFds = FileDescriptor(rawValue: sv.advanced(by: 0).pointee)
 			
 			if fileDescriptorsToSend[FileDescriptor.xctStdin] == nil {
 				/* We must add stdin in the list of file descriptors to send. */
