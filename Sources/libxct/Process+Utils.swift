@@ -371,7 +371,7 @@ private class LibXctProcess : Process {
 	}
 	
 	override var terminationHandler: ((Process) -> Void)? {
-		get {publicTerminationHandler}
+		get {super.terminationHandler}
 		set {publicTerminationHandler = newValue; updateTerminationHandler()}
 	}
 	
