@@ -29,29 +29,30 @@ struct InternalFdGetLauncher : ParsableCommand {
 		/* We need a bidirectionary dictionary… */
 		var destinationFdToReceivedFd = [CInt: CInt]()
 		var receivedFdToDestinationFd = [CInt: CInt]()
-		while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.xctStdin.rawValue) {
-			Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
-			/* As we have not closed any received fd yet, it should not be possible
-			 * to received the same fd twice. */
-			assert(receivedFdToDestinationFd[receivedFd] == nil)
-			
-			if let oldReceivedFd = destinationFdToReceivedFd[destinationFd] {
-				Xct.logger.warning("Internal Launcher: Received expected destination fd \(destinationFd) more than once! Caller did a mistake. Latest received fd (\(receivedFd) for now) wins.")
+		try FileDescriptor.xctStdin.closeAfter{
+			while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.xctStdin.rawValue) {
+				Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
+				/* As we have not closed any received fd yet, it should not be possible
+				 * to received the same fd twice. */
+				assert(receivedFdToDestinationFd[receivedFd] == nil)
 				
-				/* We should close the old fd as we won’t be using it at all. */
-				try FileDescriptor(rawValue: oldReceivedFd).close()
+				if let oldReceivedFd = destinationFdToReceivedFd[destinationFd] {
+					Xct.logger.warning("Internal Launcher: Received expected destination fd \(destinationFd) more than once! Caller did a mistake. Latest received fd (\(receivedFd) for now) wins.")
+					
+					/* We should close the old fd as we won’t be using it at all. */
+					try FileDescriptor(rawValue: oldReceivedFd).close()
+					
+					/* Then remove it from the receivedFdToDestinationFd dictionary.
+					 * No need to remove from destinationFdToReceivedFd (will be done
+					 * just after this if). */
+					assert(receivedFdToDestinationFd[oldReceivedFd] == destinationFd)
+					receivedFdToDestinationFd.removeValue(forKey: oldReceivedFd)
+				}
 				
-				/* Then remove it from the receivedFdToDestinationFd dictionary.
-				 * No need to remove from destinationFdToReceivedFd (will be done
-				 * just after this if). */
-				assert(receivedFdToDestinationFd[oldReceivedFd] == destinationFd)
-				receivedFdToDestinationFd.removeValue(forKey: oldReceivedFd)
+				receivedFdToDestinationFd[receivedFd] = destinationFd
+				destinationFdToReceivedFd[destinationFd] = receivedFd
 			}
-			
-			receivedFdToDestinationFd[receivedFd] = destinationFd
-			destinationFdToReceivedFd[destinationFd] = receivedFd
 		}
-		try FileDescriptor.xctStdin.close()
 		
 		/* We may modify destinationFdToReceivedFd values, so no (key, value)
 		 * iteration type. */
