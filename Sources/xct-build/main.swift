@@ -2,6 +2,7 @@ import Foundation
 
 
 
-/* Don’t know why, but @main does not work w/ swift in CLI. Does work in Xcode
- * though! Tested on macOS 11.3.1 (20E241), w/ Xcode 12.5 (12E262) */
+/* @main does not work w/ swift 5.4 when module contains only 1 file.
+ * Source https://twitter.com/olebegemann/status/1391769381793943562
+ * Bug report https://bugs.swift.org/browse/SR-14488 */
 XctBuild.main()

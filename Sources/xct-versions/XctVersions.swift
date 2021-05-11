@@ -4,6 +4,7 @@ import ArgumentParser
 
 
 
+@main
 struct XctVersions : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(

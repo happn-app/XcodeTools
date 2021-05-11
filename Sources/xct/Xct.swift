@@ -8,7 +8,7 @@ import SystemPackage
 
 
 // Might be useful some day: https://stackoverflow.com/a/26973384
-
+@main
 struct Xct : ParsableCommand {
 	
 	static let execPathEnvVarName = "XCT_EXEC_PATH"
