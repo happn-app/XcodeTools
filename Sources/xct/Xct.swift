@@ -24,9 +24,15 @@ struct Xct : ParsableCommand {
 		return ret
 	}()
 	
-	#warning("TODO: Assignation below might be wrong (to check) if program is launched directly `xct blabla` (usual case)")
+	/* Bundle.main.bundleURL.path seem to correctly reflect the path of the
+	 * executable that was launched:
+	 *    - Changes when executable location does (path not hard-coded in bin);
+	 *    - Does _not_ resolve symlink when launched executable is a symlink.
+	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
+	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path
+	 *          is the usr one, not the opt one. (This is what we want.) */
 	@Option(help: "Set the path to the core xct programs.")
-	var execPath: String = getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().path
+	var execPath: String = getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? Bundle.main.bundleURL.path
 	
 	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"))
 	var workdir: String?
