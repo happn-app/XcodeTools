@@ -134,7 +134,12 @@ struct InternalFdGetLauncher : ParsableCommand {
 			 * and ignore connection reset error. */
 			let ok = (receivedBytes == 0 || errno == ECONNRESET)
 			if ok {return nil}
-			else  {/* TODO: Use an actual error */throw ExitCode(rawValue: 1)}
+			else {
+				/* TODO: Is it ok to log in this context? I’d say probably yeah, but
+				 * too tired to validate now. */
+				Xct.logger.error("cannot read from socket: \(Errno(rawValue: errno))")
+				/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
+			}
 		}
 		
 		let expectedDestinationFd = iovBase.pointee
