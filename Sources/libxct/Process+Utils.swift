@@ -137,6 +137,7 @@ extension Process {
 				/* TODO: Throw a more informative error? */
 				throw LibXctError.systemError(Errno(rawValue: errno))
 			}
+			assert(sv.advanced(by: 0).pointee != -1 && sv.advanced(by: 1).pointee != -1)
 			
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
 			p.arguments = ["internal-fd-get-launcher", executable] + args
