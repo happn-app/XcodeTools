@@ -2,6 +2,18 @@
 import PackageDescription
 
 
+import Foundation
+
+/* Detect if we need the eXtenderZ. If we do (on Apple platforms where the non-
+ * public Foundation implementation is used), the eXtenderZ should be able to be
+ * imported. See Process+Utils for reason why we use the eXtenderZ. */
+let eXtenderZ: (packageDep: Package.Dependency, target: Target, targetDep1: Target.Dependency, targetDep2: Target.Dependency)? = (
+	NSStringFromClass(Process().classForCoder) != "NSTask" ?
+		(.package(url: "https://github.com/happn-tech/eXtenderZ.git", from: "1.0.5"), .target(name: "CNSTaskHelptender"), .product(name: "eXtenderZ-static", package: "eXtenderZ"), .target(name: "CNSTaskHelptender")) :
+		nil
+)
+
+
 let package = Package(
 	name: "XcodeTools",
 	platforms: [
@@ -29,10 +41,12 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.1"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.3.0"),
 		.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.2.1"),
-		.package(url: "https://github.com/xcode-actions/swift-signal-handling.git", from: "0.2.0")
-	],
+		.package(url: "https://github.com/xcode-actions/swift-signal-handling.git", from: "0.2.0"),
+		eXtenderZ?.packageDep
+	].compactMap{ $0 },
 	targets: [
 		.target(name: "CMacroExports"),
+		eXtenderZ?.target,
 		
 		.target(name: "Utils"),
 		
@@ -56,10 +70,14 @@ let package = Package(
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "CMacroExports"),
 			.target(name: "Utils"),
-			.target(name: "XcodeProj")
+			.target(name: "XcodeProj"),
 			/* libxct depends (indirectly) on xct to launch processes w/ additional
 			 * fds. To avoid a cyclic dependency, we do not add it in the deps. */
-//			.target(name: "xct")
+//			.target(name: "xct"),
+			
+			eXtenderZ?.targetDep1, eXtenderZ?.targetDep2
+		].compactMap{ $0 }, linkerSettings: [
+			.unsafeFlags(["-ObjC"])
 		]),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
@@ -114,5 +132,5 @@ let package = Package(
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "libxct")
 		])
-	]
+	].compactMap{ $0 }
 )

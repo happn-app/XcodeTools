@@ -6,7 +6,31 @@ import SystemPackage
 import CMacroExports
 import SignalHandling
 
+#if canImport(eXtenderZ)
+import CNSTaskHelptender
+import eXtenderZ
+#endif
 
+
+
+#if canImport(eXtenderZ)
+class LibXctProcessExtender : NSObject, XCTTaskExtender {
+	
+	init(_ completionHandler: @escaping (Process) -> Void) {
+		self.completionHandler = completionHandler
+	}
+	
+	func prepareObject(forExtender object: NSObject) -> Bool {return true}
+	func prepareObjectForRemoval(ofExtender object: NSObject) {/*nop*/}
+	
+	func additionalCompletionHandler() -> ((Process) -> Void)? {
+		return completionHandler
+	}
+	
+	private let completionHandler: (Process) -> Void
+	
+}
+#endif
 
 extension Process {
 	
@@ -83,7 +107,11 @@ extension Process {
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Process, DispatchGroup) {
+		#if canImport(eXtenderZ)
 		let p = Process()
+		#else
+		let p = LibXctProcess()
+		#endif
 		
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
 		var outputFileDescriptors = additionalOutputFileDescriptors
@@ -186,8 +214,8 @@ extension Process {
 		
 		readSources.forEach{ $0.activate() }
 		
-		#warning("TODO")
-		p.terminationHandler = { _ in
+		let terminationHandler: (Process) -> Void = { _ in
+			LibXctConfig.logger?.debug("Called in termination handler of process")
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
 				LibXctConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
@@ -195,6 +223,11 @@ extension Process {
 			/* Close fd to send fds if needed, and maybe others.
 			 * Do **not** cancel read sources. */
 		}
+		#if canImport(eXtenderZ)
+		p.hpn_add(LibXctProcessExtender(terminationHandler))
+		#else
+		p.privateTerminationHandler = terminationHandler
+		#endif
 		
 		LibXctConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
 		do {
@@ -354,6 +387,7 @@ extension Process {
 }
 
 
+#if !canImport(eXtenderZ)
 /**
 A subclass of Process whose termination handler is overridden, in order for
 libxct to set its own termination handler and still let clients use it. */
@@ -392,3 +426,4 @@ private class LibXctProcess : Process {
 	}
 	
 }
+#endif
