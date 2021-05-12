@@ -9,7 +9,7 @@ import Foundation
  * imported. See Process+Utils for reason why we use the eXtenderZ. */
 let eXtenderZ: (packageDep: Package.Dependency, target: Target, targetDep1: Target.Dependency, targetDep2: Target.Dependency)? = (
 	NSStringFromClass(Process().classForCoder) != "NSTask" ?
-		(.package(url: "https://github.com/xcode-actions/eXtenderZ.git", from: "1.0.6"), .target(name: "CNSTaskHelptender"), .product(name: "eXtenderZ-static", package: "eXtenderZ"), .target(name: "CNSTaskHelptender")) :
+		(.package(url: "https://github.com/xcode-actions/eXtenderZ.git", from: "1.0.7"), .target(name: "CNSTaskHelptender"), .product(name: "eXtenderZ-static", package: "eXtenderZ"), .target(name: "CNSTaskHelptender")) :
 		nil
 )
 
@@ -76,9 +76,7 @@ let package = Package(
 //			.target(name: "xct"),
 			
 			eXtenderZ?.targetDep1, eXtenderZ?.targetDep2
-		].compactMap{ $0 }, linkerSettings: [
-			.unsafeFlags(["-ObjC"])
-		]),
+		].compactMap{ $0 }),
 		.testTarget(name: "libxctTests", dependencies: [
 			.target(name: "libxct"),
 			.product(name: "CLTLogger",     package: "clt-logger"),

@@ -10,6 +10,9 @@ static char PUBLIC_TERMINATION_HANDLER_KEY;
 
 + (void)load
 {
+#ifdef HPN_eXtenderZ_STATIC
+	[HPNCategoriesLoader loadCategories];
+#endif
 	[self hpn_registerClass:self asHelptenderForProtocol:@protocol(XCTTaskExtender)];
 }
 
