@@ -8,7 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol XCTTaskExtender <HPNExtender>
 
-- (nullable void (^)(NSTask * _Nonnull))additionalCompletionHandler;
+@property(readonly) void (^additionalCompletionHandler)(NSTask * _Nonnull);
 
 @end
 

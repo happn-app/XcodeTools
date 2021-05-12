@@ -16,18 +16,14 @@ import eXtenderZ
 #if canImport(eXtenderZ)
 class LibXctProcessExtender : NSObject, XCTTaskExtender {
 	
+	let additionalCompletionHandler: (Process) -> Void
+	
 	init(_ completionHandler: @escaping (Process) -> Void) {
-		self.completionHandler = completionHandler
+		self.additionalCompletionHandler = completionHandler
 	}
 	
 	func prepareObject(forExtender object: NSObject) -> Bool {return true}
 	func prepareObjectForRemoval(ofExtender object: NSObject) {/*nop*/}
-	
-	func additionalCompletionHandler() -> ((Process) -> Void)? {
-		return completionHandler
-	}
-	
-	private let completionHandler: (Process) -> Void
 	
 }
 #endif
