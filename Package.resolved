@@ -12,11 +12,11 @@
       },
       {
         "package": "eXtenderZ",
-        "repositoryURL": "https://github.com/happn-tech/eXtenderZ.git",
+        "repositoryURL": "https://github.com/xcode-actions/eXtenderZ.git",
         "state": {
           "branch": null,
-          "revision": "0a63f06cc4de895e673586dcc994956db55f85e8",
-          "version": "1.0.5"
+          "revision": "00043546d9b4c62796e1a2cf506109c50af96cd3",
+          "version": "1.0.6"
         }
       },
       {

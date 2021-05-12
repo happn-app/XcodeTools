@@ -40,11 +40,9 @@ static char PUBLIC_TERMINATION_HANDLER_KEY;
 
 - (void)overrideTerminationHandler
 {
-	typedef void (^TerminationHandlerType)(NSTask *);
-#warning When the eXtenderZ have implemented it, use HPN_HELPTENDER_CALL_SUPER_NO_ARGS_WITH_SEL_NAME
-	void (^currentTerminationHandler)(NSTask *) = ((TerminationHandlerType (*)(id, SEL))class_getMethodImplementation([self hpn_getSuperClassWithOriginalHelptenderClass:XCTTaskHelptender.class], @selector(terminationHandler)))(self, @selector(terminationHandler));
+	void (^currentTerminationHandler)(NSTask *) = ((void (^(*)(id, SEL))(NSTask *))HPN_HELPTENDER_CALL_SUPER_NO_ARGS_WITH_SEL_NAME(XCTTaskHelptender, terminationHandler));
 	[self setPublicTerminationHandler:currentTerminationHandler];
-
+	
 	void (^newTerminationHandler)(NSTask *) = ^(NSTask *task) {
 		for (id<XCTTaskExtender> extender in [self hpn_extendersConformingToProtocol:@protocol(XCTTaskExtender)]) {
 			void (^additionalTerminationHandler)(NSTask *) = [extender additionalCompletionHandler];
