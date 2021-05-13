@@ -39,6 +39,7 @@ public enum Parser {
 		ActionStartedEventPayload.self,
 		InvocationFinishedEventPayload.self,
 		InvocationStartedEventPayload.self,
+		IssueEmittedEventPayload.self,
 		LogMessageEmittedEventPayload.self,
 		LogSectionAttachedEventPayload.self,
 		LogSectionClosedEventPayload.self,
@@ -57,6 +58,7 @@ public enum Parser {
 		CodeCoverageInfo.self,
 		DocumentLocation.self,
 		EntityIdentifier.self,
+		IssueSummary.self,
 		Reference.self,
 		ResultIssueSummaries.self,
 		ResultMetrics.self,
@@ -65,6 +67,7 @@ public enum Parser {
 		StreamedEvent.self,
 		TypeDefinition.self,
 		
+		Array<IssueSummary>.self,
 		Bool.self,
 		Date.self,
 		Double.self,
