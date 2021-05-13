@@ -6,8 +6,8 @@ import Logging
 import StreamReader
 import SystemPackage
 
-import libxct
 import XcodeJsonOutput
+import XcodeTools
 
 
 
@@ -32,7 +32,7 @@ struct XctBuild : ParsableCommand {
 	
 	func run() throws {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
-//		LibXctConfig.logger?.logLevel = .trace
+//		XcodeToolsConfig.logger?.logLevel = .trace
 		XctBuild.logger.logLevel = .trace
 		
 		let pipe = Pipe()

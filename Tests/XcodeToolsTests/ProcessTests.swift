@@ -6,7 +6,7 @@ import Logging
 import StreamReader
 import SystemPackage
 
-@testable import libxct
+@testable import XcodeTools
 
 
 
@@ -19,10 +19,10 @@ final class ProcessTests : XCTestCase {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		var logger = Logger(label: "main")
 		logger.logLevel = .trace
-		LibXctConfig.logger = logger
+		XcodeToolsConfig.logger = logger
 		
 		/* Let’s set the xct exec path env var (some methods need it) */
-		setenv(LibXctConstants.envVarNameExecPath, productsDirectory.path, 1)
+		setenv(XcodeToolsConstants.envVarNameExecPath, productsDirectory.path, 1)
 	}
 	
 	func testProcessLaunchAndStreamStdin() throws {
@@ -88,7 +88,9 @@ final class ProcessTests : XCTestCase {
 		let expectedStderr = (1...n).map{ String(repeating: "*", count: (n - $0 + 1)) }.joined(separator: "\n") + "\n"
 		
 		XCTAssertEqual(linesByFd[FileDescriptor.xctStdout, default: []].joined(), expectedStdout)
-		XCTAssertEqual(linesByFd[FileDescriptor.xctStderr, default: []].joined(), expectedStderr)
+		/* We do not check for equality here because swift sometimes log errors on
+		 * stderr before launching the script… */
+		XCTAssert(linesByFd[FileDescriptor.xctStderr, default: []].joined().hasSuffix(expectedStderr))
 	}
 	
 	@available(macOS 10.15.4, *)
@@ -134,7 +136,7 @@ final class ProcessTests : XCTestCase {
 		process.waitUntilExit()
 		
 		XCTAssertLessThan(count, n)
-		/* Apparently the fd should **NOT** be closed! It makes sense tbh. */
+		/* Apparently the fd must **NOT** be closed! It makes sense tbh. */
 //		try FileDescriptor(rawValue: fdRead).close()
 		
 		let r = outputGroup.wait(timeout: .now() + .seconds(7))

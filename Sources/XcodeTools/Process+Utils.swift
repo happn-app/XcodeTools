@@ -14,7 +14,7 @@ import eXtenderZ
 
 
 #if canImport(eXtenderZ)
-class LibXctProcessExtender : NSObject, XCTTaskExtender {
+class XcodeToolsProcessExtender : NSObject, XCTTaskExtender {
 	
 	let additionalCompletionHandler: (Process) -> Void
 	
@@ -106,7 +106,7 @@ extension Process {
 		#if canImport(eXtenderZ)
 		let p = Process()
 		#else
-		let p = LibXctProcess()
+		let p = XcodeToolsProcess()
 		#endif
 		
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
@@ -144,9 +144,9 @@ extension Process {
 			p.arguments = args
 			fdToSendFds = nil
 		} else {
-			guard let execBaseURL = getenv(LibXctConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
-				LibXctConfig.logger?.error("Cannot launch process and send its fd if \(LibXctConstants.envVarNameExecPath) is not set.")
-				throw LibXctError.envVarXctExecPathNotSet
+			guard let execBaseURL = getenv(XcodeToolsConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
+				XcodeToolsConfig.logger?.error("Cannot launch process and send its fd if \(XcodeToolsConstants.envVarNameExecPath) is not set.")
+				throw XcodeToolsError.envVarXctExecPathNotSet
 			}
 			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
 			 * equivalent to the C version `int sv[2] = {-1, -1};`.
@@ -159,7 +159,7 @@ extension Process {
 			defer {sv.deallocate()}
 			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */sv) == 0 else {
 				/* TODO: Throw a more informative error? */
-				throw LibXctError.systemError(Errno(rawValue: errno))
+				throw XcodeToolsError.systemError(Errno(rawValue: errno))
 			}
 			assert(sv.advanced(by: 0).pointee != -1 && sv.advanced(by: 1).pointee != -1)
 			
@@ -175,7 +175,7 @@ extension Process {
 		}
 		
 		let delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
-			LibXctConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
+			XcodeToolsConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			defer {handler(true)}
 			
 			guard p.isRunning else {return}
@@ -211,21 +211,21 @@ extension Process {
 		readSources.forEach{ $0.activate() }
 		
 		let terminationHandler: (Process) -> Void = { _ in
-			LibXctConfig.logger?.debug("Called in termination handler of process")
+			XcodeToolsConfig.logger?.debug("Called in termination handler of process")
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
-				LibXctConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
+				XcodeToolsConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
 			}
 			/* Close fd to send fds if needed, and maybe others.
 			 * Do **not** cancel read sources. */
 		}
 		#if canImport(eXtenderZ)
-		p.hpn_add(LibXctProcessExtender(terminationHandler))
+		p.hpn_add(XcodeToolsProcessExtender(terminationHandler))
 		#else
 		p.privateTerminationHandler = terminationHandler
 		#endif
 		
-		LibXctConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
+		XcodeToolsConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
 		do {
 			try p.run()
 			if !fileDescriptorsToSend.isEmpty {
@@ -233,7 +233,7 @@ extension Process {
 				for (fdInChild, fdToSend) in fileDescriptorsToSend {
 					try send(fd: fdToSend.rawValue, destfd: fdInChild.rawValue, to: fdToSendFds.rawValue)
 				}
-				LibXctConfig.logger?.trace("Closing fd to send fds")
+				XcodeToolsConfig.logger?.trace("Closing fd to send fds")
 				try fdToSendFds.close()
 			}
 		} catch {
@@ -279,7 +279,7 @@ extension Process {
 	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
 		let curFlags = fcntl(fd.rawValue, F_GETFL)
 		guard curFlags != -1 else {
-			throw LibXctError.systemError(Errno(rawValue: errno))
+			throw XcodeToolsError.systemError(Errno(rawValue: errno))
 		}
 		
 		let newFlags = curFlags | O_NONBLOCK
@@ -290,10 +290,10 @@ extension Process {
 		
 		if logChange {
 			/* We only log for fd that were not ours */
-			LibXctConfig.logger?.info("Setting O_NONBLOCK option on fd \(fd)")
+			XcodeToolsConfig.logger?.info("Setting O_NONBLOCK option on fd \(fd)")
 		}
 		guard fcntl(fd.rawValue, F_SETFL, newFlags) != -1 else {
-			throw LibXctError.systemError(Errno(rawValue: errno))
+			throw XcodeToolsError.systemError(Errno(rawValue: errno))
 		}
 	}
 	
@@ -301,7 +301,7 @@ extension Process {
 		do {
 			/* A bit more than estimates to get everything. */
 			let toRead = Int(estimatedBytesAvailable * 2 + 1)
-			LibXctConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
+			XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
 			/* We do not need to check the number of bytes actually read. If EOF
 			 * was reached (nothing was read), the stream reader will remember it,
 			 * and the readLine method will properly return nil without even trying
@@ -313,23 +313,23 @@ extension Process {
 				guard let line = String(data: lineData, encoding: .utf8),
 						let eol = String(data: eolData, encoding: .utf8)
 				else {
-					LibXctConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
+					XcodeToolsConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
 					return
 				}
 				outputHandler(line + eol)
 			}
 			/* We have read all the stream, we can stop */
-			LibXctConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
+			XcodeToolsConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")
 			streamSource.cancel()
 			
 		} catch StreamReaderError.streamReadForbidden {
-			LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
+			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
 			
 		} catch Errno.resourceTemporarilyUnavailable {
-			LibXctConfig.logger?.trace("Error reading from \(streamReader.sourceStream): resource temporarily unavailable")
+			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): resource temporarily unavailable")
 			
 		} catch {
-			LibXctConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
+			XcodeToolsConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
 			/* We stop everything at first error. Most likely the error is bad fd
 			 * because process exited and we were too long to read from the stream. */
 			streamSource.cancel()
@@ -365,7 +365,7 @@ extension Process {
 		msg.msg_controllen = socklen_t(XCT_CMSG_SPACE(sizeOfFd))
 		
 		guard let cmsg = XCT_CMSG_FIRSTHDR(&msg) else {
-			throw LibXctError.internalError("CMSG_FIRSTHDR returned nil.")
+			throw XcodeToolsError.internalError("CMSG_FIRSTHDR returned nil.")
 		}
 		
 		cmsg.pointee.cmsg_type = SCM_RIGHTS
@@ -375,9 +375,9 @@ extension Process {
 		memmove(XCT_CMSG_DATA(cmsg), &fd, sizeOfFd)
 		
 		guard sendmsg(socket, &msg, /*flags: */0) != -1 else {
-			throw LibXctError.systemError(Errno(rawValue: errno))
+			throw XcodeToolsError.systemError(Errno(rawValue: errno))
 		}
-		LibXctConfig.logger?.debug("sent fd \(fd) through socket to child process")
+		XcodeToolsConfig.logger?.debug("sent fd \(fd) through socket to child process")
 	}
 	
 }
@@ -386,8 +386,8 @@ extension Process {
 #if !canImport(eXtenderZ)
 /**
 A subclass of Process whose termination handler is overridden, in order for
-libxct to set its own termination handler and still let clients use it. */
-private class LibXctProcess : Process {
+XcodeTools to set its own termination handler and still let clients use it. */
+private class XcodeToolsProcess : Process {
 	
 	var privateTerminationHandler: ((Process) -> Void)? {
 		didSet {updateTerminationHandler()}
@@ -415,8 +415,8 @@ private class LibXctProcess : Process {
 			super.terminationHandler = nil
 		} else {
 			super.terminationHandler = { process in
-				(process as! LibXctProcess).privateTerminationHandler?(process)
-				(process as! LibXctProcess).publicTerminationHandler?(process)
+				(process as! XcodeToolsProcess).privateTerminationHandler?(process)
+				(process as! XcodeToolsProcess).publicTerminationHandler?(process)
 			}
 		}
 	}

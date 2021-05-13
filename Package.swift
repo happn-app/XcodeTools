@@ -29,7 +29,7 @@ let package = Package(
 		.library(name: "XcodeProj", targets: ["XcodeProj"]),
 		
 		/* The xct and xct-* executable, and the lib they use. */
-		.library(name: "libxct", targets: ["libxct"]),
+		.library(name: "XcodeTools", targets: ["XcodeTools"]),
 		.executable(name: "xct", targets: ["xct"]),
 		.executable(name: "xct-build", targets: ["xct-build"]),
 		.executable(name: "xct-versions", targets: ["xct-versions"]),
@@ -68,7 +68,7 @@ let package = Package(
 			.target(name: "Utils")
 		]),
 		
-		.target(name: "libxct", dependencies: [
+		.target(name: "XcodeTools", dependencies: [
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SignalHandling", package: "swift-signal-handling"),
 			.product(name: "StreamReader",   package: "stream-reader"),
@@ -76,20 +76,21 @@ let package = Package(
 			.target(name: "CMacroExports"),
 			.target(name: "Utils"),
 			.target(name: "XcodeProj"),
-			/* libxct depends (indirectly) on xct to launch processes w/ additional
-			 * fds. To avoid a cyclic dependency, we do not add it in the deps. */
+			/* XcodeTools depends (indirectly) on xct to launch processes with
+			 * additional file descriptors. To avoid a cyclic dependency, we do not
+			 * add it in the deps. */
 //			.target(name: "xct"),
 			
 			eXtenderZ?.targetDep1, eXtenderZ?.targetDep2
 		].compactMap{ $0 }),
-		.testTarget(name: "libxctTests", dependencies: [
-			.target(name: "libxct"),
+		.testTarget(name: "XcodeToolsTests", dependencies: [
+			.target(name: "XcodeTools"),
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
 			
-			/* This dep is technically related to libxct. See libxct deps. */
+			/* This dep is technically related to XcodeTools. See XcodeTools deps. */
 			.target(name: "xct")
 		]),
 		
@@ -100,7 +101,7 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
 			.target(name: "CMacroExports"),
-			.target(name: "libxct"),
+			.target(name: "XcodeTools"),
 			
 			/* Not _actual_ dependencies, but it is easier to have these recompiled
 			 * when modified and current scheme is xct. This is the theory, but it
@@ -116,15 +117,15 @@ let package = Package(
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "StreamReader",   package: "stream-reader"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "libxct"),
 			.target(name: "XcodeJsonOutput"),
-			.target(name: "XcodeProj")
+			.target(name: "XcodeProj"),
+			.target(name: "XcodeTools")
 		]),
 		
 		.executableTarget(name: "xct-versions", dependencies: [
 			.product(name: "ArgumentParser", package: "swift-argument-parser"),
-			.target(name: "libxct"),
-			.target(name: "XcodeProj")
+			.target(name: "XcodeProj"),
+			.target(name: "XcodeTools")
 		]),
 		
 		/* Obsolete; kept for backwards-compatibility. Will be removed. */
@@ -133,7 +134,7 @@ let package = Package(
 			.product(name: "CLTLogger",      package: "clt-logger"),
 			.product(name: "Logging",        package: "swift-log"),
 			.product(name: "SystemPackage",  package: "swift-system"),
-			.target(name: "libxct")
+			.target(name: "XcodeTools")
 		])
 	].compactMap{ $0 }
 )

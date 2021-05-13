@@ -7,7 +7,7 @@ import Logging
 import SystemPackage
 
 /* For xctStdin; we can remove when available in SystemPackage. */
-import libxct
+import XcodeTools
 
 
 

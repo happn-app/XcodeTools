@@ -2,7 +2,7 @@ import Foundation
 
 
 
-public struct LibXctConstants {
+public struct XcodeToolsConstants {
 	
 	public static var envVarNameExecPath: String = "XCT_EXEC_PATH"
 	
