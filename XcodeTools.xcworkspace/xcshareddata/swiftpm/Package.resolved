@@ -11,6 +11,15 @@
         }
       },
       {
+        "package": "eXtenderZ",
+        "repositoryURL": "https://github.com/xcode-actions/eXtenderZ.git",
+        "state": {
+          "branch": null,
+          "revision": "c59e94553295a7e8a0c3ce1465a2bed073cb6ca9",
+          "version": "1.0.7"
+        }
+      },
+      {
         "package": "stream-reader",
         "repositoryURL": "https://github.com/xcode-actions/stream-reader.git",
         "state": {
