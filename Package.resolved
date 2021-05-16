@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/xcode-actions/clt-logger.git",
         "state": {
           "branch": null,
-          "revision": "654b94141e65cac7abd7b0792f424628a088e8f3",
-          "version": "0.3.0"
+          "revision": "7b2a3bed3434d63a1800e343de3bd98fa5d4421c",
+          "version": "0.3.2"
         }
       },
       {
