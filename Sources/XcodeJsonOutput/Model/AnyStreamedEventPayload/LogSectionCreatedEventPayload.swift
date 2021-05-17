@@ -21,4 +21,8 @@ struct LogSectionCreatedEventPayload : _AnyStreamedEventPayload {
 		Self.logUnknownKeys(from: dictionary)
 	}
 	
+	func humanReadableEvent(withColors: Bool) -> String? {
+		return head.title
+	}
+	
 }

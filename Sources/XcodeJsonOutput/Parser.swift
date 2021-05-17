@@ -46,6 +46,9 @@ public enum Parser {
 		LogSectionCreatedEventPayload.self,
 		LogTextAppendedEventPayload.self,
 		
+		IssueSummary.self,
+		TestFailureIssueSummary.self,
+		
 		ActionDeviceRecord.self,
 		ActionPlatformRecord.self,
 		ActionRecordHead.self,
@@ -58,7 +61,6 @@ public enum Parser {
 		CodeCoverageInfo.self,
 		DocumentLocation.self,
 		EntityIdentifier.self,
-		IssueSummary.self,
 		Reference.self,
 		ResultIssueSummaries.self,
 		ResultMetrics.self,
@@ -68,6 +70,7 @@ public enum Parser {
 		TypeDefinition.self,
 		
 		Array<IssueSummary>.self,
+		Array<TestFailureIssueSummary>.self,
 		Bool.self,
 		Date.self,
 		Double.self,

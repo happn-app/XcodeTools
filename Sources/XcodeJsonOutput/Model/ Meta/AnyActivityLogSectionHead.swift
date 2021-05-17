@@ -10,5 +10,6 @@ public protocol AnyActivityLogSectionHead : Object {
 	
 }
 
+
 protocol _AnyActivityLogSectionHead : _Object, AnyActivityLogSectionHead {
 }

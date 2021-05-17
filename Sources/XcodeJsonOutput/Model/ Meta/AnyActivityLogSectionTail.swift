@@ -9,5 +9,6 @@ public protocol AnyActivityLogSectionTail : Object {
 	
 }
 
+
 protocol _AnyActivityLogSectionTail : _Object, AnyActivityLogSectionTail {
 }

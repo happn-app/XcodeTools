@@ -2,7 +2,7 @@ import Foundation
 
 
 
-struct IssueSummary : _Object {
+struct IssueSummary : _AnyIssueSummary {
 	
 	static var type: ObjectType = .init(name: "IssueSummary")
 	

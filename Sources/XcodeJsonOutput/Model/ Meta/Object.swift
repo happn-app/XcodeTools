@@ -3,8 +3,8 @@ import Foundation
 
 
 public protocol Object {
-	
 }
+
 
 protocol _Object : Object {
 	
@@ -12,6 +12,7 @@ protocol _Object : Object {
 	init(dictionary: [String: Any?]) throws
 	
 }
+
 
 extension _Object {
 	

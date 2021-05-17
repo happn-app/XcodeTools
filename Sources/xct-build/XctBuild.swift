@@ -46,9 +46,10 @@ struct XctBuild : ParsableCommand {
 		let args = [
 			"-verbose",// "-json",
 			"-disableAutomaticPackageResolution",
-			"-scheme", "GPS Stone",
+			"-scheme", "LocMapperLib",
 			"-resultBundlePath", resultBundlePath,
-			"-resultStreamPath", resultStreamPath
+			"-resultStreamPath", resultStreamPath,
+			"test"
 		]
 		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
 			"/usr/bin/xcodebuild", args: args,
@@ -60,9 +61,20 @@ struct XctBuild : ParsableCommand {
 				if line.last == "\n" {line.removeLast()}
 				switch fd {
 					case fhXcodeReadOutput:
-						XctBuild.logger.trace("json: \(line)")
-						do    {let o = try Parser.parse(jsonString: line); XctBuild.logger.debug("\(o)")}
-						catch {XctBuild.logger.error("\(error)")}
+//						XctBuild.logger.trace("json: \(line)")
+						do {
+							guard let streamedEvent = try Parser.parse(jsonString: line) as? StreamedEvent else {
+								/* TODO: Error */
+								throw NSError(domain: "yo", code: 1, userInfo: nil)
+							}
+							if let readable = streamedEvent.structuredPayload.humanReadableEvent(withColors: false) {
+								print(readable)
+							} else {
+//								XctBuild.logger.trace("skipped streamed event w/ no human readable description: \(streamedEvent)")
+							}
+						} catch {
+							XctBuild.logger.error("\(error)")
+						}
 						
 					case FileDescriptor.xctStdout: ()//XctBuild.logger.trace("stdout: \(line)")
 					case FileDescriptor.xctStderr: ()//XctBuild.logger.trace("stderr: \(line)")

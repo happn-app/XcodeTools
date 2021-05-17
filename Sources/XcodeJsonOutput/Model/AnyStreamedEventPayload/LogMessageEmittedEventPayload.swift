@@ -21,4 +21,9 @@ struct LogMessageEmittedEventPayload : _AnyStreamedEventPayload {
 		Self.logUnknownKeys(from: dictionary)
 	}
 	
+	func humanReadableEvent(withColors: Bool) -> String? {
+		#warning("TODO")
+		return nil
+	}
+	
 }
