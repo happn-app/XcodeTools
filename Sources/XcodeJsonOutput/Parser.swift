@@ -16,16 +16,16 @@ public enum Parser {
 		guard let dictionary = jsonObject as? [String: Any?] else {
 			throw Err.invalidJSONType
 		}
-		return try self.parse(dictionary: dictionary)
+		return try self.parse(dictionary: dictionary, parentPropertyName: nil)
 	}
 	
-	public static func parse(dictionary: [String: Any?]) throws -> Object {
+	public static func parse(dictionary: [String: Any?], parentPropertyName: String?) throws -> Object {
 		let objectType = try ObjectType(dictionary: dictionary)
 		for type: _Object.Type in allObjectTypes {
 			guard objectType == type.type else {continue}
-			return try type.init(dictionary: dictionary)
+			return try type.init(dictionary: dictionary, parentPropertyName: parentPropertyName)
 		}
-		throw Err.unknownObjectType(objectType.name)
+		throw Err.unknownObjectType("\(objectType)", objectDictionary: dictionary)
 	}
 	
 	static var allObjectTypes: [_Object.Type] = [
@@ -78,23 +78,23 @@ public enum Parser {
 		String.self
 	]
 	
-	static func parsePayload(dictionary: [String: Any?]) throws -> AnyStreamedEventPayload {
-		guard let object = try parse(dictionary: dictionary) as? AnyStreamedEventPayload else {
-			throw Err.invalidObjectType
+	static func parsePayload(dictionary: [String: Any?], parentPropertyName: String?) throws -> AnyStreamedEventPayload {
+		guard let object = try parse(dictionary: dictionary, parentPropertyName: parentPropertyName) as? AnyStreamedEventPayload else {
+			throw Err.invalidObjectType(parentPropertyName: parentPropertyName, expectedType: "AnyStreamedEventPayload", givenObjectDictionary: dictionary)
 		}
 		return object
 	}
 	
-	static func parseActivityLogSectionHead(dictionary: [String: Any?]) throws -> AnyActivityLogSectionHead {
-		guard let object = try parse(dictionary: dictionary) as? AnyActivityLogSectionHead else {
-			throw Err.invalidObjectType
+	static func parseActivityLogSectionHead(dictionary: [String: Any?], parentPropertyName: String?) throws -> AnyActivityLogSectionHead {
+		guard let object = try parse(dictionary: dictionary, parentPropertyName: parentPropertyName) as? AnyActivityLogSectionHead else {
+			throw Err.invalidObjectType(parentPropertyName: parentPropertyName, expectedType: "AnyActivityLogSectionHead", givenObjectDictionary: dictionary)
 		}
 		return object
 	}
 	
-	static func parseActivityLogSectionTail(dictionary: [String: Any?]) throws -> AnyActivityLogSectionTail {
-		guard let object = try parse(dictionary: dictionary) as? AnyActivityLogSectionTail else {
-			throw Err.invalidObjectType
+	static func parseActivityLogSectionTail(dictionary: [String: Any?], parentPropertyName: String?) throws -> AnyActivityLogSectionTail {
+		guard let object = try parse(dictionary: dictionary, parentPropertyName: parentPropertyName) as? AnyActivityLogSectionTail else {
+			throw Err.invalidObjectType(parentPropertyName: parentPropertyName, expectedType: "AnyActivityLogSectionTail", givenObjectDictionary: dictionary)
 		}
 		return object
 	}

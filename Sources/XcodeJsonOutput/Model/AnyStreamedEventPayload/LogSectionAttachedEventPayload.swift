@@ -10,13 +10,13 @@ struct LogSectionAttachedEventPayload : _AnyStreamedEventPayload {
 	var parentSectionIndex: Int?
 	var resultInfo: StreamedActionResultInfo
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.childSectionIndex  = try dictionary.getParsedAndRemove("childSectionIndex")
-		self.parentSectionIndex = try dictionary.getParsedIfExistsAndRemove("parentSectionIndex")
-		self.resultInfo         = try dictionary.getParsedAndRemove("resultInfo")
+		self.childSectionIndex  = try dictionary.getParsedAndRemove("childSectionIndex", originalDictionary)
+		self.parentSectionIndex = try dictionary.getParsedIfExistsAndRemove("parentSectionIndex", originalDictionary)
+		self.resultInfo         = try dictionary.getParsedAndRemove("resultInfo", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

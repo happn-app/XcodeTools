@@ -11,14 +11,14 @@ struct ActionRecordHead : _Object {
 	var schemeTaskName: String
 	var startedTime: Date
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.runDestination    = try dictionary.getParsedAndRemove("runDestination")
-		self.schemeCommandName = try dictionary.getParsedAndRemove("schemeCommandName")
-		self.schemeTaskName    = try dictionary.getParsedAndRemove("schemeTaskName")
-		self.startedTime       = try dictionary.getParsedAndRemove("startedTime")
+		self.runDestination    = try dictionary.getParsedAndRemove("runDestination", originalDictionary)
+		self.schemeCommandName = try dictionary.getParsedAndRemove("schemeCommandName", originalDictionary)
+		self.schemeTaskName    = try dictionary.getParsedAndRemove("schemeTaskName", originalDictionary)
+		self.startedTime       = try dictionary.getParsedAndRemove("startedTime", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

@@ -8,11 +8,11 @@ struct InvocationFinishedEventPayload : _AnyStreamedEventPayload {
 	
 	var recordRef: Reference
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.recordRef = try dictionary.getParsedAndRemove("recordRef")
+		self.recordRef = try dictionary.getParsedAndRemove("recordRef", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

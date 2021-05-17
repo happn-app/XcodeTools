@@ -9,12 +9,12 @@ struct Reference : _Object {
 	var id: String
 	var targetType: TypeDefinition
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.id         = try dictionary.getParsedAndRemove("id")
-		self.targetType = try dictionary.getParsedAndRemove("targetType")
+		self.id         = try dictionary.getParsedAndRemove("id", originalDictionary)
+		self.targetType = try dictionary.getParsedAndRemove("targetType", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

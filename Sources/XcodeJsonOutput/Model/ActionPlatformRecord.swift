@@ -9,12 +9,12 @@ struct ActionPlatformRecord : _Object {
 	var identifier: String
 	var userDescription: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.identifier      = try dictionary.getParsedAndRemove("identifier")
-		self.userDescription = try dictionary.getParsedAndRemove("userDescription")
+		self.identifier      = try dictionary.getParsedAndRemove("identifier", originalDictionary)
+		self.userDescription = try dictionary.getParsedAndRemove("userDescription", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

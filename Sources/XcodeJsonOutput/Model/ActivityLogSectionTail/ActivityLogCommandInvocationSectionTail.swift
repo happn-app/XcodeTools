@@ -9,12 +9,12 @@ struct ActivityLogCommandInvocationSectionTail : _AnyActivityLogSectionTail {
 	var duration: Double
 	var result: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.duration = try dictionary.getParsedAndRemove("duration")
-		self.result   = try dictionary.getParsedAndRemove("result")
+		self.duration = try dictionary.getParsedAndRemove("duration", originalDictionary)
+		self.result   = try dictionary.getParsedAndRemove("result", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

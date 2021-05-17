@@ -13,16 +13,16 @@ struct ActionResult : _Object {
 	var status: String
 	var testsRef: Reference?
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.coverage   = try dictionary.getParsedAndRemove("coverage")
-		self.issues     = try dictionary.getParsedAndRemove("issues")
-		self.metrics    = try dictionary.getParsedAndRemove("metrics")
-		self.resultName = try dictionary.getParsedAndRemove("resultName")
-		self.status     = try dictionary.getParsedAndRemove("status")
-		self.testsRef   = try dictionary.getParsedIfExistsAndRemove("testsRef")
+		self.coverage   = try dictionary.getParsedAndRemove("coverage", originalDictionary)
+		self.issues     = try dictionary.getParsedAndRemove("issues", originalDictionary)
+		self.metrics    = try dictionary.getParsedAndRemove("metrics", originalDictionary)
+		self.resultName = try dictionary.getParsedAndRemove("resultName", originalDictionary)
+		self.status     = try dictionary.getParsedAndRemove("status", originalDictionary)
+		self.testsRef   = try dictionary.getParsedIfExistsAndRemove("testsRef", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

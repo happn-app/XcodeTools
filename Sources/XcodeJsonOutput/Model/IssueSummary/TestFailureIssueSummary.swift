@@ -13,16 +13,16 @@ struct TestFailureIssueSummary : _AnyIssueSummary {
 	var producingTarget: String
 	var documentLocationInCreatingWorkspace: DocumentLocation
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.issueType = try dictionary.getParsedAndRemove("issueType")
-		self.message   = try dictionary.getParsedAndRemove("message")
+		self.issueType = try dictionary.getParsedAndRemove("issueType", originalDictionary)
+		self.message   = try dictionary.getParsedAndRemove("message", originalDictionary)
 		
-		self.testCaseName                        = try dictionary.getParsedAndRemove("testCaseName")
-		self.producingTarget                     = try dictionary.getParsedAndRemove("producingTarget")
-		self.documentLocationInCreatingWorkspace = try dictionary.getParsedAndRemove("documentLocationInCreatingWorkspace")
+		self.testCaseName                        = try dictionary.getParsedAndRemove("testCaseName", originalDictionary)
+		self.producingTarget                     = try dictionary.getParsedAndRemove("producingTarget", originalDictionary)
+		self.documentLocationInCreatingWorkspace = try dictionary.getParsedAndRemove("documentLocationInCreatingWorkspace", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

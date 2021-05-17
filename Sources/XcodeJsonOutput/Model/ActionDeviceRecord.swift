@@ -24,28 +24,28 @@ struct ActionDeviceRecord : _Object {
 	var platformRecord: ActionPlatformRecord
 	var ramSizeInMegabytes: Int?
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.identifier         = try dictionary.getParsedAndRemove("identifier")
-		self.modelCode          = try dictionary.getParsedAndRemove("modelCode")
-		self.modelName          = try dictionary.getParsedAndRemove("modelName")
-		self.modelUTI           = try dictionary.getParsedAndRemove("modelUTI")
-		self.name               = try dictionary.getParsedAndRemove("name")
-		self.nativeArchitecture = try dictionary.getParsedAndRemove("nativeArchitecture")
-		self.platformRecord     = try dictionary.getParsedAndRemove("platformRecord")
+		self.identifier         = try dictionary.getParsedAndRemove("identifier", originalDictionary)
+		self.modelCode          = try dictionary.getParsedAndRemove("modelCode", originalDictionary)
+		self.modelName          = try dictionary.getParsedAndRemove("modelName", originalDictionary)
+		self.modelUTI           = try dictionary.getParsedAndRemove("modelUTI", originalDictionary)
+		self.name               = try dictionary.getParsedAndRemove("name", originalDictionary)
+		self.nativeArchitecture = try dictionary.getParsedAndRemove("nativeArchitecture", originalDictionary)
+		self.platformRecord     = try dictionary.getParsedAndRemove("platformRecord", originalDictionary)
 		
-		self.busSpeedInMHz                         = try dictionary.getParsedIfExistsAndRemove("busSpeedInMHz")
-		self.cpuCount                              = try dictionary.getParsedIfExistsAndRemove("cpuCount")
-		self.cpuKind                               = try dictionary.getParsedIfExistsAndRemove("cpuKind")
-		self.cpuSpeedInMHz                         = try dictionary.getParsedIfExistsAndRemove("cpuSpeedInMHz")
-		self.isConcreteDevice                      = try dictionary.getParsedIfExistsAndRemove("isConcreteDevice")
-		self.logicalCPUCoresPerPackage             = try dictionary.getParsedIfExistsAndRemove("logicalCPUCoresPerPackage")
-		self.operatingSystemVersion                = try dictionary.getParsedIfExistsAndRemove("operatingSystemVersion")
-		self.operatingSystemVersionWithBuildNumber = try dictionary.getParsedIfExistsAndRemove("operatingSystemVersionWithBuildNumber")
-		self.physicalCPUCoresPerPackage            = try dictionary.getParsedIfExistsAndRemove("physicalCPUCoresPerPackage")
-		self.ramSizeInMegabytes                    = try dictionary.getParsedIfExistsAndRemove("ramSizeInMegabytes")
+		self.busSpeedInMHz                         = try dictionary.getParsedIfExistsAndRemove("busSpeedInMHz", originalDictionary)
+		self.cpuCount                              = try dictionary.getParsedIfExistsAndRemove("cpuCount", originalDictionary)
+		self.cpuKind                               = try dictionary.getParsedIfExistsAndRemove("cpuKind", originalDictionary)
+		self.cpuSpeedInMHz                         = try dictionary.getParsedIfExistsAndRemove("cpuSpeedInMHz", originalDictionary)
+		self.isConcreteDevice                      = try dictionary.getParsedIfExistsAndRemove("isConcreteDevice", originalDictionary)
+		self.logicalCPUCoresPerPackage             = try dictionary.getParsedIfExistsAndRemove("logicalCPUCoresPerPackage", originalDictionary)
+		self.operatingSystemVersion                = try dictionary.getParsedIfExistsAndRemove("operatingSystemVersion", originalDictionary)
+		self.operatingSystemVersionWithBuildNumber = try dictionary.getParsedIfExistsAndRemove("operatingSystemVersionWithBuildNumber", originalDictionary)
+		self.physicalCPUCoresPerPackage            = try dictionary.getParsedIfExistsAndRemove("physicalCPUCoresPerPackage", originalDictionary)
+		self.ramSizeInMegabytes                    = try dictionary.getParsedIfExistsAndRemove("ramSizeInMegabytes", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

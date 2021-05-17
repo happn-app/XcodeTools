@@ -12,13 +12,13 @@ struct IssueEmittedEventPayload : _AnyStreamedEventPayload {
 	var resultInfo: StreamedActionResultInfo
 	var severity: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.issue      = try dictionary.getParsedAndRemove("issue")
-		self.resultInfo = try dictionary.getParsedAndRemove("resultInfo")
-		self.severity   = try dictionary.getParsedAndRemove("severity")
+		self.issue      = try dictionary.getParsedAndRemove("issue", originalDictionary)
+		self.resultInfo = try dictionary.getParsedAndRemove("resultInfo", originalDictionary)
+		self.severity   = try dictionary.getParsedAndRemove("severity", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

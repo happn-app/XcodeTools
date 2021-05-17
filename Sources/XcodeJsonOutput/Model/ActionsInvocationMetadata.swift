@@ -10,13 +10,13 @@ struct ActionsInvocationMetadata : _Object {
 	var schemeIdentifier: EntityIdentifier
 	var uniqueIdentifier: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.creatingWorkspaceFilePath = try dictionary.getParsedAndRemove("creatingWorkspaceFilePath")
-		self.schemeIdentifier          = try dictionary.getParsedAndRemove("schemeIdentifier")
-		self.uniqueIdentifier          = try dictionary.getParsedAndRemove("uniqueIdentifier")
+		self.creatingWorkspaceFilePath = try dictionary.getParsedAndRemove("creatingWorkspaceFilePath", originalDictionary)
+		self.schemeIdentifier          = try dictionary.getParsedAndRemove("schemeIdentifier", originalDictionary)
+		self.uniqueIdentifier          = try dictionary.getParsedAndRemove("uniqueIdentifier", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

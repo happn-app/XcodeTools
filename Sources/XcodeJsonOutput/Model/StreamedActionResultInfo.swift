@@ -8,11 +8,11 @@ struct StreamedActionResultInfo : _Object {
 	
 	var resultIndex: Int?
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.resultIndex = try dictionary.getParsedIfExistsAndRemove("resultIndex")
+		self.resultIndex = try dictionary.getParsedIfExistsAndRemove("resultIndex", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

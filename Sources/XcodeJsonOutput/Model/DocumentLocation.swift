@@ -9,15 +9,15 @@ struct DocumentLocation : _Object {
 	var concreteTypeName: String
 	var url: URL
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.concreteTypeName = try dictionary.getParsedAndRemove("concreteTypeName")
-		let urlString: String = try dictionary.getParsedAndRemove("url")
+		self.concreteTypeName = try dictionary.getParsedAndRemove("concreteTypeName", originalDictionary)
+		let urlString: String = try dictionary.getParsedAndRemove("url", originalDictionary)
 		
 		guard let url = URL(string: urlString) else {
-			throw Err.malformedObject
+			throw Err.invalidObjectType(parentPropertyName: "url", expectedType: "URL", givenObjectDictionary: ["_value": urlString])
 		}
 		self.url = url
 		

@@ -11,14 +11,14 @@ struct EntityIdentifier : _Object {
 	var entityType: String
 	var sharedState: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.containerName = try dictionary.getParsedAndRemove("containerName")
-		self.entityName    = try dictionary.getParsedAndRemove("entityName")
-		self.entityType    = try dictionary.getParsedAndRemove("entityType")
-		self.sharedState   = try dictionary.getParsedAndRemove("sharedState")
+		self.containerName = try dictionary.getParsedAndRemove("containerName", originalDictionary)
+		self.entityName    = try dictionary.getParsedAndRemove("entityName", originalDictionary)
+		self.entityType    = try dictionary.getParsedAndRemove("entityType", originalDictionary)
+		self.sharedState   = try dictionary.getParsedAndRemove("sharedState", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

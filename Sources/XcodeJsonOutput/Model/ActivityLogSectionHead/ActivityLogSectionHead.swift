@@ -10,13 +10,13 @@ struct ActivityLogSectionHead : _AnyActivityLogSectionHead {
 	var startTime: Date
 	var title: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.domainType = try dictionary.getParsedAndRemove("domainType")
-		self.startTime  = try dictionary.getParsedAndRemove("startTime")
-		self.title      = try dictionary.getParsedAndRemove("title")
+		self.domainType = try dictionary.getParsedAndRemove("domainType", originalDictionary)
+		self.startTime  = try dictionary.getParsedAndRemove("startTime", originalDictionary)
+		self.title      = try dictionary.getParsedAndRemove("title", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

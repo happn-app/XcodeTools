@@ -10,13 +10,20 @@ struct LogSectionCreatedEventPayload : _AnyStreamedEventPayload {
 	var resultInfo: StreamedActionResultInfo
 	var sectionIndex: Int
 
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.head         = try Parser.parseActivityLogSectionHead(dictionary: dictionary.getAndRemove("head", notFoundError: Err.malformedObject, wrongTypeError: Err.malformedObject))
-		self.resultInfo   = try dictionary.getParsedAndRemove("resultInfo")
-		self.sectionIndex = try dictionary.getParsedAndRemove("sectionIndex")
+		self.head         = try Parser.parseActivityLogSectionHead(
+			dictionary: dictionary.getAndRemove(
+				"head",
+				notFoundError: Err.missingProperty("head", objectDictionary: originalDictionary),
+				wrongTypeError: Err.propertyValueIsNotDictionary(propertyName: "head", objectDictionary: originalDictionary)
+			),
+			parentPropertyName: parentPropertyName
+		)
+		self.resultInfo   = try dictionary.getParsedAndRemove("resultInfo", originalDictionary)
+		self.sectionIndex = try dictionary.getParsedAndRemove("sectionIndex", originalDictionary)
 
 		Self.logUnknownKeys(from: dictionary)
 	}

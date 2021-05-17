@@ -8,11 +8,11 @@ public struct TypeDefinition : _Object {
 	
 	public var name: String
 	
-	init(dictionary: [String: Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String: Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.name = try dictionary.getParsedAndRemove("name")
+		self.name = try dictionary.getParsedAndRemove("name", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

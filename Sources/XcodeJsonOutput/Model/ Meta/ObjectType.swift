@@ -15,22 +15,26 @@ class ObjectType : Equatable, CustomStringConvertible {
 	}
 	
 	convenience init(dictionary: [String: Any?]) throws {
-		let typeDic: [String: Any?] = try dictionary.get("_type", notFoundError: Err.noObjectType, wrongTypeError: Err.malformedObjectType)
+		let typeDic: [String: Any?] = try dictionary.get(
+			"_type",
+			notFoundError: Err.noObjectType(objectDictionary: dictionary),
+			wrongTypeError: Err.malformedObjectType(typeObject: dictionary["_type"]!)
+		)
 		try self.init(typeDictionary: typeDic)
 	}
 	
 	convenience init(typeDictionary: [String: Any?]) throws {
-		let name: String = try typeDictionary.get("_name", notFoundError: Err.malformedObjectType, wrongTypeError: Err.malformedObjectType)
+		let name: String = try typeDictionary.get("_name", notFoundError: Err.malformedObjectType(typeObject: typeDictionary), wrongTypeError: Err.malformedObjectType(typeObject: typeDictionary))
 		
 		let supertype: ObjectType?
-		if let supertypeDictionary: [String: Any?] = try typeDictionary.getIfExists("_supertype", wrongTypeError: Err.malformedObjectType) {
+		if let supertypeDictionary: [String: Any?] = try typeDictionary.getIfExists("_supertype", wrongTypeError: Err.malformedObjectType(typeObject: typeDictionary)) {
 			guard typeDictionary.count == 2 else {
-				throw Err.malformedObjectType
+				throw Err.malformedObjectType(typeObject: typeDictionary)
 			}
 			supertype = try ObjectType(typeDictionary: supertypeDictionary)
 		} else {
 			guard typeDictionary.count == 1 else {
-				throw Err.malformedObjectType
+				throw Err.malformedObjectType(typeObject: typeDictionary)
 			}
 			supertype = nil
 		}

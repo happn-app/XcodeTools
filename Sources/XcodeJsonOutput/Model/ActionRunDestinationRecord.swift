@@ -12,15 +12,15 @@ struct ActionRunDestinationRecord : _Object {
 	var targetDeviceRecord: ActionDeviceRecord
 	var targetSDKRecord: ActionSDKRecord
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.displayName         = try dictionary.getParsedAndRemove("displayName")
-		self.localComputerRecord = try dictionary.getParsedAndRemove("localComputerRecord")
-		self.targetArchitecture  = try dictionary.getParsedAndRemove("targetArchitecture")
-		self.targetDeviceRecord  = try dictionary.getParsedAndRemove("targetDeviceRecord")
-		self.targetSDKRecord     = try dictionary.getParsedAndRemove("targetSDKRecord")
+		self.displayName         = try dictionary.getParsedAndRemove("displayName", originalDictionary)
+		self.localComputerRecord = try dictionary.getParsedAndRemove("localComputerRecord", originalDictionary)
+		self.targetArchitecture  = try dictionary.getParsedAndRemove("targetArchitecture", originalDictionary)
+		self.targetDeviceRecord  = try dictionary.getParsedAndRemove("targetDeviceRecord", originalDictionary)
+		self.targetSDKRecord     = try dictionary.getParsedAndRemove("targetSDKRecord", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

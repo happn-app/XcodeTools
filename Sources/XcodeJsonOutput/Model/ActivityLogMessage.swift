@@ -10,19 +10,19 @@ struct ActivityLogMessage : _Object {
 	var shortTitle: String
 	
 	var type: String
-	var category: String
+	var category: String?
 	
 	var location: DocumentLocation?
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.title      = try dictionary.getParsedAndRemove("title")
-		self.shortTitle = try dictionary.getParsedAndRemove("shortTitle")
-		self.type       = try dictionary.getParsedAndRemove("type")
-		self.category   = try dictionary.getParsedAndRemove("category")
-		self.location   = try dictionary.getParsedIfExistsAndRemove("location")
+		self.title      = try dictionary.getParsedAndRemove("title", originalDictionary)
+		self.shortTitle = try dictionary.getParsedAndRemove("shortTitle", originalDictionary)
+		self.type       = try dictionary.getParsedAndRemove("type", originalDictionary)
+		self.category   = try dictionary.getParsedIfExistsAndRemove("category", originalDictionary)
+		self.location   = try dictionary.getParsedIfExistsAndRemove("location", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

@@ -8,11 +8,11 @@ struct InvocationStartedEventPayload : _AnyStreamedEventPayload {
 	
 	var metadata: ActionsInvocationMetadata
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.metadata = try dictionary.getParsedAndRemove("metadata")
+		self.metadata = try dictionary.getParsedAndRemove("metadata", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

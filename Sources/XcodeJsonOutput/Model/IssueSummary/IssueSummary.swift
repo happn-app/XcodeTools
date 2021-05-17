@@ -9,12 +9,12 @@ struct IssueSummary : _AnyIssueSummary {
 	var issueType: String
 	var message: String
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.issueType = try dictionary.getParsedAndRemove("issueType")
-		self.message   = try dictionary.getParsedAndRemove("message")
+		self.issueType = try dictionary.getParsedAndRemove("issueType", originalDictionary)
+		self.message   = try dictionary.getParsedAndRemove("message", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

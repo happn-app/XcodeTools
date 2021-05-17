@@ -12,15 +12,15 @@ struct ResultMetrics : _Object {
 	var testsCount: Int
 	var testsFailedCount: Int
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.warningCount = try dictionary.getParsedIfExistsAndRemove("warningCount") ?? 0
-		self.errorCount   = try dictionary.getParsedIfExistsAndRemove("errorCount")   ?? 0
+		self.warningCount = try dictionary.getParsedIfExistsAndRemove("warningCount", originalDictionary) ?? 0
+		self.errorCount   = try dictionary.getParsedIfExistsAndRemove("errorCount", originalDictionary)   ?? 0
 		
-		self.testsCount       = try dictionary.getParsedIfExistsAndRemove("testsCount")       ?? 0
-		self.testsFailedCount = try dictionary.getParsedIfExistsAndRemove("testsFailedCount") ?? 0
+		self.testsCount       = try dictionary.getParsedIfExistsAndRemove("testsCount", originalDictionary)       ?? 0
+		self.testsFailedCount = try dictionary.getParsedIfExistsAndRemove("testsFailedCount", originalDictionary) ?? 0
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

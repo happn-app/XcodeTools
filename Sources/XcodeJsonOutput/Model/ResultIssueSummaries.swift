@@ -10,13 +10,13 @@ struct ResultIssueSummaries : _Object {
 	var errorSummaries: [IssueSummary]
 	var testFailureSummaries: [TestFailureIssueSummary]
 
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.warningSummaries     = try dictionary.getParsedIfExistsAndRemove("warningSummaries")     ?? []
-		self.errorSummaries       = try dictionary.getParsedIfExistsAndRemove("errorSummaries")       ?? []
-		self.testFailureSummaries = try dictionary.getParsedIfExistsAndRemove("testFailureSummaries") ?? []
+		self.warningSummaries     = try dictionary.getParsedIfExistsAndRemove("warningSummaries", originalDictionary)     ?? []
+		self.errorSummaries       = try dictionary.getParsedIfExistsAndRemove("errorSummaries", originalDictionary)       ?? []
+		self.testFailureSummaries = try dictionary.getParsedIfExistsAndRemove("testFailureSummaries", originalDictionary) ?? []
 		
 		Self.logUnknownKeys(from: dictionary)
 	}

@@ -9,12 +9,12 @@ struct ActionStartedEventPayload : _AnyStreamedEventPayload {
 	var actionInfo: StreamedActionInfo
 	var head: ActionRecordHead
 	
-	init(dictionary: [String : Any?]) throws {
-		var dictionary = dictionary
-		try Self.consumeAndValidateTypeFor(dictionary: &dictionary)
+	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
+		var dictionary = originalDictionary
+		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.actionInfo = try dictionary.getParsedAndRemove("actionInfo")
-		self.head       = try dictionary.getParsedAndRemove("head")
+		self.actionInfo = try dictionary.getParsedAndRemove("actionInfo", originalDictionary)
+		self.head       = try dictionary.getParsedAndRemove("head", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}
