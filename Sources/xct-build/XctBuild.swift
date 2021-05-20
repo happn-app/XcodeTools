@@ -38,17 +38,21 @@ struct XctBuild : ParsableCommand {
 		let pipe = Pipe()
 		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 		let fhXcodeWriteOutput = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+		
+		guard let outputFdComponent = FilePath.Component(String(fhXcodeWriteOutput.rawValue)) else {
+			/* TODO: Error */
+			throw NSError(domain: "yo", code: 1, userInfo: nil)
+		}
+		
 		let resultBundlePath = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension("xcresult").path
-		/* TODO: When SystemPackage is updated, use FilePath (not interesting to
-		 * use in version 0.0.1) */
-		let resultStreamPath = "/dev/fd/\(fhXcodeWriteOutput.rawValue)"
+		let resultStreamPath: FilePath = FilePath(root: "/", components: "dev", "fd", outputFdComponent)
 		
 		let args = [
 			"-verbose",// "-json",
 			"-disableAutomaticPackageResolution",
 			"-scheme", "LocMapperLib",
 			"-resultBundlePath", resultBundlePath,
-			"-resultStreamPath", resultStreamPath,
+			"-resultStreamPath", resultStreamPath.string,
 			"test"
 		]
 		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
@@ -76,9 +80,9 @@ struct XctBuild : ParsableCommand {
 							XctBuild.logger.error("\(error)")
 						}
 						
-					case FileDescriptor.xctStdout: ()//XctBuild.logger.trace("stdout: \(line)")
-					case FileDescriptor.xctStderr: ()//XctBuild.logger.trace("stderr: \(line)")
-					default:                       XctBuild.logger.trace("unknown 😱: \(line)")
+					case FileDescriptor.standardOutput: ()//XctBuild.logger.trace("stdout: \(line)")
+					case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(line)")
+					default:                            XctBuild.logger.trace("unknown 😱: \(line)")
 				}
 			}
 		)

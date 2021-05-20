@@ -95,7 +95,7 @@ extension Process {
 	group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
 		_ executable: String, args: [String] = [],
-		stdin: FileDescriptor? = FileDescriptor.xctStdin,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
@@ -120,7 +120,7 @@ extension Process {
 				p.standardOutput = pipe
 				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
-				fdRedirects[fd] = FileDescriptor.xctStdout
+				fdRedirects[fd] = FileDescriptor.standardOutput
 		}
 		switch stderrRedirect {
 			case .none:         (/*nop*/)
@@ -131,7 +131,7 @@ extension Process {
 				p.standardError = pipe
 				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
-				fdRedirects[fd] = FileDescriptor.xctStderr
+				fdRedirects[fd] = FileDescriptor.standardError
 		}
 		
 		let fdToSendFds: FileDescriptor?
@@ -168,9 +168,9 @@ extension Process {
 			p.standardInput = FileHandle(fileDescriptor: sv.advanced(by: 1).pointee)
 			fdToSendFds = FileDescriptor(rawValue: sv.advanced(by: 0).pointee)
 			
-			if fileDescriptorsToSend[FileDescriptor.xctStdin] == nil {
+			if fileDescriptorsToSend[FileDescriptor.standardInput] == nil {
 				/* We must add stdin in the list of file descriptors to send. */
-				fileDescriptorsToSend[FileDescriptor.xctStdin] = FileDescriptor.xctStdin
+				fileDescriptorsToSend[FileDescriptor.standardInput] = FileDescriptor.standardInput
 			}
 		}
 		
@@ -252,7 +252,7 @@ extension Process {
 	- Returns: The exit status of the process and its termination reason. */
 	public static func spawnAndStream(
 		_ executable: String, args: [String] = [],
-		stdin: FileDescriptor? = FileDescriptor.xctStdin,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],

@@ -6,9 +6,6 @@ import CMacroExports
 import Logging
 import SystemPackage
 
-/* For xctStdin; we can remove when available in SystemPackage. */
-import XcodeTools
-
 
 
 struct InternalFdGetLauncher : ParsableCommand {
@@ -29,8 +26,8 @@ struct InternalFdGetLauncher : ParsableCommand {
 		/* We need a bidirectionary dictionary… */
 		var destinationFdToReceivedFd = [CInt: CInt]()
 		var receivedFdToDestinationFd = [CInt: CInt]()
-		try FileDescriptor.xctStdin.closeAfter{
-			while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.xctStdin.rawValue) {
+		try FileDescriptor.standardInput.closeAfter{
+			while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.standardInput.rawValue) {
 				Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
 				/* As we have not closed any received fd yet, it should not be possible
 				 * to received the same fd twice. */
