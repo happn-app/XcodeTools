@@ -2,8 +2,6 @@ import Foundation
 
 
 
-/* Apparently supertype is only a String; we only have two levels in JSON output
- * from Xcode, never more (even in cases where we should). */
 class ObjectType : Equatable, CustomStringConvertible {
 	
 	var name: String

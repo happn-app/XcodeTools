@@ -7,7 +7,7 @@ extension Array : Object where Element : Object {
 
 
 extension Array : _Object where Element : _Object {
-
+	
 	static var type: ObjectType {ObjectType(name: "Array")}
 	
 	init(dictionary originalDictionary: [String: Any?], parentPropertyName: String?) throws {

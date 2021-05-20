@@ -8,7 +8,7 @@ struct IssueEmittedEventPayload : _AnyStreamedEventPayload {
 	
 	static var type: ObjectType = .init(name: "IssueEmittedEventPayload", supertype: .init(name: "AnyStreamedEventPayload"))
 	
-	var issue: IssueSummary
+	var issue: AnyIssueSummary
 	var resultInfo: StreamedActionResultInfo
 	var severity: String
 	
@@ -16,9 +16,17 @@ struct IssueEmittedEventPayload : _AnyStreamedEventPayload {
 		var dictionary = originalDictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
 		
-		self.issue      = try dictionary.getParsedAndRemove("issue", originalDictionary)
 		self.resultInfo = try dictionary.getParsedAndRemove("resultInfo", originalDictionary)
 		self.severity   = try dictionary.getParsedAndRemove("severity", originalDictionary)
+		
+		self.issue = try Parser.parseIssueSummary(
+			dictionary: dictionary.getAndRemove(
+				"issue",
+				notFoundError: Err.missingProperty("issue", objectDictionary: originalDictionary),
+				wrongTypeError: Err.propertyValueIsNotDictionary(propertyName: "issue", objectDictionary: originalDictionary)
+			),
+			parentPropertyName: "issue"
+		)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}
