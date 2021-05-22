@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="17709" systemVersion="20D91" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="18154" systemVersion="20E241" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="1">
     <entity name="PBXAggregateTarget" representedClassName="PBXAggregateTarget" parentEntity="PBXTarget" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXAppleScriptBuildPhase" representedClassName="PBXAppleScriptBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category"/>
     <entity name="PBXBuildFile" representedClassName="PBXBuildFile" parentEntity="PBXObject" syncable="YES" codeGenerationType="category">
@@ -121,9 +121,9 @@
     <entity name="PBXShellScriptBuildPhase" representedClassName="PBXShellScriptBuildPhase" parentEntity="PBXBuildPhase" syncable="YES" codeGenerationType="category">
         <attribute name="alwaysOutOfDate" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
         <attribute name="inputFileListPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
-        <attribute name="inputPaths" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
+        <attribute name="inputPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="outputFileListPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
-        <attribute name="outputPaths" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
+        <attribute name="outputPaths" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer" customClassName="[String]"/>
         <attribute name="shellPath" attributeType="String"/>
         <attribute name="shellScript" attributeType="String"/>
         <attribute name="showEnvVarsInLog" optional="YES" attributeType="Boolean" usesScalarValueType="NO"/>
@@ -205,7 +205,7 @@
         <element name="PBXProject" positionX="172.98046875" positionY="-122.70703125" width="147.30078125" height="268"/>
         <element name="PBXReferenceProxy" positionX="-834.015625" positionY="-421.69140625" width="128" height="73"/>
         <element name="PBXResourcesBuildPhase" positionX="-811.28515625" positionY="-98.22265625" width="161.390625" height="43"/>
-        <element name="PBXShellScriptBuildPhase" positionX="-885.99609375" positionY="125.703125" width="167.34765625" height="163"/>
+        <element name="PBXShellScriptBuildPhase" positionX="-885.99609375" positionY="125.703125" width="167.34765625" height="149"/>
         <element name="PBXSourcesBuildPhase" positionX="-629.89453125" positionY="-80.18359375" width="150.671875" height="43"/>
         <element name="PBXTarget" positionX="-94.4765625" positionY="131.18359375" width="128" height="134"/>
         <element name="PBXTargetDependency" positionX="-367.89453125" positionY="266.22265625" width="148.2578125" height="119"/>
