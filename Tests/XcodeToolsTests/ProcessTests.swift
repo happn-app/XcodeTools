@@ -51,8 +51,8 @@ final class ProcessTests : XCTestCase {
 		XCTAssertEqual(terminationStatus, 0)
 		XCTAssertEqual(terminationReason, .exit)
 		
-		XCTAssertNil(linesByFd[FileDescriptor.xctStderr])
-		XCTAssertEqual(linesByFd[FileDescriptor.xctStdout, default: []].joined(), fileContents)
+		XCTAssertNil(linesByFd[FileDescriptor.standardError])
+		XCTAssertEqual(linesByFd[FileDescriptor.standardOutput, default: []].joined(), fileContents)
 	}
 	
 	func testProcessLaunchAndStreamStdoutAndStderr() throws {
@@ -87,10 +87,10 @@ final class ProcessTests : XCTestCase {
 		let expectedStdout = (1...n).map{ String(repeating: "*", count: $0)           }.joined(separator: "\n") + "\n"
 		let expectedStderr = (1...n).map{ String(repeating: "*", count: (n - $0 + 1)) }.joined(separator: "\n") + "\n"
 		
-		XCTAssertEqual(linesByFd[FileDescriptor.xctStdout, default: []].joined(), expectedStdout)
+		XCTAssertEqual(linesByFd[FileDescriptor.standardOutput, default: []].joined(), expectedStdout)
 		/* We do not check for equality here because swift sometimes log errors on
 		 * stderr before launching the script… */
-		XCTAssert(linesByFd[FileDescriptor.xctStderr, default: []].joined().hasSuffix(expectedStderr))
+		XCTAssert(linesByFd[FileDescriptor.standardError, default: []].joined().hasSuffix(expectedStderr))
 	}
 	
 	@available(macOS 10.15.4, *)
