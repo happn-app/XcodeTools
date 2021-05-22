@@ -50,8 +50,9 @@ public struct PBXProj {
 		}
 		
 		objectVersion = try rawDecoded.getForParse("objectVersion", nil)
-		guard Set(arrayLiteral: "46", "48", "50", "52", "53", "54").contains(objectVersion) else {
-			throw XcodeProjError.unsupportedPBXProj(.unknownObjectVersion(objectVersion))
+		if !Set(arrayLiteral: "46", "48", "50", "52", "53", "54").contains(objectVersion) {
+			let msg = "Unknown object version \(objectVersion); parsing might fail"
+			XcodeProjConfig.logger?.warning(.init(stringLiteral: msg))
 		}
 		
 		let classes: [String: Any]? = try rawDecoded.getIfExistsForParse("classes", nil)
