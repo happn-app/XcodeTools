@@ -56,8 +56,7 @@ struct XctBuild : ParsableCommand {
 			"-disableAutomaticPackageResolution",
 			"-scheme", scheme,
 			"-resultBundlePath", resultBundlePath,
-			"-resultStreamPath", resultStreamPath.string,
-			"test"
+			"-resultStreamPath", resultStreamPath.string
 		]
 		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
 			"/usr/bin/xcodebuild", args: args,
