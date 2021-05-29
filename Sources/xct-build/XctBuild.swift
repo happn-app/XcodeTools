@@ -30,6 +30,10 @@ struct XctBuild : ParsableCommand {
 	@Option
 	var xcodebuildPath: String = "/usr/bin/xcodebuild"
 	
+	/* TODO: For now only one scheme only. Later multiple schemes? */
+	@Option
+	var scheme: String
+	
 	func run() throws {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 //		XcodeToolsConfig.logger?.logLevel = .trace
@@ -50,7 +54,7 @@ struct XctBuild : ParsableCommand {
 		let args = [
 			"-verbose",// "-json",
 			"-disableAutomaticPackageResolution",
-			"-scheme", "LocMapperLib",
+			"-scheme", scheme,
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath.string,
 			"test"
