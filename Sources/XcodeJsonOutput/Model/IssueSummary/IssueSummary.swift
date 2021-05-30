@@ -8,6 +8,7 @@ struct IssueSummary : _AnyIssueSummary {
 	
 	var issueType: String
 	var message: String
+	var documentLocationInCreatingWorkspace: DocumentLocation?
 	
 	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
 		var dictionary = originalDictionary
@@ -15,6 +16,8 @@ struct IssueSummary : _AnyIssueSummary {
 		
 		self.issueType = try dictionary.getParsedAndRemove("issueType", originalDictionary)
 		self.message   = try dictionary.getParsedAndRemove("message", originalDictionary)
+		
+		self.documentLocationInCreatingWorkspace = try dictionary.getParsedIfExistsAndRemove("documentLocationInCreatingWorkspace", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}
