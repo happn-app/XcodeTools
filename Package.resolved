@@ -51,8 +51,8 @@
         "repositoryURL": "https://github.com/xcode-actions/swift-signal-handling.git",
         "state": {
           "branch": null,
-          "revision": "1fd84e624b31161307490e454347ce1535b646bb",
-          "version": "0.2.0"
+          "revision": "8cbe3550d5d4f9169921c532081cc39822b8b537",
+          "version": "1.0.0-rc.1"
         }
       },
       {
