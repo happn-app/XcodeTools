@@ -20,7 +20,7 @@ struct XctVersions : ParsableCommand {
 	
 	struct Options : ParsableArguments {
 		
-		enum OutputFormat : String, ExpressibleByArgument {
+		enum OutputFormat : String, CaseIterable, ExpressibleByArgument {
 			
 			case none
 			case text
