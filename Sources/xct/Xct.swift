@@ -31,16 +31,16 @@ struct Xct : ParsableCommand {
 	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
 	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path
 	 *          is the usr one, not the opt one. (This is what we want.) */
-	@Option(help: "Set the path to the core xct programs.")
+	@Option(completion: .directory, help: "Set the path to the core xct programs.")
 	var execPath: String = getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? Bundle.main.bundleURL.path
 	
-	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"))
+	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"), completion: .directory)
 	var workdir: String?
 	
-	@Argument
+	@Argument(completion: .custom(toolNameCompletion))
 	var toolName: String
 	
-	@Argument(parsing: .unconditionalRemaining)
+	@Argument(parsing: .unconditionalRemaining, completion: .custom(toolArgsCompletion))
 	var toolArguments: [String] = []
 	
 	func run() throws {
@@ -68,6 +68,20 @@ struct Xct : ParsableCommand {
 			case "internal-fd-get-launcher": return InternalFdGetLauncher.main(toolArguments)
 			default:                         try launchGenericTool(absoluteExecPath: absoluteExecPath)
 		}
+	}
+	
+	private static func toolNameCompletion(_ args: [String]) -> [String] {
+		/* Let’s “parse” the arguments to see if an exec-path has been given, then
+		 * find all the xct-* tools available in the exec-path + PATH */
+		
+		return ["a", "b"]
+	}
+	
+	private static func toolArgsCompletion(_ args: [String]) -> [String] {
+		/* Let’s “parse” the arguments to see if an exec-path has been given, then
+		 * find all the xct-* tools available in the exec-path + PATH */
+		
+		return ["a", "b"]
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {
