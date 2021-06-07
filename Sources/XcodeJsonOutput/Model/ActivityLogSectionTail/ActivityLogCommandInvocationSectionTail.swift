@@ -8,6 +8,7 @@ struct ActivityLogCommandInvocationSectionTail : _AnyActivityLogSectionTail {
 	
 	var duration: Double
 	var result: String
+	var exitCode: Int?
 	
 	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
 		var dictionary = originalDictionary
@@ -15,6 +16,7 @@ struct ActivityLogCommandInvocationSectionTail : _AnyActivityLogSectionTail {
 		
 		self.duration = try dictionary.getParsedAndRemove("duration", originalDictionary)
 		self.result   = try dictionary.getParsedAndRemove("result", originalDictionary)
+		self.exitCode = try dictionary.getParsedIfExistsAndRemove("exitCode", originalDictionary)
 		
 		Self.logUnknownKeys(from: dictionary)
 	}
