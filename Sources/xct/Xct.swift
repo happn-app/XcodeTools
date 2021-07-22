@@ -24,15 +24,8 @@ struct Xct : ParsableCommand {
 		return ret
 	}()
 	
-	/* Bundle.main.bundleURL.path seem to correctly reflect the path of the
-	 * executable that was launched:
-	 *    - Changes when executable location does (path not hard-coded in bin);
-	 *    - Does _not_ resolve symlink when launched executable is a symlink.
-	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
-	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path
-	 *          is the usr one, not the opt one. (This is what we want.) */
 	@Option(completion: .directory, help: "Set the path to the core xct programs.")
-	var execPath: String = getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? Bundle.main.bundleURL.path
+	var execPath: String = Self.defaultExecPath
 	
 	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"), completion: .directory)
 	var workdir: String?
@@ -70,22 +63,132 @@ struct Xct : ParsableCommand {
 		}
 	}
 	
-	private static func toolNameCompletion(_ args: [String]) -> [String] {
-		/* Let’s “parse” the arguments to see if an exec-path has been given, then
-		 * find all the xct-* tools available in the exec-path + PATH */
+	/* Bundle.main.bundleURL.path seem to correctly reflect the path of the
+	 * executable that was launched:
+	 *    - Changes when executable location does (path not hard-coded in bin);
+	 *    - Does _not_ resolve symlink when launched executable is a symlink.
+	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
+	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path
+	 *          is the usr one, not the opt one. (This is what we want.) */
+	private static var defaultExecPath: String {
+		return getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? Bundle.main.bundleURL.path
+	}
+	
+	private static func updateEnvFromArgs(_ args: [String]) {
+		func checkShortArgValue(expected: Character, i: inout Int) -> String? {
+			let arg = args[i]
+			
+			guard
+				arg.first == "-",                               /* Current arg is an option */
+				let nextChar = arg.dropFirst().first,           /* Current arg is not a single - */
+				nextChar != "-",                                /* Current arg is not a long option */
+				let charPosition = arg.firstIndex(of: expected) /* Current arg contains the option we seek */
+			else {
+				return nil
+			}
+			
+			if charPosition == arg.index(before: arg.endIndex) {
+				/* The value we seek is the next arg */
+				if args.index(after: i) < args.endIndex {
+					i = args.index(after: i)
+					return args[i]
+				} else {
+					/* Note: This case should never happen as we’re called from
+					 * ArgumentParser, in the completion module for the tool name,
+					 * and in that context we should ne be able to have a last
+					 * argument being the arg we seek without value. */
+					return nil
+				}
+			} else {
+				/* The value we seek is after the char we found.
+				 * Funily it seems ArgumentParser does not support this use case. */
+				return String(arg[arg.index(after: charPosition)...])
+			}
+		}
 		
-		return ["a", "b"]
+		func checkLongArgValue(expected: String, i: inout Int) -> String? {
+			let arg = args[i]
+			let fullNoEqual = "--" + expected
+			let fullWithEqual = "--" + expected + "="
+			
+			if arg == fullNoEqual {
+				if args.index(after: i) < args.endIndex {
+					i = args.index(after: i)
+					return args[i]
+				} else {
+					/* Note: This case should never happen as we’re called from
+					 * ArgumentParser, in the completion module for the tool name,
+					 * and in that context we should ne be able to have a last
+					 * argument being the arg we seek without value. */
+					return nil
+				}
+			}
+			if let r = arg.range(of: fullWithEqual), r.lowerBound == arg.startIndex {
+				return String(arg[r.upperBound...])
+			}
+			return nil
+		}
+		
+//		FileHandle.standardError.write(Data("\n".utf8))
+//		FileHandle.standardError.write(Data("args \(args)\n".utf8))
+		var i = args.startIndex
+		while i < args.endIndex {
+			defer {i = args.index(after: i)}
+			
+			guard args[i] != "--" else {
+				/* End of the options; we do not go further */
+				break
+			}
+			
+			if let path = checkShortArgValue(expected: "C", i: &i) {
+//				FileHandle.standardError.write(Data("got path \(path)\n".utf8))
+				_ = FileManager.default.changeCurrentDirectoryPath(path)
+			}
+			if let execPath = checkLongArgValue(expected: "exec-path", i: &i) {
+//				FileHandle.standardError.write(Data("got exec path \(execPath)\n".utf8))
+				_ = setenv(execPathEnvVarName, execPath, 1)
+			}
+		}
+	}
+	
+	private static func listExecutableSuffixesIn(_ dir: String, prefix: String) throws -> [String] {
+		let fm = FileManager.default
+		guard let realpathDir = realpath(dir.isEmpty ? "." : dir, nil) else {
+			throw Errno(rawValue: errno)
+		}
+		return try fm.contentsOfDirectory(at: URL(fileURLWithPath: String(cString: realpathDir)), includingPropertiesForKeys: [.isExecutableKey, .isRegularFileKey], options: [])
+			.compactMap{ url in
+				let path = url.lastPathComponent
+				guard let r = path.range(of: prefix), r.lowerBound == path.startIndex else {
+					return nil
+				}
+				guard path.hasPrefix(prefix) else {
+					return nil
+				}
+				let resVal = try url.resourceValues(forKeys: Set(arrayLiteral: .isExecutableKey, .isRegularFileKey))
+				guard resVal.isRegularFile ?? false, resVal.isExecutable ?? false else {
+					return nil
+				}
+				return String(path[r.upperBound...])
+			}
+	}
+	
+	private static func toolNameCompletion(_ args: [String]) -> [String] {
+		updateEnvFromArgs(args)
+		let execPath = Self.defaultExecPath
+		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
+		let suffixes = ([execPath] + path.split(separator: ":", omittingEmptySubsequences: false).map(String.init)).flatMap{ (try? listExecutableSuffixesIn($0, prefix: "xct-")) ?? [] }
+		return suffixes
 	}
 	
 	private static func toolArgsCompletion(_ args: [String]) -> [String] {
-		/* Let’s “parse” the arguments to see if an exec-path has been given, then
-		 * find all the xct-* tools available in the exec-path + PATH */
-		
-		return ["a", "b"]
+		updateEnvFromArgs(args)
+		return ["c", "d"]
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {
-		/* We will use the PATH in env, but w/ the exec path search first. */
+		/* We will use the PATH in env, but w/ the exec path search first (tested
+		 * with git which apparently puts its internal tools first in the search). */
 		let searchPath = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
 		let newSearchPath = absoluteExecPath + (searchPath.isEmpty ? "" : ":") + searchPath
 		
