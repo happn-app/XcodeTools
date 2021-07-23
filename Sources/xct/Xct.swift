@@ -58,8 +58,9 @@ struct Xct : ParsableCommand {
 		 * subcommand, because the main command expects a generic tool name arg,
 		 * which cannot be distinguished from the subcommand). */
 		switch toolName {
-			case "internal-fd-get-launcher": return InternalFdGetLauncher.main(toolArguments)
-			default:                         try launchGenericTool(absoluteExecPath: absoluteExecPath)
+			case "internal-fd-get-launcher":        return InternalFdGetLauncher.main(toolArguments)
+			case "generate-meta-completion-script": return GenerateMetaCompletionScript.main(toolArguments)
+			default:                                try launchGenericTool(absoluteExecPath: absoluteExecPath)
 		}
 	}
 	
