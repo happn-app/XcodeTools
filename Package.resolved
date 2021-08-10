@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/xcode-actions/clt-logger.git",
         "state": {
           "branch": null,
-          "revision": "64e68f64634cad4aa721e9f7b47c9d747e9f0851",
-          "version": "0.3.4"
+          "revision": "150eaf2c84c2a161b9c40cd3c1b04b51884b8029",
+          "version": "0.3.5"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/xcode-actions/stream-reader.git",
         "state": {
           "branch": null,
-          "revision": "c929a9700ed0592b6ba05cd631722694657b4e45",
-          "version": "3.2.1"
+          "revision": "ee2df594d840f03ddd9b35c7748f2eac212463d6",
+          "version": "3.2.2"
         }
       },
       {
@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "986d191f94cec88f6350056da59c2e59e83d1229",
-          "version": "0.4.3"
+          "revision": "83b23d940471b313427da226196661856f6ba3e0",
+          "version": "0.4.4"
         }
       },
       {
