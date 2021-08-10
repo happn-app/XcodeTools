@@ -82,6 +82,11 @@ extension Process {
 	- Important: The handler will not be called on the calling thread (so you can
 	`waitUntilExit` on the `Process` and still receive the stream “live”).
 	
+	- Important: All of the `additionalOutputFileDescriptors` are closed when the
+	end of their respective stream are reached (i.e. the function takes ownership
+	of the file descriptors). Maybe later we’ll add an option not to close at end
+	of the stream.
+	
 	- Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
 	`stdout` and `stderr`, which are handled and differently) to clone in the
 	child process. The **value** is the file descriptor to clone (from the parent
@@ -90,7 +95,9 @@ extension Process {
 	- Parameter additionalOutputFileDescriptors: Additional output file
 	descriptors to stream from the process. Usually used with
 	`fileDescriptorsToSend` (you open a socket, give the write fd in fds to
-	clone, and the read fd to additional output fds).
+	clone, and the read fd to additional output fds). **Important**: The function
+	takes ownership of these file descriptors, i.e. it closes them when the end
+	of their respective streams is reached.
 	- Returns: The _started_ `Process` object that was created and a dispatch
 	group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
@@ -193,7 +200,10 @@ extension Process {
 			readSources.append(streamSource)
 			
 			streamSource.setRegistrationHandler(handler: streamGroup.enter)
-			streamSource.setCancelHandler(handler: streamGroup.leave)
+			streamSource.setCancelHandler{
+				_ = try? fd.close()
+				streamGroup.leave()
+			}
 			
 			streamSource.setEventHandler{
 				/* `source.data`: see doc of dispatch_source_get_data in objc */
@@ -216,8 +226,6 @@ extension Process {
 			for (signal, error) in errors {
 				XcodeToolsConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
 			}
-			/* Close fd to send fds if needed, and maybe others.
-			 * Do **not** cancel read sources. */
 		}
 		#if canImport(eXtenderZ)
 		p.hpn_add(XcodeToolsProcessExtender(terminationHandler))

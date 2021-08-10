@@ -136,12 +136,59 @@ final class ProcessTests : XCTestCase {
 		process.waitUntilExit()
 		
 		XCTAssertLessThan(count, n)
-		/* Apparently the fd must **NOT** be closed! It makes sense tbh. */
-//		try FileDescriptor(rawValue: fdRead).close()
 		
 		let r = outputGroup.wait(timeout: .now() + .seconds(7))
 		XCTAssertEqual(r, .success)
 		XCTAssertEqual(count, n)
+	}
+	
+	/* This disabled test has allowed the discovery of a leak of fds: the reading
+	 * ends of the pipes that are created when capturing the output of a process
+	 * were not closed when the end of the streams were reached.
+	 * The test is now disabled because it is excessively long.
+	 *
+	 * For reference the bug manifested in three ways that can still happen in
+	 * case of starvation of file descriptors in the process, but that I don’t
+	 * think I can detect and/or prevent (well I have a theory now for the two
+	 * last cases, which might be detectable though; see the third case for
+	 * explanation):
+	 *    - The test crashes because of an ObjC exception: Process is not
+	 *      launched. The exception is thrown when the `terminationStatus`
+	 *      property is read inside the `spawnAndStream` method.
+	 *    - The test simply stops forever. This is because the stream group never
+	 *      reaches the end, and the `spawnAndStream` method simply waits forever
+	 *      for the group to be over.
+	 *    - More rare, but it happened, we can get an assertion failure inside
+	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
+	 *      of the pipes created in the output file descriptors variable. I think
+	 *      this one might actually be the same of the previous one: the reading
+	 *      end of the pipe would be an invalid fd. If both the pipe for stdout
+	 *      and stderr have an invalid fd for their reading ends, we’d add the
+	 *      same fd in the output fds twice, which is protected by an assert. In
+	 *      the previous case, maybe the stream group never reaches the end
+	 *      because the reading is done on an invalid fd which simply never
+	 *      triggers a read.
+	 *      This explanation is a theory. I could verify it, but it’s an edge
+	 *      case and I don’t really feel like it for now. */
+	func disabledTestLaunchProcessWithResourceStarving() throws {
+		/* It has been observed that on my computer, things starts to go bad when
+		 * there are roughly 6500 fds open.
+		 * So we start by opening 6450 fds. */
+		for _ in 0..<6450 {
+			_ = try FileDescriptor.open("/dev/random", .readOnly)
+		}
+		for _ in 0..<5000 {
+			let (exitCode, exitReason) = try Process.spawnAndStream(
+				"/bin/sh", args: ["-c", "echo hello"],
+				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+				signalsToForward: [],
+				outputHandler: { _, _ in }
+			)
+			guard exitCode == 0, exitReason == .exit else {
+				struct UnexpectedExit : Error {}
+				throw UnexpectedExit()
+			}
+		}
 	}
 	
 	/** Returns the path to the built products directory. */
