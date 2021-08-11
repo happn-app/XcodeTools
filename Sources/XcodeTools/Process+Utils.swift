@@ -116,6 +116,20 @@ extension Process {
 		let p = XcodeToolsProcess()
 		#endif
 		
+		var fdToCloseInCaseOfError = Set<FileDescriptor>()
+		var mustCallTerminationHandlerInCaseOfError = false
+		func cleanupAndThrow(_ error: Error) throws -> Never {
+			if mustCallTerminationHandlerInCaseOfError {p.terminationHandler?(p)}
+			fdToCloseInCaseOfError.forEach{ try? $0.close() }
+			throw error
+		}
+		func cleanupIfThrows<R>(_ block: () throws -> R) rethrows -> R {
+			do {return try block()}
+			catch {
+				try cleanupAndThrow(error)
+			}
+		}
+		
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
 		var outputFileDescriptors = additionalOutputFileDescriptors
 		switch stdoutRedirect {
@@ -123,22 +137,47 @@ extension Process {
 			case .toNull:       p.standardOutput = nil
 			case .toFd(let fd): p.standardOutput = FileHandle(fileDescriptor: fd.rawValue)
 			case .capture:
+				/* The Pipe init is non-fallible, but can fail. So we cast the Pipe
+				 * returned by the init to a Pipe? */
+				guard let pipe = Pipe() as Pipe? else {
+					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
+				}
+				/* An alternative to the guard above:
 				let pipe = Pipe()
+				guard Unmanaged.passUnretained(pipe).toOpaque() != UnsafeMutableRawPointer(bitPattern: 0) else {
+					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe"))
+				}*/
+				
+				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
+				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+				
+				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
+				fdRedirects[fdForReading] = FileDescriptor.standardOutput
+				
+				fdToCloseInCaseOfError.insert(fdForReading)
+				fdToCloseInCaseOfError.insert(fdForWriting)
+				
 				p.standardOutput = pipe
-				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
-				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
-				fdRedirects[fd] = FileDescriptor.standardOutput
 		}
 		switch stderrRedirect {
 			case .none:         (/*nop*/)
 			case .toNull:       p.standardError = nil
 			case .toFd(let fd): p.standardError = FileHandle(fileDescriptor: fd.rawValue)
 			case .capture:
-				let pipe = Pipe()
+				guard let pipe = Pipe() as Pipe? else {
+					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stderr"))
+				}
+				
+				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
+				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+				
+				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
+				fdRedirects[fdForReading] = FileDescriptor.standardError
+				
+				fdToCloseInCaseOfError.insert(fdForReading)
+				fdToCloseInCaseOfError.insert(fdForWriting)
+				
 				p.standardError = pipe
-				let fd = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
-				let (inserted, _) = outputFileDescriptors.insert(fd); assert(inserted)
-				fdRedirects[fd] = FileDescriptor.standardError
 		}
 		
 		let fdToSendFds: FileDescriptor?
@@ -153,7 +192,7 @@ extension Process {
 		} else {
 			guard let execBaseURL = getenv(XcodeToolsConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
 				XcodeToolsConfig.logger?.error("Cannot launch process and send its fd if \(XcodeToolsConstants.envVarNameExecPath) is not set.")
-				throw XcodeToolsError.envVarXctExecPathNotSet
+				try cleanupAndThrow(XcodeToolsError.envVarXctExecPathNotSet)
 			}
 			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
 			 * equivalent to the C version `int sv[2] = {-1, -1};`.
@@ -166,14 +205,19 @@ extension Process {
 			defer {sv.deallocate()}
 			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */sv) == 0 else {
 				/* TODO: Throw a more informative error? */
-				throw XcodeToolsError.systemError(Errno(rawValue: errno))
+				try cleanupAndThrow(XcodeToolsError.systemError(Errno(rawValue: errno)))
 			}
-			assert(sv.advanced(by: 0).pointee != -1 && sv.advanced(by: 1).pointee != -1)
+			let fdRaw0 = sv.advanced(by: 0).pointee
+			let fdRaw1 = sv.advanced(by: 1).pointee
+			assert(fdRaw0 != -1 && fdRaw1 != -1)
+			
+			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw0))
+			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw1))
 			
 			p.executableURL = execBaseURL.appendingPathComponent("xct")
 			p.arguments = ["internal-fd-get-launcher", executable] + args
-			p.standardInput = FileHandle(fileDescriptor: sv.advanced(by: 1).pointee)
-			fdToSendFds = FileDescriptor(rawValue: sv.advanced(by: 0).pointee)
+			p.standardInput = FileHandle(fileDescriptor: fdRaw1)
+			fdToSendFds = FileDescriptor(rawValue: fdRaw0)
 			
 			if fileDescriptorsToSend[FileDescriptor.standardInput] == nil {
 				/* We must add stdin in the list of file descriptors to send. */
@@ -181,13 +225,13 @@ extension Process {
 			}
 		}
 		
-		let delayedSigations = try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
+		let delayedSigations = try cleanupIfThrows{ try SigactionDelayer_Unsig.registerDelayedSigactions(signalsToForward, handler: { (signal, handler) in
 			XcodeToolsConfig.logger?.debug("Handler action in Process+Utils", metadata: ["signal": "\(signal)"])
 			defer {handler(true)}
 			
 			guard p.isRunning else {return}
 			kill(p.processIdentifier, signal.rawValue)
-		})
+		}) }
 		
 		let streamGroup = DispatchGroup()
 		var readSources = [DispatchSourceRead]()
@@ -234,7 +278,8 @@ extension Process {
 		#endif
 		
 		XcodeToolsConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
-		do {
+		mustCallTerminationHandlerInCaseOfError = true
+		try cleanupIfThrows{
 			try p.run()
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
@@ -244,9 +289,6 @@ extension Process {
 				XcodeToolsConfig.logger?.trace("Closing fd to send fds")
 				try fdToSendFds.close()
 			}
-		} catch {
-			/* We must call the termination handler manually then… */
-			p.terminationHandler?(p)
 		}
 		
 		return (p, streamGroup)
