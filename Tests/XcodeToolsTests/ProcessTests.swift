@@ -168,8 +168,12 @@ final class ProcessTests : XCTestCase {
 	 *      the previous case, maybe the stream group never reaches the end
 	 *      because the reading is done on an invalid fd which simply never
 	 *      triggers a read.
-	 *      This explanation is a theory. I could verify it, but it’s an edge
-	 *      case and I don’t really feel like it for now. */
+	 *      This explanation is a theory. I have actually verified that we get an
+	 *      invalid Pipe object when initializing a Pipe when no more fds are
+	 *      available, which did trigger the assertion failure, and now properly
+	 *      detect this problem. See `testLaunchProcessWithResourceStarving` for
+	 *      more info. For the rest of the cases, I’m not sure how to reproduce
+	 *      them exactly. */
 	func disabledTestLaunchProcessWithResourceStarving() throws {
 		/* It has been observed that on my computer, things starts to go bad when
 		 * there are roughly 6500 fds open.
@@ -189,6 +193,57 @@ final class ProcessTests : XCTestCase {
 				throw UnexpectedExit()
 			}
 		}
+	}
+	
+	func testLaunchProcessWithResourceStarving() throws {
+		/* Let’s starve the fds first */
+		var fds = Set<FileDescriptor>()
+		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
+		defer {fds.forEach{ try? $0.close() }}
+		
+		func releaseRandomFd() throws {
+			guard let randomFd = fds.randomElement() else {
+				throw XcodeToolsError.internalError("We starved the fds without opening a lot of files it seems.")
+			}
+			try randomFd.close()
+			fds.remove(randomFd)
+		}
+		
+		/* Now we try and use Process */
+		XCTAssertThrowsError(try Process.spawnAndStream(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+			signalsToForward: [],
+			outputHandler: { _, _ in }
+		))
+		
+		/* We release two fds. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		/* Using process should still fail, but with error when opening Pipe for
+		 * stderr, not stdout. To verify, the test would have to be modified, but
+		 * the check would not be very stable, so we simply verify we still get a
+		 * failure. */
+		XCTAssertThrowsError(try Process.spawnAndStream(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+			signalsToForward: [],
+			outputHandler: { _, _ in }
+		))
+		
+		/* Now let’s release more fds.
+		 * If we release two, we get an error with a read from a bad fd. Not sure
+		 * why, but it’s not very much surprising.
+		 * If we release one more it seems to work. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		_ = try Process.spawnAndStream(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+			signalsToForward: [],
+			outputHandler: { _, _ in }
+		)
 	}
 	
 	/** Returns the path to the built products directory. */
