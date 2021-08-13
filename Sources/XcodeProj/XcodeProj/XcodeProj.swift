@@ -3,6 +3,7 @@ import Foundation
 
 
 
+/** Represents a parsed `xcodeproj` bundle. */
 public struct XcodeProj {
 	
 	public let xcodeprojURL: URL

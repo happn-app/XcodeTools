@@ -3,6 +3,8 @@ import Foundation
 
 
 
+/** Represents a parsed `pbxproj` file, which is the main file of an xcodeproj
+ bundle. */
 public struct PBXProj {
 	
 	public let rawDecoded: [String: Any]

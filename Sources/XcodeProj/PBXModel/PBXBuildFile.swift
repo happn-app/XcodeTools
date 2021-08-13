@@ -3,6 +3,8 @@ import Foundation
 
 
 
+/** Represents a file to build in a build phase. It’s basically a reference to a
+ ``PBXFileElement`` with some settings. */
 @objc(PBXBuildFile)
 public class PBXBuildFile : PBXObject {
 	

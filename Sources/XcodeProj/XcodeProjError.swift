@@ -3,6 +3,7 @@ import Foundation
 
 
 
+/** All of the errors thrown by the module should have this type. */
 public enum XcodeProjError : Error {
 	
 	case cannotReadFile(URL, Error)

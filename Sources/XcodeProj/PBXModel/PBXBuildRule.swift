@@ -3,6 +3,8 @@ import Foundation
 
 
 
+/** Represents a build rule, that is the tool to call to compile a given type of
+ file. */
 @objc(PBXBuildRule)
 public class PBXBuildRule : PBXObject {
 	

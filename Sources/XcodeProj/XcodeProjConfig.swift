@@ -4,7 +4,9 @@ import Logging
 
 
 
-public struct XcodeProjConfig {
+/** A container to hold the properties that can modify the behaviour of the
+ module. */
+public enum XcodeProjConfig {
 	
 	/**
 	Set to true to allow allocate unknown objects as `PBXObjects`.
@@ -12,11 +14,7 @@ public struct XcodeProjConfig {
 	If set to `false`, trying to allocate unknown objects will throw an error. */
 	public static var allowPBXObjectAllocation = false
 	
-	public static var logger: Logging.Logger? = {
-		return Logger(label: "com.xcode-actions.XcodeProj")
-	}()
-	
-	/** This struct is simply a container for static configuration properties. */
-	private init() {}
+	@TaskLocal
+	public static var logger: Logger? = .init(label: "com.xcode-actions.XcodeProj")
 	
 }

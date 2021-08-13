@@ -4,6 +4,7 @@ import Utils
 
 
 
+/** Represents a parsed `xcconfig` file. */
 public struct XCConfig {
 	
 	public enum Line {
