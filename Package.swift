@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.5
 import PackageDescription
 
 
@@ -22,9 +22,11 @@ let eXtenderZ: (packageDep: Package.Dependency, target: Target, targetDep1: Targ
 let package = Package(
 	name: "XcodeTools",
 	platforms: [
-		.macOS(.v10_15)
+		.macOS(.v12)
 	],
 	products: [
+		.library(name: "SourceBuilder", targets: ["SourceBuilder"]),
+		
 		/* A lib one can use to manipulate Xcode Projects. */
 		.library(name: "XcodeProj", targets: ["XcodeProj"]),
 		
@@ -44,6 +46,7 @@ let package = Package(
 		.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 		.package(url: "https://github.com/apple/swift-system.git", from: "0.0.2"),
+		.package(url: "https://github.com/happn-tech/XibLoc.git", from: "1.1.1"),
 		.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.3.4"),
 		.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.2.1"),
 		.package(url: "https://github.com/xcode-actions/swift-signal-handling.git", from: "1.0.0-rc"),
@@ -56,12 +59,21 @@ let package = Package(
 		.target(name: "Utils"),
 		
 		.target(name: "XcodeProj", dependencies: [
-			.target(name: "Utils"),
-			.product(name: "Logging", package: "swift-log")
+			.product(name: "Logging", package: "swift-log"),
+			.target(name: "Utils")
 		], resources: [
 			.process("PBXModel.xcdatamodeld") // Dot not delete this token (for compilation sans sandbox): __COREDATA_TOKEN_XcodeProj_PBXModel
 		]),
 		.testTarget(name: "XcodeProjTests", dependencies: [.target(name: "XcodeProj")]),
+		
+		.target(name: "SourceBuilder", dependencies: [
+			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "SystemPackage", package: "swift-system"),
+			.product(name: "XibLoc",        package: "XibLoc"),
+			.target(name: "Utils"),
+			.target(name: "XcodeTools")
+		]),
+		.testTarget(name: "SourceBuilderTests", dependencies: [.target(name: "SourceBuilder")]),
 		
 		.target(name: "XcodeJsonOutput", dependencies: [
 			.product(name: "CLTLogger", package: "clt-logger"), /* For the SGRs */
@@ -86,6 +98,7 @@ let package = Package(
 		].compactMap{ $0 }),
 		.testTarget(name: "XcodeToolsTests", dependencies: [
 			.target(name: "XcodeTools"),
+			
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "StreamReader",  package: "stream-reader"),
