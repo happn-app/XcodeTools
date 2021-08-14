@@ -24,7 +24,7 @@ public class PBXContainerItemProxy : PBXObject {
 		
 		proxyType = try rawObject.getInt16ForParse("proxyType", xcID)
 		if proxyType != 1 && proxyType != 2 {
-			XcodeProjConfig.logger?.warning("Unknown value for proxyType \(proxyType) in object \(xcID ?? "<unknown>"); expected 1 or 2.")
+			Conf.logger?.warning("Unknown value for proxyType \(proxyType) in object \(xcID ?? "<unknown>"); expected 1 or 2.")
 		}
 	}
 	

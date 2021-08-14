@@ -52,7 +52,7 @@ public struct BuildSetting {
 			case let s as String:   return s
 			case let a as [String]: return a.joined(separator: " ")
 			default:
-				XcodeProjConfig.logger?.warning("Asked string value of build setting whose value is \(value), which has type \(type(of: value)), which is not standard. Returning an empty String.")
+				Conf.logger?.warning("Asked string value of build setting whose value is \(value), which has type \(type(of: value)), which is not standard. Returning an empty String.")
 				return ""
 		}
 	}

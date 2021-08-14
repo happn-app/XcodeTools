@@ -35,4 +35,4 @@ public enum XcodeProjConfig {
 	
 }
 
-typealias Config = XcodeProjConfig
+typealias Conf = XcodeProjConfig

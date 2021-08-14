@@ -37,7 +37,7 @@ public struct PBXProj {
 			.mapErrorAndGet{ XcodeProjError.pbxProjParseError(.plistParseError($0), objectID: nil) }
 		
 		if format != .openStep {
-			XcodeProjConfig.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
+			Conf.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
 		}
 		
 		guard let decoded = decodedUntyped as? [String: Any] else {
@@ -54,7 +54,7 @@ public struct PBXProj {
 		objectVersion = try rawDecoded.getForParse("objectVersion", nil)
 		if !Set(arrayLiteral: "46", "48", "50", "51", "52", "53", "54").contains(objectVersion) {
 			let msg = "Unknown object version \(objectVersion); parsing might fail"
-			XcodeProjConfig.logger?.warning(.init(stringLiteral: msg))
+			Conf.logger?.warning(.init(stringLiteral: msg))
 		}
 		
 		let classes: [String: Any]? = try rawDecoded.getIfExistsForParse("classes", nil)
@@ -83,8 +83,8 @@ public struct PBXProj {
 			do {
 				try context.save()
 			} catch {
-				XcodeProjConfig.logger?.debug("Error when saving PBXProj model: \(error)")
-				XcodeProjConfig.logger?.debug("   -> Validation errors: \(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"] ?? "<none>")")
+				Conf.logger?.debug("Error when saving PBXProj model: \(error)")
+				Conf.logger?.debug("   -> Validation errors: \(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"] ?? "<none>")")
 				context.rollback()
 				throw XcodeProjError.invalidPBXProjObjectGraph(.coreDataSaveError(error), objectID: nil)
 			}

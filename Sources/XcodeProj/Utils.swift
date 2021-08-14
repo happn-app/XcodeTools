@@ -49,7 +49,7 @@ extension Dictionary where Key == String {
 	func getBoolForParse(_ key: Key, _ objectID: String?) throws -> Bool {
 		let i = try getIntForParse(key, objectID)
 		if i != 0 && i != 1 {
-			XcodeProjConfig.logger?.warning("Suspicious value “\(i)” for key “\(key)” in object “\(objectID ?? "<unknown or root>")”; expecting 0 or 1; setting to true.")
+			Conf.logger?.warning("Suspicious value “\(i)” for key “\(key)” in object “\(objectID ?? "<unknown or root>")”; expecting 0 or 1; setting to true.")
 		}
 		return i != 0
 	}
@@ -65,7 +65,7 @@ extension Dictionary where Key == String {
 	func getBoolAsNumberIfExistsForParse(_ key: Key, _ objectID: String?) throws -> NSNumber? {
 		guard let i = try getIntIfExistsForParse(key, objectID) else {return nil}
 		if i != 0 && i != 1 {
-			XcodeProjConfig.logger?.warning("Suspicious value “\(i)” for key “\(key)” in object “\(objectID ?? "<unknown or root>")”; expecting 0 or 1; setting to true.")
+			Conf.logger?.warning("Suspicious value “\(i)” for key “\(key)” in object “\(objectID ?? "<unknown or root>")”; expecting 0 or 1; setting to true.")
 		}
 		return NSNumber(value: i != 0)
 	}

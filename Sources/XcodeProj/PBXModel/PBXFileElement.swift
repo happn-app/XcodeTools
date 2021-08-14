@@ -119,7 +119,7 @@ public class PBXFileElement : PBXObject {
 					}
 				} else {
 					guard let project = (self as? PBXGroup)?.projectForMainGroup_ else {
-						XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup_ property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
+						Conf.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup_ property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
 					/* I don’t know the role of project.projectRoot. I tried
@@ -144,7 +144,7 @@ public class PBXFileElement : PBXObject {
 					return nil
 				}
 				if !path.starts(with: "/") {
-					XcodeProjConfig.logger?.warning("Got an absolute source tree in \(xcID ?? "<unknown object>"), but file element path does not start w/ a slash!")
+					Conf.logger?.warning("Got an absolute source tree in \(xcID ?? "<unknown object>"), but file element path does not start w/ a slash!")
 				}
 				return (nil, path)
 				
@@ -152,7 +152,7 @@ public class PBXFileElement : PBXObject {
 				return (variable, path ?? ".")
 				
 			case .unknown:
-				XcodeProjConfig.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
+				Conf.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") whose source tree is unknown! Returning nil.")
 				/* I guess? */
 				return nil
 		}

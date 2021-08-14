@@ -39,8 +39,8 @@ public class PBXObject : NSManagedObject {
 		
 		let diffUnknownButExist = Set(nonNilRawObject.keys).subtracting(known.keys)
 		let diffKnownButDoNotExist = Set(known.keys).subtracting(nonNilRawObject.keys)
-		if !diffUnknownButExist.isEmpty,    let logger = XcodeProjConfig.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist.sorted())")}
-		if !diffKnownButDoNotExist.isEmpty, let logger = XcodeProjConfig.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
+		if !diffUnknownButExist.isEmpty,    let logger = Conf.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are unknown by the object but exist in the raw object: \(diffUnknownButExist.sorted())")}
+		if !diffKnownButDoNotExist.isEmpty, let logger = Conf.logger {logger.warning("In object \(xcID ?? "<unknown>") of type \(rawISA ?? "<unknown>"), got the following keys that are known by the object but do **not** exist in the raw object: \(diffKnownButDoNotExist)")}
 		
 		return (rawObject ?? [:]).merging(known, uniquingKeysWith: { _, new in new })
 	}
@@ -80,10 +80,10 @@ public class PBXObject : NSManagedObject {
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
 			throw XcodeProjError.internalError(.managedContextHasNoModel)
 		}
-		guard let entity = model.entitiesByName[isa] ?? (XcodeProjConfig.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
+		guard let entity = model.entitiesByName[isa] ?? (Conf.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
 			throw XcodeProjError.pbxProjParseError(.isaNotFoundInModel(isa), objectID: id)
 		}
-		guard !entity.isAbstract || (XcodeProjConfig.allowPBXObjectAllocation && entity.name == "PBXObject") else {
+		guard !entity.isAbstract || (Conf.allowPBXObjectAllocation && entity.name == "PBXObject") else {
 			throw XcodeProjError.pbxProjParseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
@@ -149,7 +149,7 @@ public class PBXObject : NSManagedObject {
 		/* Let’s validate we know all the properties in the raw object. */
 		let renamings = Self.propertyRenamings()
 		let unknownProperties = Set(rawObject.keys).subtracting(entity.propertiesByName.keys.map{ renamings[$0] ?? $0 }).subtracting(["isa"])
-		if !unknownProperties.isEmpty, let logger = XcodeProjConfig.logger {
+		if !unknownProperties.isEmpty, let logger = Conf.logger {
 			logger.warning("In object of type \(rawISA ?? "<unknown>"), instantiated w/ class \(entity.name ?? "<unknown>"), with ID \(xcID ?? "<unknown>"), got the following unknown properties: \(unknownProperties.sorted())")
 		}
 	}
@@ -159,7 +159,7 @@ public class PBXObject : NSManagedObject {
 	the parent’s one, a warning is logged. */
 	/*protected*/ func mergeSerialization(_ parent: [String: Any], _ child: [String: Any]) -> [String: Any] {
 		return parent.merging(child, uniquingKeysWith: { current, new in
-			XcodeProjConfig.logger?.warning("Child serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
+			Conf.logger?.warning("Child serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")
 			return new
 		})
 	}

@@ -39,7 +39,7 @@ public class XCConfigurationList : PBXObject {
 			usedByType = t.rawISA ?? "(null)"
 			usedByName = t.name ?? "(null)"
 		} else {
-			XcodeProjConfig.logger?.warning("Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
+			Conf.logger?.warning("Cannot get stringSerializationName for configuration list \(xcID ?? "<nil>") because both the project and target relationships are nil.")
 			return nil
 		}
 		return "Build configuration list for \(usedByType) \"\(usedByName)\""

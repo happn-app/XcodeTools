@@ -36,4 +36,4 @@ public enum SourceBuilderConfig {
 	
 }
 
-typealias Config = SourceBuilderConfig
+typealias Conf = SourceBuilderConfig

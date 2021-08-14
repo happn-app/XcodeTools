@@ -199,7 +199,7 @@ public struct XCConfig {
 	}
 	
 	public init(url: URL, failIfFileDoesNotExist: Bool = true, allowCommaSeparatorForParameters: Bool = false, allowSpacesAfterSharp: Bool = false, allowNoSpacesAfterInclude: Bool = false) throws {
-		XcodeProjConfig.logger?.trace("Trying to parse xcconfig file \(url.absoluteString)")
+		Conf.logger?.trace("Trying to parse xcconfig file \(url.absoluteString)")
 		sourceURL = url
 		
 		var isDir = ObjCBool(false)
@@ -214,7 +214,7 @@ public struct XCConfig {
 		if isDir.boolValue {
 			/* We do not fail if the xcconfig file is a directory! This is the
 			 * observed behaviour in Xcode. It simply gives a warning. */
-			XcodeProjConfig.logger?.warning("Tried to import directory \(url.path) in an xcconfig file.")
+			Conf.logger?.warning("Tried to import directory \(url.path) in an xcconfig file.")
 			lines = [:]
 			return
 		}
@@ -258,7 +258,7 @@ public struct XCConfig {
 		if path.starts(with: "<DEVELOPER_DIR>") {
 			let developerDir = try BuildSettings.getDeveloperDir()
 //			let a = "/<DEVELOPER_DIR>/<DEVELOPER_DIR>"
-//			XcodeProjConfig.logger?.debug("\(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))")
+//			Conf.logger?.debug("\(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))")
 			/* Tested (commented code above): The line below does indeed replace
 			 * the string only if it is the prefix of the var. */
 			path = path.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored)

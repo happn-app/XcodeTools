@@ -24,7 +24,7 @@ public class PBXProject : PBXObject {
 		projectDirPath = try rawObject.getForParse("projectDirPath", xcID)
 		projectRoot = try rawObject.getIfExistsForParse("projectRoot", xcID)
 		if !(projectRoot?.isEmpty ?? true) {
-			XcodeProjConfig.logger?.warning("Suspicious non empty value for projectRoot: \(projectRoot ?? "<nil>"). This probably changes nothing, but I can’t guarantee it.")
+			Conf.logger?.warning("Suspicious non empty value for projectRoot: \(projectRoot ?? "<nil>"). This probably changes nothing, but I can’t guarantee it.")
 		}
 		
 		knownRegions = try rawObject.getForParse("knownRegions", xcID)
