@@ -11,9 +11,11 @@ public enum SourceBuilderConfig {
 	/**
 	 The `FileManager` that will be used in ``SourceBuilder``.
 	 
-	 - Important: This property is not thread-safe.
-	 */
+	 - Important: This property is not thread-safe. */
 	public static var fm: FileManager = .default
+	
+	@TaskLocal
+	public static var urlSession: URLSession = .shared
 	
 	/**
 	 Everything ``SourceBuilder`` logs will go through this logger.
