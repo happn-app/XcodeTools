@@ -45,6 +45,12 @@ All elements in the model inherit from ``PBXObject``. Some elements in the model
 are abstract and only their subclasses can be instantiated. Here is the list of
 all the abstract classes in the PBXProj model.
 
+@Comment {
+	Note: The objects created in the CoreData model with code autogeneration set to
+	class (as opposed to category or none) might require a clean rebuild before
+	being seen by DocC.
+}
+
 - ``PBXObject``
 - ``PBXBuildPhase``
 - ``PBXFileElement``
@@ -123,8 +129,3 @@ These classes add support for SPM in an Xcode project.
 - ``PBXBuildFile``
 - ``PBXBuildRule``
 - ``PBXTargetDependency``
-
-<!--
-Note: The objects created in the CoreData model with code autogeneration set to
-class (as opposed to category or none) might require a clean rebuild before
-being seen by DocC. --> 
