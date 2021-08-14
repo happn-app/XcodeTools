@@ -30,25 +30,25 @@ public struct PBXProj {
 	public let rootObject: PBXProject
 	
 	public init(url: URL, context: NSManagedObjectContext) throws {
-		let data = try Result{ try Data(contentsOf: url) }.mapErrorAndGet{ XcodeProjError.cannotReadFile(url, $0) }
+		let data = try Result{ try Data(contentsOf: url) }.mapErrorAndGet{ Err.cannotReadFile(url, $0) }
 		
 		var format = PropertyListSerialization.PropertyListFormat.xml
 		let decodedUntyped = try Result{ try PropertyListSerialization.propertyList(from: data, options: [], format: &format) }
-			.mapErrorAndGet{ XcodeProjError.pbxProjParseError(.plistParseError($0), objectID: nil) }
+			.mapErrorAndGet{ Err.pbxProjParseError(.plistParseError($0), objectID: nil) }
 		
 		if format != .openStep {
 			Conf.logger?.warning("pbxproj file was deserialized w/ plist format \(format), which is unexpected (expected OpenStep format). Serialization will probably be different than source.")
 		}
 		
 		guard let decoded = decodedUntyped as? [String: Any] else {
-			throw XcodeProjError.pbxProjParseError(.deserializedPlistHasInvalidType, objectID: nil)
+			throw Err.pbxProjParseError(.deserializedPlistHasInvalidType, objectID: nil)
 		}
 		
 		rawDecoded = decoded
 		
 		archiveVersion = try rawDecoded.getForParse("archiveVersion", nil)
 		guard archiveVersion == "1" else {
-			throw XcodeProjError.unsupportedPBXProj(.unknownArchiveVersion(archiveVersion))
+			throw Err.unsupportedPBXProj(.unknownArchiveVersion(archiveVersion))
 		}
 		
 		objectVersion = try rawDecoded.getForParse("objectVersion", nil)
@@ -59,7 +59,7 @@ public struct PBXProj {
 		
 		let classes: [String: Any]? = try rawDecoded.getIfExistsForParse("classes", nil)
 		guard classes?.isEmpty ?? true else {
-			throw XcodeProjError.unsupportedPBXProj(.classesPropertyIsNotEmpty(classes!))
+			throw Err.unsupportedPBXProj(.classesPropertyIsNotEmpty(classes!))
 		}
 		hasClassesProperty = (classes != nil)
 		
@@ -71,7 +71,7 @@ public struct PBXProj {
 		let unknownProperties = Set(arrayLiteral: "archiveVersion", "objectVersion", "classes", "rootObject", "objects")
 			.subtracting(rawDecoded.keys)
 		guard unknownProperties.isEmpty else {
-			throw XcodeProjError.unsupportedPBXProj(.unknownRootProperties(unknownProperties))
+			throw Err.unsupportedPBXProj(.unknownRootProperties(unknownProperties))
 		}
 		
 		rootObject = try context.performAndWait{
@@ -86,7 +86,7 @@ public struct PBXProj {
 				Conf.logger?.debug("Error when saving PBXProj model: \(error)")
 				Conf.logger?.debug("   -> Validation errors: \(((error as NSError).userInfo["NSDetailedErrors"] as? [NSError])?.first?.userInfo["NSValidationErrorObject"] ?? "<none>")")
 				context.rollback()
-				throw XcodeProjError.invalidPBXProjObjectGraph(.coreDataSaveError(error), objectID: nil)
+				throw Err.invalidPBXProjObjectGraph(.coreDataSaveError(error), objectID: nil)
 			}
 			return ret
 		}

@@ -69,7 +69,7 @@ public class PBXObject : NSManagedObject {
 	static func unsafeInstantiate(id: String, on context: NSManagedObjectContext, rawObjects: [String: [String: Any]], decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
-				throw XcodeProjError.pbxProjParseError(.invalidObjectTypeInDecodedObjects(expectedType: self), objectID: id)
+				throw Err.pbxProjParseError(.invalidObjectTypeInDecodedObjects(expectedType: self), objectID: id)
 			}
 			return result
 		}
@@ -78,16 +78,16 @@ public class PBXObject : NSManagedObject {
 		let isa: String = try rawObject.getForParse("isa", id)
 		
 		guard let model = context.persistentStoreCoordinator?.managedObjectModel else {
-			throw XcodeProjError.internalError(.managedContextHasNoModel)
+			throw Err.internalError(.managedContextHasNoModel)
 		}
 		guard let entity = model.entitiesByName[isa] ?? (Conf.allowPBXObjectAllocation ? model.entitiesByName["PBXObject"] : nil) else {
-			throw XcodeProjError.pbxProjParseError(.isaNotFoundInModel(isa), objectID: id)
+			throw Err.pbxProjParseError(.isaNotFoundInModel(isa), objectID: id)
 		}
 		guard !entity.isAbstract || (Conf.allowPBXObjectAllocation && entity.name == "PBXObject") else {
-			throw XcodeProjError.pbxProjParseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
+			throw Err.pbxProjParseError(.tryingToInstantiateAbstractISA(isa, entity: entity), objectID: id)
 		}
 		guard entity.topmostSuperentity().name == "PBXObject" else {
-			throw XcodeProjError.internalError(.tryingToInstantiateNonPBXObjectEntity(isa: isa, entity: entity))
+			throw Err.internalError(.tryingToInstantiateNonPBXObjectEntity(isa: isa, entity: entity))
 		}
 		
 		/* First let’s see if the object is not already in the graph */
@@ -96,7 +96,7 @@ public class PBXObject : NSManagedObject {
 		fetchRequest.predicate = NSPredicate(format: "%K == %@", #keyPath(PBXObject.xcID), id)
 		let results = try context.fetch(fetchRequest)
 		guard results.count <= 1 else {
-			throw XcodeProjError.internalError(.gotMoreThanOneObjectForID(id))
+			throw Err.internalError(.gotMoreThanOneObjectForID(id))
 		}
 		
 		let created: Bool
@@ -106,7 +106,7 @@ public class PBXObject : NSManagedObject {
 		
 		guard let result = resultObject as? Self else {
 			if created {context.delete(resultObject)}
-			throw XcodeProjError.pbxProjParseError(.invalidObjectTypeFetchedOrCreated(expectedType: self), objectID: id)
+			throw Err.pbxProjParseError(.invalidObjectTypeFetchedOrCreated(expectedType: self), objectID: id)
 		}
 		
 		do {
@@ -124,7 +124,7 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	static func getNonOptionalValue<T>(_ cdValue: T?, _ propertyName: String, _ objectID: String?) throws -> T {
-		return try cdValue.get(orThrow: XcodeProjError.invalidPBXProjObjectGraph(.missingProperty(propertyName: propertyName), objectID: objectID))
+		return try cdValue.get(orThrow: Err.invalidPBXProjObjectGraph(.missingProperty(propertyName: propertyName), objectID: objectID))
 	}
 	
 	static func getOptionalToMany<T>(_ cdValue: NSOrderedSet?, _ isSetFlag: Bool) -> [T]? {
@@ -220,7 +220,7 @@ public class PBXObject : NSManagedObject {
 				ret += "}"
 				
 			default:
-				throw XcodeProjError.internalError(.unknownObjectTypeDuringSerialization(object: v))
+				throw Err.internalError(.unknownObjectTypeDuringSerialization(object: v))
 		}
 		return ret
 	}

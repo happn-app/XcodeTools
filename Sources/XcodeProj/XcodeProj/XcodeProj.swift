@@ -30,7 +30,7 @@ public struct XcodeProj {
 				return true
 			}
 			guard let e = xcodeprojs.onlyElement else {
-				throw XcodeProjError.cannotFindSingleXcodeproj
+				throw Err.cannotFindSingleXcodeproj
 			}
 			xcodeprojPath = e
 		}
@@ -45,13 +45,13 @@ public struct XcodeProj {
 		/* *** Load CoreData model *** */
 		
 		guard let model = ModelSingleton.model else {
-			throw XcodeProjError.internalError(.modelNotFound)
+			throw Err.internalError(.modelNotFound)
 		}
 		managedObjectModel = model
 		
 		let pc = NSPersistentStoreCoordinator(managedObjectModel: managedObjectModel)
 		_ = try Result{ try pc.addPersistentStore(ofType: NSInMemoryStoreType, configurationName: nil, at: nil, options: nil) }
-			.mapErrorAndGet{ error in XcodeProjError.internalError(.cannotLoadModel(error)) }
+			.mapErrorAndGet{ error in Err.internalError(.cannotLoadModel(error)) }
 		
 		persistentCoordinator = pc
 		
@@ -85,7 +85,7 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard combinedBuildSettings.targetName == nil else {
-					throw XcodeProjError.internalError(.combinedSettingsForProjectWithTargetName)
+					throw Err.internalError(.combinedSettingsForProjectWithTargetName)
 				}
 				return try handler(combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}
@@ -100,10 +100,10 @@ public struct XcodeProj {
 			
 			return try allCombinedBuildSettings.sorted(by: CombinedBuildSettings.convenienceSort).map{ combinedBuildSettings -> T in
 				guard let targetName = combinedBuildSettings.targetName else {
-					throw XcodeProjError.internalError(.combinedSettingsForTargetWithoutTargetName)
+					throw Err.internalError(.combinedSettingsForTargetWithoutTargetName)
 				}
 				guard let target = combinedBuildSettings.target else {
-					throw XcodeProjError.internalError(.combinedSettingsForTargetWithoutTarget)
+					throw Err.internalError(.combinedSettingsForTargetWithoutTarget)
 				}
 				return try handler(target, targetName, combinedBuildSettings.configuration, combinedBuildSettings.configurationName, combinedBuildSettings)
 			}

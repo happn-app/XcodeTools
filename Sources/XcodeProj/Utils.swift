@@ -10,22 +10,22 @@ extension Dictionary where Key == String {
 	func getForParse<T>(_ key: Key, _ objectID: String?) throws -> T {
 		return try get(
 			key,
-			notFoundError: XcodeProjError.pbxProjParseError(.missingProperty(propertyName: key), objectID: objectID),
-			wrongTypeError: XcodeProjError.pbxProjParseError(.unexpectedPropertyValueType(propertyName: key, value: self[key]!), objectID: objectID)
+			notFoundError: Err.pbxProjParseError(.missingProperty(propertyName: key), objectID: objectID),
+			wrongTypeError: Err.pbxProjParseError(.unexpectedPropertyValueType(propertyName: key, value: self[key]!), objectID: objectID)
 		)
 	}
 	
 	func getIfExistsForParse<T>(_ key: Key, _ objectID: String?) throws -> T? {
 		return try getIfExists(
 			key,
-			wrongTypeError: XcodeProjError.pbxProjParseError(.unexpectedPropertyValueType(propertyName: key, value: self[key]!), objectID: objectID)
+			wrongTypeError: Err.pbxProjParseError(.unexpectedPropertyValueType(propertyName: key, value: self[key]!), objectID: objectID)
 		)
 	}
 	
 	func getURLForParse(_ key: Key, _ objectID: String?) throws -> URL {
 		let v: String = try getForParse(key, objectID)
 		guard let url = URL(string: v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidURLString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidURLString(propertyName: key, string: v), objectID: objectID)
 		}
 		return url
 	}
@@ -33,7 +33,7 @@ extension Dictionary where Key == String {
 	func getIntForParse(_ key: Key, _ objectID: String?) throws -> Int {
 		let v: String = try getForParse(key, objectID)
 		guard let i = Int(v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
 		}
 		return i
 	}
@@ -41,7 +41,7 @@ extension Dictionary where Key == String {
 	func getInt16ForParse(_ key: Key, _ objectID: String?) throws -> Int16 {
 		let v: String = try getForParse(key, objectID)
 		guard let i = Int16(v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
 		}
 		return i
 	}
@@ -57,7 +57,7 @@ extension Dictionary where Key == String {
 	func getIntIfExistsForParse(_ key: Key, _ objectID: String?) throws -> Int? {
 		guard let v: String = try getIfExistsForParse(key, objectID) else {return nil}
 		guard let i = Int(v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
 		}
 		return i
 	}
@@ -78,7 +78,7 @@ extension Dictionary where Key == String {
 	func getInt32AsNumberIfExistsForParse(_ key: Key, _ objectID: String?) throws -> NSNumber? {
 		guard let v: String = try getIfExistsForParse(key, objectID) else {return nil}
 		guard let i = Int32(v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
 		}
 		return NSNumber(value: i)
 	}
@@ -86,7 +86,7 @@ extension Dictionary where Key == String {
 	func getInt16AsNumberIfExistsForParse(_ key: Key, _ objectID: String?) throws -> NSNumber? {
 		guard let v: String = try getIfExistsForParse(key, objectID) else {return nil}
 		guard let i = Int16(v) else {
-			throw XcodeProjError.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
+			throw Err.pbxProjParseError(.invalidIntString(propertyName: key, string: v), objectID: objectID)
 		}
 		return NSNumber(value: i)
 	}

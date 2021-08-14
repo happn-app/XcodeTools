@@ -128,3 +128,5 @@ public enum XcodeProjError : Error {
 	}
 	
 }
+
+typealias Err = XcodeProjError

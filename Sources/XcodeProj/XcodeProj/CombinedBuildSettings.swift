@@ -103,14 +103,14 @@ public struct CombinedBuildSettings {
 			let targetAndProjectSettings: (PBXTarget, [BuildSettingsRef])? = try targetAndProjectSettingsPerConfigName.flatMap{ targetAndProjectSettingsPerConfigName in
 				let (target, projectSettingsPerConfigName) = targetAndProjectSettingsPerConfigName
 				guard let projectSettings = projectSettingsPerConfigName[name] else {
-					throw XcodeProjError.invalidPBXProjObjectGraph(.targetHasConfigurationNameProjectDoesNot(configName: name), objectID: target.xcID)
+					throw Err.invalidPBXProjObjectGraph(.targetHasConfigurationNameProjectDoesNot(configName: name), objectID: target.xcID)
 				}
 				return (target, projectSettings)
 			}
 			return (name, try CombinedBuildSettings(configuration: configuration, targetAndProjectSettings: targetAndProjectSettings, xcodeprojURL: xcodeprojURL, defaultBuildSettings: defaultBuildSettings))
 		}
 		return try Dictionary(settings, uniquingKeysWith: { (current, new) in
-			throw XcodeProjError.invalidPBXProjObjectGraph(.atLeastTwoConfigurationsHaveSameName, objectID: nil)
+			throw Err.invalidPBXProjObjectGraph(.atLeastTwoConfigurationsHaveSameName, objectID: nil)
 		})
 	}
 	
@@ -133,7 +133,7 @@ public struct CombinedBuildSettings {
 		
 		if let baseConfigurationReference = config.baseConfigurationReference {
 			guard baseConfigurationReference.xcLanguageSpecificationIdentifier == "text.xcconfig" || baseConfigurationReference.lastKnownFileType == "text.xcconfig" else {
-				throw XcodeProjError.invalidPBXProjObjectGraph(.baseConfigurationReferenceIsNotTextXCConfig(configurationID: configuration.xcID), objectID: baseConfigurationReference.xcID)
+				throw Err.invalidPBXProjObjectGraph(.baseConfigurationReferenceIsNotTextXCConfig(configurationID: configuration.xcID), objectID: baseConfigurationReference.xcID)
 			}
 			let url = try baseConfigurationReference.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: ["SOURCE_ROOT": xcodeprojURL.deletingLastPathComponent().absoluteURL.path])
 			let config = try BuildSettingsRef(BuildSettings(xcconfigURL: url, sourceConfig: config))
@@ -226,11 +226,11 @@ public struct CombinedBuildSettings {
 		guard let plistURL = infoPlistURL(xcodeprojURL: xcodeprojURL) else {
 			return nil
 		}
-		let plistData = try Result{ try Data(contentsOf: plistURL) }.mapErrorAndGet{ XcodeProjError.cannotReadFile(plistURL, $0) }
+		let plistData = try Result{ try Data(contentsOf: plistURL) }.mapErrorAndGet{ Err.cannotReadFile(plistURL, $0) }
 		let deserializedPlist = try Result{ try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil) }
-			.mapErrorAndGet{ XcodeProjError.infoPlistParseError(.plistParseError($0)) }
+			.mapErrorAndGet{ Err.infoPlistParseError(.plistParseError($0)) }
 		guard let deserializedPlistObject = deserializedPlist as? [String: Any] else {
-			throw XcodeProjError.infoPlistParseError(.deserializedPlistHasInvalidType)
+			throw Err.infoPlistParseError(.deserializedPlistHasInvalidType)
 		}
 		return deserializedPlistObject
 	}

@@ -173,7 +173,7 @@ public class PBXFileElement : PBXObject {
 		switch try getResolvedPathInfo() {
 			case (let rootVar?, let path):
 				guard let varValue = variables[rootVar] else {
-					throw XcodeProjError.missingVariable(rootVar)
+					throw Err.missingVariable(rootVar)
 				}
 				if varValue.isEmpty  {return relativeToXcodeproj(path)}
 				else if path.isEmpty {return relativeToXcodeproj(varValue)}

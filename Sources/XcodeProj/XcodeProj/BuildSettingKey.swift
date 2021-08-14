@@ -59,7 +59,7 @@ public struct BuildSettingKey : Hashable {
 		parameters = BuildSettingKey.parseSettingParams(scanner: scanner, allowCommaSeparator: allowCommaSeparatorForParameters)
 		garbage = scanner.scanUpToCharacters(from: CharacterSet()) ?? ""
 		guard garbage.isEmpty else {
-			throw XcodeProjError.buildSettingParseError(.unfinishedKey(full: serializedKey, garbage: garbage))
+			throw Err.buildSettingParseError(.unfinishedKey(full: serializedKey, garbage: garbage))
 		}
 	}
 	

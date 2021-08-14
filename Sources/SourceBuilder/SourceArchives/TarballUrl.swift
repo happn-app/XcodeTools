@@ -24,9 +24,8 @@ public struct TarballUrl : SourceArchive {
 		self.url = url
 	}
 	
-	struct E : Error {}
 	public func extractAndHash<H>(cacheFolder: FilePath?, destinationFolder: FilePath, hasher: H) async throws -> (Source, H.Digest) where H : HashFunction {
-		throw E()
+		throw Err.notImplemented
 	}
 	
 //	func ensureDownloaded(at localPath: FilePath) async throws {

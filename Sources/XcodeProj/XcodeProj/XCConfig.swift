@@ -44,7 +44,7 @@ public struct XCConfig {
 				 * in Xcode build settings UI.
 				 * In the UI, the spaces after the sharp seem to break the xcconfig
 				 * file fully; in code, the directive seems to work ok w/ spaces! */
-				guard postSharp.isEmpty || allowSpacesAfterSharp else {throw XcodeProjError.xcconfigParseError(.gotSpaceAfterSharpInDirective)}
+				guard postSharp.isEmpty || allowSpacesAfterSharp else {throw Err.xcconfigParseError(.gotSpaceAfterSharpInDirective)}
 				
 				let directive = scanner.scanUpToCharacters(from: Line.xcconfigWhitespace.union(CharacterSet(charactersIn: "?"))) ?? ""
 				let isOptional = (scanner.scanString("?") != nil)
@@ -54,24 +54,24 @@ public struct XCConfig {
 						/* An empty post directive only works in the GUI of Xcode, not
 						 * when building (Xcode 12.0.1 (12A7300)). */
 						guard allowNoSpacesAfterInclude || !postDirective.isEmpty else {
-							throw XcodeProjError.xcconfigParseError(.noSpaceAfterIncludeDirective)
+							throw Err.xcconfigParseError(.noSpaceAfterIncludeDirective)
 						}
 						guard scanner.scanString("\"") != nil else {
-							throw XcodeProjError.xcconfigParseError(.expectedDoubleQuoteAfterIncludeDirective)
+							throw Err.xcconfigParseError(.expectedDoubleQuoteAfterIncludeDirective)
 						}
 						/* An empty path is valid… */
 						let path = scanner.scanUpToString("\"") ?? ""
 						guard scanner.scanString("\"") != nil else {
-							throw XcodeProjError.xcconfigParseError(.unterminatedIncludeFileName)
+							throw Err.xcconfigParseError(.unterminatedIncludeFileName)
 						}
 						guard scanner.isAtEnd else {
-							throw XcodeProjError.xcconfigParseError(.unexpectedCharAfterInclude)
+							throw Err.xcconfigParseError(.unexpectedCharAfterInclude)
 						}
 						
 						self = .include(path: path, isOptional: isOptional, prefix: linePrefix, postSharp: postSharp, postDirective: postDirective, suffix: lineSuffix)
 						
 					default:
-						throw XcodeProjError.xcconfigParseError(.unknownDirective(directive))
+						throw Err.xcconfigParseError(.unknownDirective(directive))
 				}
 			} else {
 				/* We should have a normal line (setting = value) */
@@ -81,7 +81,7 @@ public struct XCConfig {
 					 * character cannot return nil, hence the force-unwrap. */
 					let firstChar = scanner.scanCharacter()!
 					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettingKey.charactersValidForFirstVariableCharacter.contains(scalar) else {
-						throw XcodeProjError.xcconfigParseError(.invalidFirstCharInVar(firstChar))
+						throw Err.xcconfigParseError(.invalidFirstCharInVar(firstChar))
 					}
 					let restOfVariableName = scanner.scanCharacters(from: BuildSettingKey.charactersValidInVariableName) ?? ""
 					variableName = String(firstChar) + restOfVariableName
@@ -91,7 +91,7 @@ public struct XCConfig {
 				
 				let beforeEqualSign = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
 				guard scanner.scanString("=") != nil else {
-					throw XcodeProjError.xcconfigParseError(.unexpectedCharAfterVarName)
+					throw Err.xcconfigParseError(.unexpectedCharAfterVarName)
 				}
 				
 				let value: String
@@ -157,7 +157,7 @@ public struct XCConfig {
 		
 		func lineString() throws -> String {
 			guard isValid else {
-				throw XcodeProjError.xcconfigParseError(.invalidLine(self))
+				throw Err.xcconfigParseError(.invalidLine(self))
 			}
 			
 			switch self {
@@ -205,7 +205,7 @@ public struct XCConfig {
 		var isDir = ObjCBool(false)
 		if !FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir) {
 			if failIfFileDoesNotExist {
-				throw XcodeProjError.xcconfigParseError(.cannotFindFile(url))
+				throw Err.xcconfigParseError(.cannotFindFile(url))
 			} else {
 				lines = [:]
 				return

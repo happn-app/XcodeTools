@@ -34,22 +34,22 @@ public struct BuildSettings {
 		p.launch()
 		p.waitUntilExit()
 		guard p.terminationReason == .exit, p.terminationStatus == 0 else {
-			throw XcodeProjError.internalError(.cannotGetDeveloperDir)
+			throw Err.internalError(.cannotGetDeveloperDir)
 		}
 		
 		let outputData: Data?
 		if #available(OSX 10.15.4, *) {
 			outputData = try Result{ try pipe.fileHandleForReading.readToEnd() }
-				.mapErrorAndGet{ _ in XcodeProjError.internalError(.cannotGetDeveloperDir) }
+				.mapErrorAndGet{ _ in Err.internalError(.cannotGetDeveloperDir) }
 		} else {
 			/* Note: This can throw an (uncatchable objc) exception! */
 			outputData = pipe.fileHandleForReading.readDataToEndOfFile()
 		}
 		let outputString = try outputData.flatMap{ String(data: $0, encoding: .utf8) }
-			.get(orThrow: XcodeProjError.internalError(.cannotGetDeveloperDir))
+			.get(orThrow: Err.internalError(.cannotGetDeveloperDir))
 			.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard !outputString.isEmpty else {
-			throw XcodeProjError.internalError(.cannotGetDeveloperDir)
+			throw Err.internalError(.cannotGetDeveloperDir)
 		}
 		return outputString
 	}
