@@ -1,20 +1,36 @@
 import CryptoKit
 import Foundation
 
-import XcodeTools
+import SystemPackage
+import XibLoc
 
 
 
-//struct TarballUrlRetriever : SourceRetriever {
-//
-//	typealias RemoteSource = TarballUrl
-//
-//	func extractAndHash<H>(remoteSource: TarballUrl, cacheFolder: FilePath, destinationFolder: FilePath, hasher: H) async throws -> (Source, H.Digest) where H : HashFunction {
-//	}
-//
-//	func ensureDownloaded() async throws {
-//		if Config.fm.fileExists(atPath: localPath.string), try checkShasum(path: localPath) {
-//			/* File exists and already has correct checksum (or checksum is not checked) */
+public struct TarballUrl : SourceArchive {
+	
+	public var url: URL
+	
+	public init(url: URL) {
+		self.url = url
+	}
+	
+	public init?(template: String, version: String) {
+		/* The force-unwrap is valid: all the tokens are valid */
+		let xibLocInfo = Str2StrXibLocInfo(simpleSourceTypeReplacements: [OneWordTokens(leftToken: "{{", rightToken: "}}"): { _ in version }], identityReplacement: { $0 })!
+		let tarballStringURL = template.applying(xibLocInfo: xibLocInfo)
+		guard let url = URL(string: tarballStringURL) else {
+			return nil
+		}
+		self.url = url
+	}
+	
+	struct E : Error {}
+	public func extractAndHash<H>(cacheFolder: FilePath?, destinationFolder: FilePath, hasher: H) async throws -> (Source, H.Digest) where H : HashFunction {
+		throw E()
+	}
+	
+//	func ensureDownloaded(at localPath: FilePath) async throws {
+//		if Config.fm.fileExists(atPath: localPath.string) {
 //			Config.logger.info("Reusing downloaded tarball at path \(localPath)")
 //		} else {
 //			Config.logger.info("Downloading tarball from \(url)")
@@ -29,7 +45,7 @@ import XcodeTools
 //			 * tmpFilePath variable would have to be set in the guard above. */
 //			assert(tmpFileURL.isFileURL)
 //			let tmpFilePath = FilePath(tmpFileURL.path)
-//			guard try checkShasum(path: tmpFilePath) else {
+//			guard try await checkShasum(path: tmpFilePath) else {
 //				struct InvalidChecksumForDownloadedTarball : Error {}
 //				throw InvalidChecksumForDownloadedTarball()
 //			}
@@ -38,7 +54,7 @@ import XcodeTools
 //			Config.logger.info("Tarball downloaded")
 //		}
 //	}
-//
+	
 //	func extract(in folder: FilePath) async throws -> FilePath {
 //		try Config.fm.ensureDirectory(path: folder)
 //		try Process.spawnAndStreamEnsuringSuccess("/usr/bin/tar", args: ["xf", localPath.string, "-C", folder.string], outputHandler: Process.logProcessOutputFactory())
@@ -51,7 +67,7 @@ import XcodeTools
 //		}
 //		return extractedTarballDir
 //	}
-//
+	
 //	private func checkShasum(path: FilePath) async throws -> Bool {
 //		guard let expectedShasum = expectedShasum else {
 //			return true
@@ -60,5 +76,5 @@ import XcodeTools
 //		let fileContents = try Data(contentsOf: path.url)
 //		return SHA256.hash(data: fileContents).reduce("", { $0 + String(format: "%02x", $1) }) == expectedShasum.lowercased()
 //	}
-//
-//}
+	
+}

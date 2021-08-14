@@ -73,7 +73,12 @@ let package = Package(
 			.target(name: "Utils"),
 			.target(name: "XcodeTools")
 		]),
-		.testTarget(name: "SourceBuilderTests", dependencies: [.target(name: "SourceBuilder")]),
+		.testTarget(name: "SourceBuilderTests", dependencies: [
+			.target(name: "SourceBuilder"),
+			
+			.product(name: "Logging",   package: "swift-log"),
+			.product(name: "CLTLogger", package: "clt-logger")
+		]),
 		
 		.target(name: "XcodeJsonOutput", dependencies: [
 			.product(name: "CLTLogger", package: "clt-logger"), /* For the SGRs */
