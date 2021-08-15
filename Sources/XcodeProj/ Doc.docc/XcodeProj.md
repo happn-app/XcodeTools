@@ -83,6 +83,10 @@ kind of targets a pbxproj can contain.
 - ``PBXLegacyTarget``
 - ``PBXNativeTarget``
 
+### PBXProj Model – Target Dependency
+
+- ``PBXTargetDependency``
+
 ### PBXProj Model – Build Phases
 
 These classes all inherit from ``PBXBuildPhase`` and represent the different 
@@ -95,6 +99,11 @@ kind of build phase Xcode knows.
 - ``PBXResourcesBuildPhase``
 - ``PBXShellScriptBuildPhase``
 - ``PBXSourcesBuildPhase``
+
+### PBXProj Model – Build
+
+- ``PBXBuildFile``
+- ``PBXBuildRule``
 
 ### PBXProj Model – Build Configurations
 
@@ -119,13 +128,12 @@ These classes add support for SPM in an Xcode project.
 - ``XCRemoteSwiftPackageReference``
 - ``XCSwiftPackageProductDependency``
 
-### PBXProj Model – Proxies and References
+### PBXProj Model – Container
 
-- ``ProjectReference``
 - ``PBXContainerItemProxy``
 
 ### PBXProj Model – Other
 
-- ``PBXBuildFile``
-- ``PBXBuildRule``
-- ``PBXTargetDependency``
+The only object in the Core Data model not inheriting from ``PBXObject``.
+
+- ``ProjectReference``
