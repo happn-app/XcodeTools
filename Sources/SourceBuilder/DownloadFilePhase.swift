@@ -85,7 +85,7 @@ public struct DownloadFilePhase : BuildPhase {
 		}
 		try Conf.fm.ensureFileDeleted(path: downloadDestination)
 		try Conf.fm.moveItem(at: tmpFileURL, to: downloadDestination.url)
-		Conf.logger?.info("Tarball downloaded")
+		Conf.logger?.info("File downloaded")
 		return [downloadDestination]
 	}
 	
