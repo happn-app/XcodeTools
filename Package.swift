@@ -56,7 +56,9 @@ let package = Package(
 		.target(name: "CMacroExports"),
 		eXtenderZ?.target,
 		
-		.target(name: "Utils"),
+		.target(name: "Utils", dependencies: [
+			.product(name: "SystemPackage", package: "swift-system")
+		]),
 		
 		.target(name: "XcodeProj", dependencies: [
 			.product(name: "Logging", package: "swift-log"),
@@ -68,6 +70,7 @@ let package = Package(
 		
 		.target(name: "SourceBuilder", dependencies: [
 			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
 			.product(name: "XibLoc",        package: "XibLoc"),
 			.target(name: "Utils"),
@@ -76,8 +79,9 @@ let package = Package(
 		.testTarget(name: "SourceBuilderTests", dependencies: [
 			.target(name: "SourceBuilder"),
 			
-			.product(name: "Logging",   package: "swift-log"),
-			.product(name: "CLTLogger", package: "clt-logger")
+			.product(name: "CLTLogger",     package: "clt-logger"),
+			.product(name: "Logging",       package: "swift-log"),
+			.product(name: "SystemPackage", package: "swift-system")
 		]),
 		
 		.target(name: "XcodeJsonOutput", dependencies: [
