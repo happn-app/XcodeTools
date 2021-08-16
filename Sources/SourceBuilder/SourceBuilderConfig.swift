@@ -8,6 +8,18 @@ import Logging
  module. */
 public enum SourceBuilderConfig {
 	
+	public static func registerBuildPhase(name: String, type: BuildPhase.Type) -> Bool {
+		guard registeredBuildPhases[name] == nil else {
+			logger?.error("Build phase “\(name)” is already registered. Ignoring new registration.")
+			return false
+		}
+		registeredBuildPhases[name] = type
+		return true
+	}
+	private static var registeredBuildPhases: [String: BuildPhase.Type] = [
+		"DownloadFile": DownloadFilePhase.self
+	]
+	
 	/**
 	 The `FileManager` that will be used in ``SourceBuilder``.
 	 
