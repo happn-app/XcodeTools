@@ -11,6 +11,9 @@ enum SourceBuilderError : Error {
 	case invalidURLResponse(URLResponse)
 	case invalidChecksumForDownloadedFile(URL, String)
 	
+	case filepathHasNoExtensions(FilePath)
+	case filepathHasNoStem(FilePath)
+
 	/* Also open error to handle… */
 //	case urlSessionError(Error)
 	case notImplemented

@@ -81,7 +81,8 @@ let package = Package(
 			
 			.product(name: "CLTLogger",     package: "clt-logger"),
 			.product(name: "Logging",       package: "swift-log"),
-			.product(name: "SystemPackage", package: "swift-system")
+			.product(name: "SystemPackage", package: "swift-system"),
+			.target(name: "Utils")
 		]),
 		
 		.target(name: "XcodeJsonOutput", dependencies: [

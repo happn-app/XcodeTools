@@ -22,7 +22,7 @@ public struct DownloadFilePhase : BuildPhase {
 		throw Err.notImplemented
 	}
 	
-	public init(urlTemplate template: String, variables: [String: String], destination: FilePath, expectedHash: (value: String, hasher: AnyHasher)?) throws {
+	public init(urlTemplate template: String, variables: [String: String], destinationFolder: FilePath, expectedHash: (value: String, hasher: AnyHasher)?) throws {
 		var unknownVars = Set<String>()
 		let variableReplacementBlock: (String) -> String = { str in
 			let varName = str.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -42,7 +42,7 @@ public struct DownloadFilePhase : BuildPhase {
 			throw Err.invalidURL(stringURL)
 		}
 		
-		self.init(downloadedURL: url, destination: destination, expectedHash: expectedHash)
+		self.init(downloadedURL: url, destination: destinationFolder.appending(url.lastPathComponent), expectedHash: expectedHash)
 	}
 		
 	public init(downloadedURL: URL, destination: FilePath, expectedHash: (value: String, hasher: AnyHasher)?) {

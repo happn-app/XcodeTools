@@ -17,7 +17,8 @@ public enum SourceBuilderConfig {
 		return true
 	}
 	private static var registeredBuildPhases: [String: BuildPhase.Type] = [
-		"DownloadFile": DownloadFilePhase.self
+		"download-file": DownloadFilePhase.self,
+		"untar": UntarPhase.self
 	]
 	
 	/**
