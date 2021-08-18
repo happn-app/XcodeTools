@@ -331,6 +331,31 @@ extension Process {
 		return (p.terminationStatus, p.terminationReason)
 	}
 	
+	public static func spawnAndGetOutput(
+		_ executable: String, args: [String] = [],
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
+		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses
+	) throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: String]) {
+		var outputs = [FileDescriptor: String]()
+		let (exitCode, exitReason) = try spawnAndStream(
+			executable, args: args,
+			workingDirectory: workingDirectory,
+			environment: environment,
+			stdin: stdin,
+			stdoutRedirect: .capture,
+			stderrRedirect: .capture,
+			fileDescriptorsToSend: fileDescriptorsToSend,
+			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
+			signalsToForward: signalsToForward,
+			outputHandler: { line, fd in outputs[fd, default: ""] += line }
+		)
+		
+		return (exitCode, exitReason, outputs)
+	}
+	
 	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
 		let curFlags = fcntl(fd.rawValue, F_GETFL)
 		guard curFlags != -1 else {

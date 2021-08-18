@@ -25,7 +25,30 @@ final class ProcessTests : XCTestCase {
 		setenv(XcodeToolsConstants.envVarNameExecPath, productsDirectory.path, 1)
 	}
 	
-	func testProcessLaunchAndStreamStdin() throws {
+	func testProcessSpawnWithWDChange() throws {
+		let mypwdURL = URL(fileURLWithPath: #filePath)
+			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("check-pwd+env.swift")
+		
+		let workingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
+		defer {_ = try? FileManager.default.removeItem(at: workingDirectory)}
+		
+		guard let realpathDir = realpath(workingDirectory.path, nil) else {
+			struct CannotGetRealPath : Error {var sourcePath: String}
+			throw CannotGetRealPath(sourcePath: workingDirectory.path)
+		}
+		let expectedWorkingDirectory = String(cString: realpathDir)
+		
+		let expectedEnvValue = UUID().uuidString
+		
+		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(mypwdURL.path, workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue])
+		XCTAssertEqual(exitCode, 0)
+		XCTAssertEqual(exitReason, .exit)
+		XCTAssertEqual(outputs, [.standardOutput: expectedWorkingDirectory + "\n" + expectedEnvValue + "\n"])
+	}
+	
+	func testProcessSpawnAndStreamStdin() throws {
 		struct ReadError : Error {}
 		let fileURL = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -55,7 +78,7 @@ final class ProcessTests : XCTestCase {
 		XCTAssertEqual(linesByFd[FileDescriptor.standardOutput, default: []].joined(), fileContents)
 	}
 	
-	func testProcessLaunchAndStreamStdoutAndStderr() throws {
+	func testProcessSpawnAndStreamStdoutAndStderr() throws {
 		struct ReadError : Error {}
 		let scriptURL = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -174,7 +197,7 @@ final class ProcessTests : XCTestCase {
 	 *      detect this problem. See `testLaunchProcessWithResourceStarving` for
 	 *      more info. For the rest of the cases, I’m not sure how to reproduce
 	 *      them exactly. */
-	func disabledTestLaunchProcessWithResourceStarving() throws {
+	func disabledTestSpawnProcessWithResourceStarving() throws {
 		/* It has been observed that on my computer, things starts to go bad when
 		 * there are roughly 6500 fds open.
 		 * So we start by opening 6450 fds. */
@@ -195,7 +218,7 @@ final class ProcessTests : XCTestCase {
 		}
 	}
 	
-	func testLaunchProcessWithResourceStarving() throws {
+	func testSpawnProcessWithResourceStarving() throws {
 		/* Let’s starve the fds first */
 		var fds = Set<FileDescriptor>()
 		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
