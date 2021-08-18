@@ -115,8 +115,8 @@ extension Process {
 		let p = XcodeToolsProcess()
 #endif
 		
-		p.environment = environment
-		p.currentDirectoryURL = workingDirectory
+		if let environment      = environment      {p.environment         = environment}
+		if let workingDirectory = workingDirectory {p.currentDirectoryURL = workingDirectory}
 		
 		var fdToCloseInCaseOfError = Set<FileDescriptor>()
 		var mustCallTerminationHandlerInCaseOfError = false
