@@ -277,6 +277,8 @@ final class ProcessTests : XCTestCase {
 		
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
 		
 		let curCPath = getenv("PATH")
@@ -290,8 +292,14 @@ final class ProcessTests : XCTestCase {
 		
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", usePATH: true, environment: [:]))
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:]))
+		
+		FileManager.default.changeCurrentDirectoryPath(scriptsPath.string)
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
 	}
 	
 	private static var testsDataPath: FilePath {

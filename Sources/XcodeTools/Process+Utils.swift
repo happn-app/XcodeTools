@@ -362,7 +362,9 @@ extension Process {
 			let actualPATH = [forcedPreprendedPATH].compactMap{ $0 } + PATH
 			func tryPaths(from index: Int, executableComponent: FilePath.Component) throws {
 				do {
-					p.executableURL = URL(fileURLWithPath: actualPATH[index].appending([executableComponent]).string)
+					let url = URL(fileURLWithPath: actualPATH[index].appending([executableComponent]).string)
+					XcodeToolsConfig.logger?.debug("Trying path \(url.path)")
+					p.executableURL = url
 					try p.run()
 				} catch {
 					let nserror = error as NSError
