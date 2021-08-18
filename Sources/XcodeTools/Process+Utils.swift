@@ -85,6 +85,36 @@ extension Process {
 	 ownership of the file descriptors). Maybe later we’ll add an option not to
 	 close at end of the stream.
 	 
+	 - Parameter usePATH: Try and search the executable in the `PATH` environment
+	 variable when the executable path is a simple word (shell-like search). If
+	 `false` (default) the standard `Process` behaviour will apply: resolve the
+	 executable path just like any other path and execute that.
+	 If not using `PATH` and there are fds to send, the `XCT_EXEC_PATH` env var
+	 becomes mandatory. We have to know the location of the `xct` executable. If
+	 using PATH with fds to send, the xct executable is searched normally, except
+	 the `XCT_EXEC_PATH` path is tried first, if defined.
+	 The environment is never modified (neither for the executed process nor the
+	 current one), regardless of this variable or whether there are additional
+	 fds to send.
+	 The `PATH` is modified for the `xct` launcher when sending fds (and only for
+	 it) so that all paths are absolute though. The subprocess will still see the
+	 original `PATH`.
+	 _Note_: Setting `usePATH` to `false` or `customPATH` to an empty array is
+	 technically equivalent. (But setting `usePATH` to `false` is marginally
+	 faster).
+	 - Parameter customPATH: Override the PATH environment variable and use this.
+	 Empty strings are the same as “`.`”. This parameter allows having a “PATH”
+	 containing colons, which the standard `PATH` variable does not allow.
+	 _However_ this does not work when there are fds to send, in which case the
+	 paths containing colons are **removed** (for security reasons). Maybe one
+	 day we’ll enable it in this case too, but for now it’s not enabled.
+	 Another difference when there are fds to send regarding the PATH is all the
+	 paths are made absolute. This avoids any problem when the `workingDirectory`
+	 parameter is set to a non-null value.
+	 Finally the parameter is a double-optional. It can be set to `.none`, which
+	 means the default `PATH` env variable will be used, to `.some(.none)`, in
+	 which case the default `PATH` is used (`_PATH_DEFPATH`, see `exec(3)`) or a
+	 non-nil value, in which case this value is used.
 	 - Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
 	 `stdout` and `stderr`, which are handled and differently) to clone in the
 	 child process. The **value** is the file descriptor to clone (from the
@@ -99,7 +129,7 @@ extension Process {
 	 - Returns: The _started_ `Process` object that was created and a dispatch
 	 group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
-		_ executable: String, args: [String] = [],
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
@@ -186,16 +216,58 @@ extension Process {
 		/* We will modify it later to add stdin if needed */
 		var fileDescriptorsToSend = fileDescriptorsToSend
 		
+		/* Let’s compute the PATH. */
+		/** The resolved PATH */
+		let PATH: [FilePath]
+		/** `true` if the default `_PATH_DEFPATH` path is used. The variable is
+		 used when using the `xct` launcher. */
+		let isDefaultPATH: Bool
+		/** Set if we use the `xct` launcher. */
+		let forcedPreprendedPATH: FilePath?
+		if usePATH {
+			if case .some(.some(let p)) = customPATH {
+				PATH = p
+				isDefaultPATH = false
+			} else {
+				let PATHstr: String
+				if case .some(.none) = customPATH {
+					/* We use the default path: _PATH_DEFPATH */
+					PATHstr = _PATH_DEFPATH
+					isDefaultPATH = true
+				} else {
+					/* We use the PATH env var */
+					let envPATHstr = getenv("PATH").flatMap{ String(cString: $0) }
+					PATHstr = envPATHstr ?? _PATH_DEFPATH
+					isDefaultPATH = (envPATHstr == nil)
+				}
+				PATH = PATHstr.split(separator: ":", omittingEmptySubsequences: false).map{ FilePath(String($0)) }
+			}
+		} else {
+			PATH = []
+			isDefaultPATH = false
+		}
+		
+		let actualExecutablePath: FilePath
 		if fileDescriptorsToSend.isEmpty {
 			p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
-			p.executableURL = URL(fileURLWithPath: executable)
 			p.arguments = args
+			actualExecutablePath = executable
+			forcedPreprendedPATH = nil
 			fdToSendFds = nil
 		} else {
-			guard let execBaseURL = getenv(XcodeToolsConstants.envVarNameExecPath).flatMap({ URL(fileURLWithPath: String(cString: $0)) }) else {
-				XcodeToolsConfig.logger?.error("Cannot launch process and send its fd if \(XcodeToolsConstants.envVarNameExecPath) is not set.")
-				try cleanupAndThrow(XcodeToolsError.envVarXctExecPathNotSet)
+			let execBasePath = getenv(XcodeToolsConstants.envVarNameExecPath).flatMap{ FilePath(String(cString: $0)) }
+			if !usePATH {
+				guard let execBasePath = execBasePath else {
+					XcodeToolsConfig.logger?.error("Cannot launch process and send its fd if \(XcodeToolsConstants.envVarNameExecPath) is not set.")
+					try cleanupAndThrow(XcodeToolsError.envVarXctExecPathNotSet)
+				}
+				actualExecutablePath = execBasePath.appending("xct")
+				forcedPreprendedPATH = nil
+			} else {
+				actualExecutablePath = "xct"
+				forcedPreprendedPATH = execBasePath
 			}
+			
 			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
 			 * equivalent to the C version `int sv[2] = {-1, -1};`.
 			 * https://forums.swift.org/t/guarantee-in-memory-tuple-layout-or-dont/40122
@@ -216,8 +288,13 @@ extension Process {
 			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw0))
 			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw1))
 			
-			p.executableURL = execBaseURL.appendingPathComponent("xct")
-			p.arguments = ["internal-fd-get-launcher", executable] + args
+			let cwd = FilePath(FileManager.default.currentDirectoryPath)
+			if !cwd.isAbsolute {XcodeToolsConfig.logger?.error("currentDirectoryPath is not abolute! Madness may ensue.", metadata: ["path": "\(cwd)"])}
+			/* We make all paths absolute, and filter the ones containing colons. */
+			let PATHstr = (!isDefaultPATH ? PATH.map{ cwd.pushing($0).string }.filter{ $0.firstIndex(of: ":") == nil }.joined(separator: ":") : nil)
+			let PATHoption = PATHstr.flatMap{ ["--path", $0] } ?? []
+			
+			p.arguments = ["internal-fd-get-launcher", usePATH ? "--use-path" : "--no-use-path"] + PATHoption + [executable.string] + args
 			p.standardInput = FileHandle(fileDescriptor: fdRaw1)
 			fdToSendFds = FileDescriptor(rawValue: fdRaw0)
 			
@@ -282,7 +359,33 @@ extension Process {
 		XcodeToolsConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
 		mustCallTerminationHandlerInCaseOfError = true
 		try cleanupIfThrows{
-			try p.run()
+			let actualPATH = [forcedPreprendedPATH].compactMap{ $0 } + PATH
+			func tryPaths(from index: Int, executableComponent: FilePath.Component) throws {
+				do {
+					p.executableURL = URL(fileURLWithPath: actualPATH[index].appending([executableComponent]).string)
+					try p.run()
+				} catch {
+					let nserror = error as NSError
+					switch (nserror.domain, nserror.code) {
+						case (NSCocoaErrorDomain, NSFileNoSuchFileError):
+							let nextIndex = actualPATH.index(after: index)
+							if nextIndex < actualPATH.endIndex {
+								try tryPaths(from: nextIndex, executableComponent: executableComponent)
+							} else {
+								throw error
+							}
+							
+						default:
+							throw error
+					}
+				}
+			}
+			if usePATH, !actualPATH.isEmpty, !actualExecutablePath.isAbsolute, actualExecutablePath.components.count == 1, let component = actualExecutablePath.components.last {
+				try tryPaths(from: actualPATH.startIndex, executableComponent: component)
+			} else {
+				p.executableURL = URL(fileURLWithPath: actualExecutablePath.string)
+				try p.run()
+			}
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
 				for (fdInChild, fdToSend) in fileDescriptorsToSend {
@@ -303,7 +406,7 @@ extension Process {
 	 
 	 - Returns: The exit status of the process and its termination reason. */
 	public static func spawnAndStream(
-		_ executable: String, args: [String] = [],
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
@@ -314,7 +417,7 @@ extension Process {
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
 		let (p, g) = try spawnedAndStreamedProcess(
-			executable, args: args,
+			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory,
 			environment: environment,
 			stdin: stdin,
@@ -332,7 +435,7 @@ extension Process {
 	}
 	
 	public static func spawnAndGetOutput(
-		_ executable: String, args: [String] = [],
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
@@ -341,7 +444,7 @@ extension Process {
 	) throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: String]) {
 		var outputs = [FileDescriptor: String]()
 		let (exitCode, exitReason) = try spawnAndStream(
-			executable, args: args,
+			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory,
 			environment: environment,
 			stdin: stdin,
@@ -403,7 +506,7 @@ extension Process {
 			streamSource.cancel()
 			
 		} catch StreamReaderError.streamReadForbidden {
-			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden")
+			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden (this is normal)")
 			
 		} catch Errno.resourceTemporarilyUnavailable {
 			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): resource temporarily unavailable")

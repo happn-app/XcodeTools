@@ -40,13 +40,21 @@ struct Xct : ParsableCommand {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 		
 		let absoluteExecPath = URL(fileURLWithPath: execPath).path
-		/* We force the XCT_EXEC_PATH env to the current exec path (used by some subcommands). */
-		guard setenv(Xct.execPathEnvVarName, absoluteExecPath, 1) == 0 else {
-			Xct.logger.error("Error modifying \(Xct.execPathEnvVarName): \(Errno(rawValue: errno).description)")
-			throw ExitCode(errno)
+		if toolName != "internal-fd-get-launcher" {
+			/* We force the XCT_EXEC_PATH env to the current exec path if current
+			 * tool name is not "internal-fd-get-launcher".
+			 * This is because some subprograms need the XCT_EXEC_PATH and expect
+			 * it to be defined.
+			 * We do not define it for the internal launcher because the spawn*
+			 * function family guarantees the env is not modified when the
+			 * executable is launched, even when sending fds. */
+			guard setenv(Xct.execPathEnvVarName, absoluteExecPath, 1) == 0 else {
+				Xct.logger.error("Error modifying \(Xct.execPathEnvVarName): \(Errno(rawValue: errno).description)")
+				throw ExitCode(errno)
+			}
 		}
 		
-		/* Change current working if asked */
+		/* Change current workdir if asked */
 		if let workdir = workdir {
 			guard FileManager.default.changeCurrentDirectoryPath(workdir) else {
 				Xct.logger.error("Cannot set current directory to \(workdir)")

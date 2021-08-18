@@ -6,6 +6,8 @@ import Logging
 import StreamReader
 import SystemPackage
 
+import Utils
+
 @testable import XcodeTools
 
 
@@ -26,9 +28,7 @@ final class ProcessTests : XCTestCase {
 	}
 	
 	func testProcessSpawnWithWorkdirAndEnvChange() throws {
-		let mypwdURL = URL(fileURLWithPath: #filePath)
-			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("check-pwd+env.swift")
+		let checkPwdAndEnvPath = Self.scriptsPath.appending("check-pwd+env.swift")
 		
 		let workingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
@@ -42,7 +42,7 @@ final class ProcessTests : XCTestCase {
 		
 		let expectedEnvValue = UUID().uuidString
 		
-		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(mypwdURL.path, workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue])
+		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(checkPwdAndEnvPath, args: ["XCT_PROCESS_TEST_VALUE"], workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue])
 		XCTAssertEqual(exitCode, 0)
 		XCTAssertEqual(exitReason, .exit)
 		XCTAssertEqual(outputs, [.standardOutput: expectedWorkingDirectory + "\n" + expectedEnvValue + "\n"])
@@ -50,10 +50,8 @@ final class ProcessTests : XCTestCase {
 	
 	func testProcessSpawnAndStreamStdin() throws {
 		struct ReadError : Error {}
-		let fileURL = URL(fileURLWithPath: #filePath)
-			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-			.appendingPathComponent("TestsData").appendingPathComponent("files").appendingPathComponent("three_lines.txt")
-		let fd = try FileDescriptor.open(fileURL.path, .readOnly)
+		let filePath = Self.filesPath.appending("three_lines.txt")
+		let fd = try FileDescriptor.open(filePath, .readOnly)
 		let fileContents = try fd.closeAfter{ () -> String in
 			guard let r = try String(data: FileDescriptorReader(stream: fd, bufferSize: 256, bufferSizeIncrement: 128).readDataToEnd(), encoding: .utf8) else {
 				throw ReadError()
@@ -64,7 +62,7 @@ final class ProcessTests : XCTestCase {
 		var linesByFd = [FileDescriptor: [String]]()
 		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
 			"/bin/cat", args: [],
-			stdin: FileDescriptor.open(fileURL.path, .readOnly),
+			stdin: FileDescriptor.open(filePath, .readOnly),
 			stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
 			outputHandler: { line, fd in
 				linesByFd[fd, default: []].append(line)
@@ -80,9 +78,7 @@ final class ProcessTests : XCTestCase {
 	
 	func testProcessSpawnAndStreamStdoutAndStderr() throws {
 		struct ReadError : Error {}
-		let scriptURL = URL(fileURLWithPath: #filePath)
-			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("slow-and-interleaved-output.swift")
+		let scriptURL = Self.scriptsPath.appending("slow-and-interleaved-output.swift")
 		
 		let n = 3 /* Not lower than 2 to get fdSwitchCount high enough */
 		let t = 0.25
@@ -91,7 +87,7 @@ final class ProcessTests : XCTestCase {
 		var previousFd: FileDescriptor?
 		var linesByFd = [FileDescriptor: [String]]()
 		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
-			scriptURL.path, args: ["\(n)", "\(t)"], stdin: nil,
+			scriptURL, args: ["\(n)", "\(t)"], stdin: nil,
 			stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
 			outputHandler: { line, fd in
 				if previousFd != fd {
@@ -119,9 +115,7 @@ final class ProcessTests : XCTestCase {
 	@available(macOS 10.15.4, *)
 	func testNonStandardFdCapture() throws {
 		struct ReadError : Error {}
-		let scriptURL = URL(fileURLWithPath: #filePath)
-			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("write-500-lines.swift")
+		let scriptURL = Self.scriptsPath.appending("write-500-lines.swift")
 		
 		let n = 50
 		
@@ -131,7 +125,7 @@ final class ProcessTests : XCTestCase {
 		
 		var count = 0
 		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
-			scriptURL.path, args: ["\(n)", "\(fdWrite)"], stdin: nil,
+			scriptURL, args: ["\(n)", "\(fdWrite)"], stdin: nil,
 			stdoutRedirect: .none, stderrRedirect: .none,
 			fileDescriptorsToSend: [FileDescriptor(rawValue: fdWrite): FileDescriptor(rawValue: fdWrite)],
 			additionalOutputFileDescriptors: [FileDescriptor(rawValue: fdRead)],
@@ -267,6 +261,51 @@ final class ProcessTests : XCTestCase {
 			signalsToForward: [],
 			outputHandler: { _, _ in }
 		)
+	}
+	
+	func testSpawnProcessWithNonExistentExecutable() throws {
+		let inexistentScriptURL = Self.scriptsPath.appending("inexistent.swift")
+		XCTAssertThrowsError(try Process.spawnAndGetOutput(inexistentScriptURL))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __")) /* We hope nobody will ever create the "__ inexistent __" executable :-) */
+	}
+	
+	func testPathSearch() throws {
+		let scriptsPath = Self.scriptsPath
+		
+		let currentWD = FileManager.default.currentDirectoryPath
+		defer {FileManager.default.changeCurrentDirectoryPath(currentWD)}
+		
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
+		
+		let curCPath = getenv("PATH")
+		defer {
+			if curCPath != nil {setenv("PATH", curCPath, 1)}
+			else               {unsetenv("PATH")}
+		}
+		let path = curCPath.flatMap{ String(cString: $0) } ?? ""
+		let newPath = path + (path.isEmpty ? "" : ":") + scriptsPath.string
+		setenv("PATH", newPath, 1)
+		
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", usePATH: true, environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:]))
+	}
+	
+	private static var testsDataPath: FilePath {
+		return FilePath(#filePath)
+			.removingLastComponent().removingLastComponent().removingLastComponent()
+			.appending("TestsData")
+	}
+	
+	private static var scriptsPath: FilePath {
+		return testsDataPath.appending("scripts")
+	}
+	
+	private static var filesPath: FilePath {
+		return testsDataPath.appending("files")
 	}
 	
 	/** Returns the path to the built products directory. */

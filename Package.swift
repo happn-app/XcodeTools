@@ -113,6 +113,7 @@ let package = Package(
 			.product(name: "Logging",       package: "swift-log"),
 			.product(name: "StreamReader",  package: "stream-reader"),
 			.product(name: "SystemPackage", package: "swift-system"),
+			.target(name: "Utils"),
 			
 			/* This dep is technically related to XcodeTools. See XcodeTools deps. */
 			.target(name: "xct")

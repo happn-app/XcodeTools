@@ -14,6 +14,13 @@ struct InternalFdGetLauncher : ParsableCommand {
 		abstract: "Internal launcher for xct which receives a fd before launching the tool."
 	)
 	
+	@Flag(inversion: .prefixedNo)
+	var usePath = false
+	
+	/** If `nil` and `usePath` is `true`, we use `_PATH_DEFPATH`. */
+	@Option
+	var path: String?
+	
 	@Argument
 	var toolName: String
 	
@@ -30,7 +37,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.standardInput.rawValue) {
 				Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
 				/* As we have not closed any received fd yet, it should not be possible
-				 * to received the same fd twice. */
+				 * to received the same fd twice. */
 				assert(receivedFdToDestinationFd[receivedFd] == nil)
 				
 				if let oldReceivedFd = destinationFdToReceivedFd[destinationFd] {
@@ -40,8 +47,8 @@ struct InternalFdGetLauncher : ParsableCommand {
 					try FileDescriptor(rawValue: oldReceivedFd).close()
 					
 					/* Then remove it from the receivedFdToDestinationFd dictionary.
-					 * No need to remove from destinationFdToReceivedFd (will be done
-					 * just after this if). */
+					 * No need to remove from destinationFdToReceivedFd (will be done
+					 * just after this if). */
 					assert(receivedFdToDestinationFd[oldReceivedFd] == destinationFd)
 					receivedFdToDestinationFd.removeValue(forKey: oldReceivedFd)
 				}
@@ -52,7 +59,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 		}
 		
 		/* We may modify destinationFdToReceivedFd values, so no (key, value)
-		 * iteration type. */
+		 * iteration type. */
 		for destinationFd in destinationFdToReceivedFd.keys {
 			let receivedFd = destinationFdToReceivedFd[destinationFd]!
 			defer {
@@ -65,7 +72,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			
 			if let destinationFdToUpdate = receivedFdToDestinationFd[destinationFd] {
 				/* If the current destination fd is in the received fds, we must dup
-				 * the destination fd. */
+				 * the destination fd. */
 				let newReceivedFd = dup(destinationFd)
 				guard newReceivedFd != -1 else {
 					/* TODO: Use an actual error */
@@ -89,9 +96,16 @@ struct InternalFdGetLauncher : ParsableCommand {
 		
 		try withCStrings([toolName] + toolArguments, scoped: { cargs in
 			Xct.logger.trace("exec’ing \(toolName)")
-			/* The v means we pass an array to exec (as opposed to the variadic
-			 * exec variant, which is not available in Swift anyway). */
-			let ret = execv(toolName, cargs)
+			let ret: Int32
+			if usePath {
+				/* The P implementation of exec searches for the binary path in the
+				 * given search path.
+				 * The v means we pass an array to exec (as opposed to the variadic
+				 * exec variant, which is not available in Swift anyway). */
+				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
+			} else {
+				ret = execv(toolName, cargs)
+			}
 			assert(ret != 0, "exec should not return if it was successful.")
 			Xct.logger.error("Error running executable \(toolName): \(Errno(rawValue: errno).description)")
 			throw ExitCode(errno)
@@ -127,13 +141,13 @@ struct InternalFdGetLauncher : ParsableCommand {
 		let receivedBytes = recvmsg(socket, &msg, 0)
 		guard receivedBytes >= 0 else {
 			/* The socket is not a TCP socket, so we cannot know whether the
-			 * connexion was closed before reading it. We check error after reading
-			 * and ignore connection reset error. */
+			 * connexion was closed before reading it. We check error after reading
+			 * and ignore connection reset error. */
 			let ok = (receivedBytes == 0 || errno == ECONNRESET)
 			if ok {return nil}
 			else {
 				/* TODO: Is it ok to log in this context? I’d say probably yeah, but
-				 * too tired to validate now. */
+				 * too tired to validate now. */
 				Xct.logger.error("cannot read from socket: \(Errno(rawValue: errno))")
 				/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
 			}
