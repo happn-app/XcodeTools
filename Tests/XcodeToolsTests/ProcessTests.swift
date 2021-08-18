@@ -25,7 +25,7 @@ final class ProcessTests : XCTestCase {
 		setenv(XcodeToolsConstants.envVarNameExecPath, productsDirectory.path, 1)
 	}
 	
-	func testProcessSpawnWithWDChange() throws {
+	func testProcessSpawnWithWorkdirAndEnvChange() throws {
 		let mypwdURL = URL(fileURLWithPath: #filePath)
 			.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 			.appendingPathComponent("TestsData").appendingPathComponent("scripts").appendingPathComponent("check-pwd+env.swift")
@@ -112,7 +112,7 @@ final class ProcessTests : XCTestCase {
 		
 		XCTAssertEqual(linesByFd[FileDescriptor.standardOutput, default: []].joined(), expectedStdout)
 		/* We do not check for equality here because swift sometimes log errors on
-		 * stderr before launching the script… */
+		 * stderr before launching the script… */
 		XCTAssert(linesByFd[FileDescriptor.standardError, default: []].joined().hasSuffix(expectedStderr))
 	}
 	
@@ -139,7 +139,7 @@ final class ProcessTests : XCTestCase {
 			outputHandler: { line, fd in
 				guard fd.rawValue != FileHandle.standardError.fileDescriptor else {
 					/* When a Swift script is launched, swift can output some shit on
-					 * stderr… */
+					 * stderr… */
 					NSLog("%@", "Got err from script: \(line)")
 					return
 				}
@@ -166,41 +166,41 @@ final class ProcessTests : XCTestCase {
 	}
 	
 	/* This disabled test has allowed the discovery of a leak of fds: the reading
-	 * ends of the pipes that are created when capturing the output of a process
-	 * were not closed when the end of the streams were reached.
-	 * The test is now disabled because it is excessively long.
-	 *
-	 * For reference the bug manifested in three ways that can still happen in
-	 * case of starvation of file descriptors in the process, but that I don’t
-	 * think I can detect and/or prevent (well I have a theory now for the two
-	 * last cases, which might be detectable though; see the third case for
-	 * explanation):
-	 *    - The test crashes because of an ObjC exception: Process is not
-	 *      launched. The exception is thrown when the `terminationStatus`
-	 *      property is read inside the `spawnAndStream` method.
-	 *    - The test simply stops forever. This is because the stream group never
-	 *      reaches the end, and the `spawnAndStream` method simply waits forever
-	 *      for the group to be over.
-	 *    - More rare, but it happened, we can get an assertion failure inside
-	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
-	 *      of the pipes created in the output file descriptors variable. I think
-	 *      this one might actually be the same of the previous one: the reading
-	 *      end of the pipe would be an invalid fd. If both the pipe for stdout
-	 *      and stderr have an invalid fd for their reading ends, we’d add the
-	 *      same fd in the output fds twice, which is protected by an assert. In
-	 *      the previous case, maybe the stream group never reaches the end
-	 *      because the reading is done on an invalid fd which simply never
-	 *      triggers a read.
-	 *      This explanation is a theory. I have actually verified that we get an
-	 *      invalid Pipe object when initializing a Pipe when no more fds are
-	 *      available, which did trigger the assertion failure, and now properly
-	 *      detect this problem. See `testLaunchProcessWithResourceStarving` for
-	 *      more info. For the rest of the cases, I’m not sure how to reproduce
-	 *      them exactly. */
+	 * ends of the pipes that are created when capturing the output of a process
+	 * were not closed when the end of the streams were reached.
+	 * The test is now disabled because it is excessively long.
+	 *
+	 * For reference the bug manifested in three ways that can still happen in
+	 * case of starvation of file descriptors in the process, but that I don’t
+	 * think I can detect and/or prevent (well I have a theory now for the two
+	 * last cases, which might be detectable though; see the third case for
+	 * explanation):
+	 *    - The test crashes because of an ObjC exception: Process is not
+	 *      launched. The exception is thrown when the `terminationStatus`
+	 *      property is read inside the `spawnAndStream` method.
+	 *    - The test simply stops forever. This is because the stream group never
+	 *      reaches the end, and the `spawnAndStream` method simply waits forever
+	 *      for the group to be over.
+	 *    - More rare, but it happened, we can get an assertion failure inside
+	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
+	 *      of the pipes created in the output file descriptors variable. I think
+	 *      this one might actually be the same of the previous one: the reading
+	 *      end of the pipe would be an invalid fd. If both the pipe for stdout
+	 *      and stderr have an invalid fd for their reading ends, we’d add the
+	 *      same fd in the output fds twice, which is protected by an assert. In
+	 *      the previous case, maybe the stream group never reaches the end
+	 *      because the reading is done on an invalid fd which simply never
+	 *      triggers a read.
+	 *      This explanation is a theory. I have actually verified that we get an
+	 *      invalid Pipe object when initializing a Pipe when no more fds are
+	 *      available, which did trigger the assertion failure, and now properly
+	 *      detect this problem. See `testLaunchProcessWithResourceStarving` for
+	 *      more info. For the rest of the cases, I’m not sure how to reproduce
+	 *      them exactly. */
 	func disabledTestSpawnProcessWithResourceStarving() throws {
 		/* It has been observed that on my computer, things starts to go bad when
-		 * there are roughly 6500 fds open.
-		 * So we start by opening 6450 fds. */
+		 * there are roughly 6500 fds open.
+		 * So we start by opening 6450 fds. */
 		for _ in 0..<6450 {
 			_ = try FileDescriptor.open("/dev/random", .readOnly)
 		}
@@ -244,9 +244,9 @@ final class ProcessTests : XCTestCase {
 		try releaseRandomFd()
 		try releaseRandomFd()
 		/* Using process should still fail, but with error when opening Pipe for
-		 * stderr, not stdout. To verify, the test would have to be modified, but
-		 * the check would not be very stable, so we simply verify we still get a
-		 * failure. */
+		 * stderr, not stdout. To verify, the test would have to be modified, but
+		 * the check would not be very stable, so we simply verify we still get a
+		 * failure. */
 		XCTAssertThrowsError(try Process.spawnAndStream(
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
@@ -255,9 +255,9 @@ final class ProcessTests : XCTestCase {
 		))
 		
 		/* Now let’s release more fds.
-		 * If we release two, we get an error with a read from a bad fd. Not sure
-		 * why, but it’s not very much surprising.
-		 * If we release one more it seems to work. */
+		 * If we release two, we get an error with a read from a bad fd. Not sure
+		 * why, but it’s not very much surprising.
+		 * If we release one more it seems to work. */
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
@@ -271,14 +271,14 @@ final class ProcessTests : XCTestCase {
 	
 	/** Returns the path to the built products directory. */
 	private static var productsDirectory: URL {
-		#if os(macOS)
+#if os(macOS)
 		for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
 			return bundle.bundleURL.deletingLastPathComponent()
 		}
 		fatalError("couldn't find the products directory")
-		#else
+#else
 		return Bundle.main.bundleURL
-		#endif
+#endif
 	}
 	
 }
