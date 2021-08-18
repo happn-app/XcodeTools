@@ -80,6 +80,15 @@ public struct UntarPhase : BuildPhase {
 	}
 	
 	public func execute() async throws -> [FilePath] {
+		if stripComponents < 0 {
+			Conf.logger?.warning("Strip components lower than 0 (\(stripComponents)). Ignoring.")
+		}
+		if verifyNoLostFilesFromStrip && stripComponents <= 0 {
+			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
+		}
+		if verifyNoLostFilesFromStrip && stripComponents > 0 {
+			
+		}
 		throw Err.notImplemented
 	}
 	
