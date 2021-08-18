@@ -100,13 +100,13 @@ extension Process {
 	 group you can wait on to be sure the end of the streams was reached. */
 	public static func spawnedAndStreamedProcess(
 		_ executable: String, args: [String] = [],
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
 		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Process, DispatchGroup) {
 #if canImport(eXtenderZ)
@@ -304,6 +304,7 @@ extension Process {
 	 - Returns: The exit status of the process and its termination reason. */
 	public static func spawnAndStream(
 		_ executable: String, args: [String] = [],
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		stdoutRedirect: RedirectMode = RedirectMode.none,
 		stderrRedirect: RedirectMode = RedirectMode.none,
@@ -314,6 +315,8 @@ extension Process {
 	) throws -> (Int32, Process.TerminationReason) {
 		let (p, g) = try spawnedAndStreamedProcess(
 			executable, args: args,
+			workingDirectory: workingDirectory,
+			environment: environment,
 			stdin: stdin,
 			stdoutRedirect: stdoutRedirect,
 			stderrRedirect: stderrRedirect,
