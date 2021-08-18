@@ -175,6 +175,8 @@ final class ProcessTests : XCTestCase {
 	 *    - The test simply stops forever. This is because the stream group never
 	 *      reaches the end, and the `spawnAndStream` method simply waits forever
 	 *      for the group to be over.
+	 *      Apparently this is *not* due to fd starvation as I got this in a
+	 *      normal run. So we probably have a race of some kind. This is sad.
 	 *    - More rare, but it happened, we can get an assertion failure inside
 	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
 	 *      of the pipes created in the output file descriptors variable. I think
@@ -294,12 +296,16 @@ final class ProcessTests : XCTestCase {
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:]))
 		
 		FileManager.default.changeCurrentDirectoryPath(scriptsPath.string)
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:]))
+		/* Sadly the error we get is a file not found */
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:]))
 	}
 	
 	private static var testsDataPath: FilePath {

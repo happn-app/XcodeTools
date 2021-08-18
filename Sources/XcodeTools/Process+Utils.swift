@@ -85,6 +85,12 @@ extension Process {
 	 ownership of the file descriptors). Maybe later we’ll add an option not to
 	 close at end of the stream.
 	 
+	 - Important: AFAICT the absolute ref for `PATH` resolution is
+	 https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html
+	 (end of file). Sadly `Process` does not report the actual errors and seem to
+	 always report “File not found” errors when the executable cannot be run. So
+	 we do not fully emulate exec’s behaviour.
+	 
 	 - Parameter usePATH: Try and search the executable in the `PATH` environment
 	 variable when the executable path is a simple word (shell-like search). If
 	 `false` (default) the standard `Process` behaviour will apply: resolve the
