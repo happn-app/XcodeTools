@@ -12,6 +12,7 @@ import XcodeTools
 
 
 /* Big up to https://github.com/jjrscott/XcodeBuildResultStream */
+@main
 struct XctBuild : ParsableCommand {
 	
 	static let execPathEnvVarName = "XCT_EXEC_PATH"
