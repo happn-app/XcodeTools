@@ -207,7 +207,12 @@ struct Xct : ParsableCommand {
 			 * given search path.
 			 * The v means we pass an array to exec (as opposed to the variadic
 			 * exec variant, which is not available in Swift anyway). */
+#if !os(Linux)
 			let ret = execvP(fullToolName, newSearchPath, cargs)
+#else
+			/* TODO: Set PATH to newSearchPath (and document it) */
+			let ret = execvp(fullToolName, cargs)
+#endif
 			assert(ret != 0, "exec should not return if it was successful.")
 			Xct.logger.error("Error running executable \(fullToolName): \(Errno(rawValue: errno).description)")
 			throw ExitCode(errno)

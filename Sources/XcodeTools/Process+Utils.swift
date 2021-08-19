@@ -283,7 +283,12 @@ extension Process {
 			let sv = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
 			sv.initialize(repeating: -1, count: 2)
 			defer {sv.deallocate()}
-			guard socketpair(/*domain: */AF_UNIX, /*type: */SOCK_DGRAM, /*protocol: */0, /*socket_vector: */sv) == 0 else {
+#if !os(Linux)
+			let sockDgram = SOCK_DGRAM
+#else
+			let sockDgram = Int32(SOCK_DGRAM.rawValue)
+#endif
+			guard socketpair(/*domain: */AF_UNIX, /*type: */sockDgram, /*protocol: */0, /*socket_vector: */sv) == 0 else {
 				/* TODO: Throw a more informative error? */
 				try cleanupAndThrow(XcodeToolsError.systemError(Errno(rawValue: errno)))
 			}
@@ -551,17 +556,31 @@ extension Process {
 		defer {buf.deallocate()}
 		buf.initialize(to: -1)
 		
+#if !os(Linux)
 		msg.msg_control = UnsafeMutableRawPointer(buf)
 		msg.msg_controllen = socklen_t(XCT_CMSG_SPACE(sizeOfFd))
+#else
+		msg.msg_control = UnsafeMutableRawPointer(buf)
+		msg.msg_controllen = Int(XCT_CMSG_SPACE(sizeOfFd))
+#endif
 		
 		guard let cmsg = XCT_CMSG_FIRSTHDR(&msg) else {
 			throw XcodeToolsError.internalError("CMSG_FIRSTHDR returned nil.")
 		}
 		
+#if !os(Linux)
 		cmsg.pointee.cmsg_type = SCM_RIGHTS
 		cmsg.pointee.cmsg_level = SOL_SOCKET
+#else
+		cmsg.pointee.cmsg_type = Int32(SCM_RIGHTS)
+		cmsg.pointee.cmsg_level = SOL_SOCKET
+#endif
 		
+#if !os(Linux)
 		cmsg.pointee.cmsg_len = socklen_t(XCT_CMSG_LEN(sizeOfFd))
+#else
+		cmsg.pointee.cmsg_len = Int(XCT_CMSG_LEN(sizeOfFd))
+#endif
 		memmove(XCT_CMSG_DATA(cmsg), &fd, sizeOfFd)
 		
 		guard sendmsg(socket, &msg, /*flags: */0) != -1 else {

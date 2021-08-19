@@ -288,8 +288,8 @@ final class ProcessTests : XCTestCase {
 		
 		let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 		defer {
-			if curPath != nil {setenv("PATH", curPath, 1)}
-			else              {unsetenv("PATH")}
+			if let curPath = curPath {setenv("PATH", curPath, 1)}
+			else                     {unsetenv("PATH")}
 		}
 		let path = curPath ?? ""
 		let newPath = path + (path.isEmpty ? "" : ":") + scriptsPath.string
@@ -311,17 +311,19 @@ final class ProcessTests : XCTestCase {
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:]))
 	}
 	
-	/* Disabled because long, but allowed me to find multiple memory leaks. */
-	func disabledTestLotsOfRuns() throws {
-		try autoreleasepool{
-			for _ in 0..<50 {
-				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift")))
-			}
-		}
-	}
+	/* Disabled because long, but allowed me to find multiple memory leaks.
+	 * Fully commented instead of just renamed disabled* because does not compile
+	 * on Linux because of autoreleasepool. */
+//	func disabledTestLotsOfRuns() throws {
+//		try autoreleasepool{
+//			for _ in 0..<50 {
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
+//				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift")))
+//			}
+//		}
+//	}
 	
 	private static var testsDataPath: FilePath {
 		return FilePath(#filePath)

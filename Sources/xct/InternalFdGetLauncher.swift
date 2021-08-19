@@ -102,7 +102,12 @@ struct InternalFdGetLauncher : ParsableCommand {
 				 * given search path.
 				 * The v means we pass an array to exec (as opposed to the variadic
 				 * exec variant, which is not available in Swift anyway). */
+#if !os(Linux)
 				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
+#else
+				/* TODO: Set PATH to newSearchPath and document it (we promise env is not changed in doc currently, this would break the promise) */
+				ret = execvp(toolName, cargs)
+#endif
 			} else {
 				ret = execv(toolName, cargs)
 			}
@@ -136,7 +141,11 @@ struct InternalFdGetLauncher : ParsableCommand {
 		defer {controlBuf.deallocate()}
 		controlBuf.assign(repeating: 0, count: controlBufSize)
 		msg.msg_control = UnsafeMutableRawPointer(controlBuf)
+#if !os(Linux)
 		msg.msg_controllen = socklen_t(controlBufSize)
+#else
+		msg.msg_controllen = Int(controlBufSize)
+#endif
 		
 		let receivedBytes = recvmsg(socket, &msg, 0)
 		guard receivedBytes >= 0 else {

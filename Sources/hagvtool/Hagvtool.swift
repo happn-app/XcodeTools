@@ -25,7 +25,12 @@ struct Hagvtool : ParsableCommand {
 			/* The p implementation of exec searches for the binary path in PATH.
 			 * The v means we pass an array to exec (as opposed to the variadic
 			 * exec variant, which is not available in Swift anyway). */
+#if !os(Linux)
 			let ret = execvP("xct-versions", URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().path, cargs)
+#else
+			/* TODO: Add CommandLine.arguments[0] (minus last path component) in PATH */
+			let ret = execvp("xct-versions", cargs)
+#endif
 			assert(ret != 0, "exec should not return if it was successful.")
 			logger.error("Error running executable xct-versions: \(Errno(rawValue: errno).description)")
 			throw ExitCode(errno)
