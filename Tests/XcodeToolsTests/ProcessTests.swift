@@ -176,7 +176,10 @@ final class ProcessTests : XCTestCase {
 	 *      reaches the end, and the `spawnAndStream` method simply waits forever
 	 *      for the group to be over.
 	 *      Apparently this is *not* due to fd starvation as I got this in a
-	 *      normal run. So we probably have a race of some kind. This is sad.
+	 *      normal run. It was highly likely to have been due to a leak in the
+	 *      stream sources that were never cancelled when a Process failed to
+	 *      launch. I never confirmed it because reproducibility was hard, but it
+	 *      is very likely. See f499ac28b08fc9f4bb8611c34b40baebd1b12d03.
 	 *    - More rare, but it happened, we can get an assertion failure inside
 	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
 	 *      of the pipes created in the output file descriptors variable. I think
