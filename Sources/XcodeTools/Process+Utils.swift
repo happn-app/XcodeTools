@@ -609,6 +609,10 @@ private class XcodeToolsProcess : Process {
 		updateTerminationHandler()
 	}
 	
+	deinit {
+		Conf.logger?.trace("Deinit of an XcodeToolsProcess")
+	}
+	
 	override var terminationHandler: ((Process) -> Void)? {
 		get {super.terminationHandler}
 		set {publicTerminationHandler = newValue; updateTerminationHandler()}
