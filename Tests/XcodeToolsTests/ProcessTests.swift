@@ -260,12 +260,13 @@ final class ProcessTests : XCTestCase {
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
-		_ = try Process.spawnAndStream(
+		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(
 			"/bin/sh", args: ["-c", "echo hello"],
-			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-			signalsToForward: [],
-			outputHandler: { _, _ in }
+			stdin: nil, signalsToForward: []
 		)
+		XCTAssertEqual(exitCode, 0)
+		XCTAssertEqual(exitReason, .exit)
+		XCTAssertEqual(outputs, [.standardOutput: "hello\n"])
 	}
 	
 	func testSpawnProcessWithNonExistentExecutable() throws {

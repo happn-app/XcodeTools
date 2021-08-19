@@ -176,8 +176,8 @@ extension Process {
 			case .toFd(let fd): p.standardOutput = FileHandle(fileDescriptor: fd.rawValue)
 			case .capture:
 				/* The Pipe init is non-fallible, but can fail. So we cast the Pipe
-				 * returned by the init to a Pipe? */
-				guard let pipe = Pipe() as Pipe? else {
+				 * returned by the init to a `Pipe?`. */
+				guard let pipe = Pipe() as Pipe?, pipe.fileHandleForReading.fileDescriptor >= 0, pipe.fileHandleForWriting.fileDescriptor >= 0 else {
 					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
 				}
 				/* An alternative to the guard above:
@@ -188,6 +188,11 @@ extension Process {
 				
 				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+				/* On Linux the instantiation is indeed non-fallible, however the
+				 * reading and writing ends of the pipes might be invalid (< 0). */
+				guard fdForReading.rawValue >= 0, fdForWriting.rawValue >= 0 else {
+					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
+				}
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardOutput
@@ -208,6 +213,9 @@ extension Process {
 				
 				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+				guard fdForReading.rawValue >= 0, fdForWriting.rawValue >= 0 else {
+					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
+				}
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardError
