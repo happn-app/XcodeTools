@@ -15,6 +15,8 @@ import Utils
 class SourceBuilderTests : XCTestCase {
 	
 	override class func setUp() {
+		super.setUp()
+		
 		LoggingSystem.bootstrap{ _ in
 			var l = CLTLogger()
 			l.logLevel = .trace
