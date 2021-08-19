@@ -51,12 +51,14 @@ static char PUBLIC_TERMINATION_HANDLER_KEY;
 	[self setPublicTerminationHandler:currentTerminationHandler];
 	
 	XCTTaskTerminationSignature ^newTerminationHandler = ^(NSTask *task) {
-		for (id<XCTTaskExtender> extender in [self hpn_extendersConformingToProtocol:@protocol(XCTTaskExtender)]) {
+		/* The assert below is valid, but it retains self, which we do not want. */
+//		NSCAssert(task == self, @"Weird, got a task in handler which is not self.");
+		for (id<XCTTaskExtender> extender in [task hpn_extendersConformingToProtocol:@protocol(XCTTaskExtender)]) {
 			XCTTaskTerminationSignature ^additionalTerminationHandler = [extender additionalCompletionHandler];
-			if (additionalTerminationHandler != NULL) additionalTerminationHandler(self);
+			if (additionalTerminationHandler != NULL) additionalTerminationHandler(task);
 		}
-		XCTTaskTerminationSignature ^terminationHandler = [self publicTerminationHandler];
-		if (terminationHandler != NULL) terminationHandler(self);
+		XCTTaskTerminationSignature ^terminationHandler = [(XCTTaskHelptender *)task publicTerminationHandler];
+		if (terminationHandler != NULL) terminationHandler(task);
 	};
 	((void (*)(id, SEL, XCTTaskTerminationSignature ^))HPN_HELPTENDER_CALL_SUPER_WITH_SEL_NAME(XCTTaskHelptender, setTerminationHandler:, newTerminationHandler));
 }
