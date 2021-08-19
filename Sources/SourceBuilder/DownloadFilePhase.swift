@@ -102,7 +102,7 @@ public struct DownloadFilePhase : BuildPhase {
 				} else {
 					continuation.resume(throwing: error ?? Err.unknownNetworkingError)
 				}
-			})
+			}).resume()
 		}
 #endif
 	}
