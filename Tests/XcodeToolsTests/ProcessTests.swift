@@ -286,12 +286,12 @@ final class ProcessTests : XCTestCase {
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
 		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
 		
-		let curCPath = getenv("PATH")
+		let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 		defer {
-			if curCPath != nil {setenv("PATH", curCPath, 1)}
-			else               {unsetenv("PATH")}
+			if curPath != nil {setenv("PATH", curPath, 1)}
+			else              {unsetenv("PATH")}
 		}
-		let path = curCPath.flatMap{ String(cString: $0) } ?? ""
+		let path = curPath ?? ""
 		let newPath = path + (path.isEmpty ? "" : ":") + scriptsPath.string
 		setenv("PATH", newPath, 1)
 		
