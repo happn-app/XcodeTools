@@ -318,37 +318,6 @@ extension Process {
 			kill(p.processIdentifier, signal.rawValue)
 		}) }
 		
-		let streamGroup = DispatchGroup()
-		var readSources = [DispatchSourceRead]()
-		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
-		for fd in outputFileDescriptors {
-			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
-			streamReader.underlyingStreamReadSizeLimit = 0
-			
-			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
-			readSources.append(streamSource)
-			
-			streamSource.setRegistrationHandler(handler: streamGroup.enter)
-			streamSource.setCancelHandler{
-				_ = try? fd.close()
-				streamGroup.leave()
-			}
-			
-			streamSource.setEventHandler{
-				/* `source.data`: see doc of dispatch_source_get_data in objc */
-				/* `source.mask`: see doc of dispatch_source_get_mask in objc (is always 0 for read source) */
-				Process.handleProcessOutput(
-					streamSource: streamSource,
-					streamQueue: streamQueue,
-					outputHandler: { str in outputHandler(str, fdRedirects[fd] ?? fd) },
-					streamReader: streamReader,
-					estimatedBytesAvailable: streamSource.data
-				)
-			}
-		}
-		
-		readSources.forEach{ $0.activate() }
-		
 		let terminationHandler: (Process) -> Void = { _ in
 			XcodeToolsConfig.logger?.debug("Called in termination handler of process")
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
@@ -403,6 +372,36 @@ extension Process {
 				try fdToSendFds.close()
 			}
 		}
+		
+		let streamGroup = DispatchGroup()
+		var readSources = [DispatchSourceRead]()
+		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
+		for fd in outputFileDescriptors {
+			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
+			streamReader.underlyingStreamReadSizeLimit = 0
+			
+			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
+			readSources.append(streamSource)
+			
+			streamSource.setRegistrationHandler(handler: streamGroup.enter)
+			streamSource.setCancelHandler{
+				_ = try? fd.close()
+				streamGroup.leave()
+			}
+			
+			streamSource.setEventHandler{
+				/* `source.data`: see doc of dispatch_source_get_data in objc */
+				/* `source.mask`: see doc of dispatch_source_get_mask in objc (is always 0 for read source) */
+				Process.handleProcessOutput(
+					streamSource: streamSource,
+					streamQueue: streamQueue,
+					outputHandler: { str in outputHandler(str, fdRedirects[fd] ?? fd) },
+					streamReader: streamReader,
+					estimatedBytesAvailable: streamSource.data
+				)
+			}
+		}
+		readSources.forEach{ $0.activate() }
 		
 		return (p, streamGroup)
 	}

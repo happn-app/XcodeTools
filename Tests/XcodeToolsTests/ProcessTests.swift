@@ -308,6 +308,17 @@ final class ProcessTests : XCTestCase {
 		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:]))
 	}
 	
+//	func testLotsOfRuns() throws {
+//		for _ in 0..<5000 {
+//			try autoreleasepool{
+//				_ = try? Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"))
+//				_ = try? Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"))
+//				_ = try? Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"))
+//				_ = try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift"))
+//			}
+//		}
+//	}
+	
 	private static var testsDataPath: FilePath {
 		return FilePath(#filePath)
 			.removingLastComponent().removingLastComponent().removingLastComponent()
