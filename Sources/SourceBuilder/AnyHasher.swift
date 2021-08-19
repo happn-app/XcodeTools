@@ -1,6 +1,6 @@
-import CryptoKit
 import Foundation
 
+import Crypto
 import StreamReader
 import SystemPackage
 

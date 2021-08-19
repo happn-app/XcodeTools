@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 import SystemPackage
 
@@ -16,6 +19,7 @@ enum SourceBuilderError : Error {
 
 	/* Also open error to handle… */
 //	case urlSessionError(Error)
+	case unknownNetworkingError /* We should not need that one once Linux has support for async/await */
 	case notImplemented
 	
 }

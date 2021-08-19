@@ -1,5 +1,7 @@
-import CryptoKit
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 import SystemPackage
 import Utils
@@ -67,7 +69,7 @@ public struct DownloadFilePhase : BuildPhase {
 	
 	public func execute() async throws -> [FilePath] {
 		Conf.logger?.info("Downloading file from \(downloadedURL)")
-		let (tmpFileURL, urlResponse) = try await Conf.urlSession.download(from: downloadedURL, delegate: nil)
+		let (tmpFileURL, urlResponse) = try await temporaryLinuxAsyncDownload(url: downloadedURL)
 		guard let httpURLResponse = urlResponse as? HTTPURLResponse, 200..<300 ~= httpURLResponse.statusCode else {
 			throw Err.invalidURLResponse(urlResponse)
 		}
@@ -87,6 +89,22 @@ public struct DownloadFilePhase : BuildPhase {
 		try Conf.fm.moveItem(at: tmpFileURL, to: downloadDestination.url)
 		Conf.logger?.info("File downloaded")
 		return [downloadDestination]
+	}
+	
+	private func temporaryLinuxAsyncDownload(url: URL) async throws -> (URL, URLResponse) {
+#if !os(Linux)
+		return try await Conf.urlSession.download(from: downloadedURL, delegate: nil)
+#else
+		return try await withCheckedThrowingContinuation{ continuation in
+			Conf.urlSession.downloadTask(with: url, completionHandler: { url, response, error in
+				if let url = url, let response = response, error == nil {
+					continuation.resume(returning: (url, response))
+				} else {
+					continuation.resume(throwing: error ?? Err.unknownNetworkingError)
+				}
+			})
+		}
+#endif
 	}
 	
 }

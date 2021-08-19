@@ -12,6 +12,7 @@ let needseXtenderZ = (NSStringFromClass(Process().classForCoder) != "NSTask")
 
 var dependencies: [Package.Dependency] = [
 	.package(url: "https://github.com/apple/swift-argument-parser.git", from: "0.4.0"),
+	.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"),
 	.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 	.package(url: "https://github.com/apple/swift-system.git", from: "0.0.2"),
 	.package(url: "https://github.com/happn-tech/XibLoc.git", from: "1.1.1"),
@@ -30,11 +31,10 @@ var products = [Product]()
 /* *** SourceBuilder *** */
 /* ********************* */
 
-#if canImport(CryptoKit)
-/* TODO: See w/ https://github.com/apple/swift-crypto */
 products.append(.library(name: "SourceBuilder", targets: ["SourceBuilder"]))
 targets.append(contentsOf: [
 	.target(name: "SourceBuilder", dependencies: [
+		.product(name: "Crypto",        package: "swift-crypto"), /* If we supported macOS only we’d use CryptoKit instead of this… */
 		.product(name: "Logging",       package: "swift-log"),
 		.product(name: "StreamReader",  package: "stream-reader"),
 		.product(name: "SystemPackage", package: "swift-system"),
@@ -51,15 +51,14 @@ targets.append(contentsOf: [
 		.target(name: "Utils")
 	])
 ])
-#endif
 
 
 /* ***************** */
 /* *** XcodeProj *** */
 /* ***************** */
 
-/* A lib one can use to manipulate Xcode Projects. */
 #if canImport(CoreData)
+/* A lib one can use to manipulate Xcode Projects. */
 products.append(.library(name: "XcodeProj", targets: ["XcodeProj"]))
 targets.append(contentsOf: [
 	.target(name: "XcodeProj", dependencies: [
