@@ -84,6 +84,9 @@ extension Process {
 	 the end of their respective stream are reached (i.e. the function takes
 	 ownership of the file descriptors). Maybe later we’ll add an option not to
 	 close at end of the stream.
+	 Additionally on Linux the fds will be set non-blocking (clients should not
+	 care as they have given up ownership of the fd, but it’s still good to know
+	 IMHO).
 	 
 	 - Important: AFAICT the absolute ref for `PATH` resolution is
 	 https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html
@@ -155,10 +158,26 @@ extension Process {
 		if let workingDirectory = workingDirectory {p.currentDirectoryURL = workingDirectory}
 		
 		var fdToCloseInCaseOfError = Set<FileDescriptor>()
+		var fdToSwitchToBlockingInCaseOfError = Set<FileDescriptor>()
 		var mustCallTerminationHandlerInCaseOfError = false
 		func cleanupAndThrow(_ error: Error) throws -> Never {
 			if mustCallTerminationHandlerInCaseOfError {p.terminationHandler?(p)}
+			
+			/* Only the fds that are not ours, and thus not in additional output
+			 * fds are allowed to be closed in case of error. */
+			assert(additionalOutputFileDescriptors.intersection(fdToCloseInCaseOfError).isEmpty)
+			/* We only try and revert fds to blocking for fds we don’t own. Only
+			 * those in additional output fds. */
+			assert(additionalOutputFileDescriptors.isSuperset(of: fdToSwitchToBlockingInCaseOfError))
+			/* The assert below is a consequence of the two above. */
+			assert(fdToCloseInCaseOfError.intersection(fdToSwitchToBlockingInCaseOfError).isEmpty)
+			
+			fdToSwitchToBlockingInCaseOfError.forEach{ fd in
+				do    {try removeRequireNonBlockingIO(on: fd)}
+				catch {Conf.logger?.error("Cannot revert fd \(fd.rawValue) to blocking.")}
+			}
 			fdToCloseInCaseOfError.forEach{ try? $0.close() }
+			
 			throw error
 		}
 		func cleanupIfThrows<R>(_ block: () throws -> R) rethrows -> R {
@@ -176,7 +195,9 @@ extension Process {
 			case .toFd(let fd): p.standardOutput = FileHandle(fileDescriptor: fd.rawValue)
 			case .capture:
 				/* The Pipe init is non-fallible, but can fail. So we cast the Pipe
-				 * returned by the init to a `Pipe?`. */
+				 * returned by the init to a `Pipe?`.
+				 * On Linux the instantiation is indeed non-fallible, however the
+				 * reading and writing ends of the pipes might be invalid (< 0).*/
 				guard let pipe = Pipe() as Pipe?, pipe.fileHandleForReading.fileDescriptor >= 0, pipe.fileHandleForWriting.fileDescriptor >= 0 else {
 					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
 				}
@@ -188,11 +209,6 @@ extension Process {
 				
 				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
-				/* On Linux the instantiation is indeed non-fallible, however the
-				 * reading and writing ends of the pipes might be invalid (< 0). */
-				guard fdForReading.rawValue >= 0, fdForWriting.rawValue >= 0 else {
-					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
-				}
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardOutput
@@ -207,15 +223,12 @@ extension Process {
 			case .toNull:       p.standardError = nil
 			case .toFd(let fd): p.standardError = FileHandle(fileDescriptor: fd.rawValue)
 			case .capture:
-				guard let pipe = Pipe() as Pipe? else {
+				guard let pipe = Pipe() as Pipe?, pipe.fileHandleForReading.fileDescriptor >= 0, pipe.fileHandleForWriting.fileDescriptor >= 0 else {
 					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stderr"))
 				}
 				
 				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
 				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
-				guard fdForReading.rawValue >= 0, fdForWriting.rawValue >= 0 else {
-					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
-				}
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardError
@@ -225,6 +238,23 @@ extension Process {
 				
 				p.standardError = pipe
 		}
+		
+#if os(Linux)
+		/* I did not find any other way than using non-blocking IO on Linux.
+		 * https://stackoverflow.com/questions/39173429/one-shot-level-triggered-epoll-does-epolloneshot-imply-epollet/46142976#comment121697690_46142976 */
+		for fd in outputFileDescriptors {
+			try cleanupIfThrows{
+				let isFromClient = additionalOutputFileDescriptors.contains(fd)
+				try setRequireNonBlockingIO(on: fd, logChange: isFromClient)
+				if isFromClient {
+					/* The fd is not ours. We must try and revert it to its original
+					 * state if the function throws an error. */
+					assert(!fdToCloseInCaseOfError.contains(fd))
+					fdToSwitchToBlockingInCaseOfError.insert(fd)
+				}
+			}
+		}
+#endif
 		
 		let fdToSendFds: FileDescriptor?
 		/* We will modify it later to add stdin if needed */
@@ -493,8 +523,25 @@ extension Process {
 		
 		if logChange {
 			/* We only log for fd that were not ours */
-			XcodeToolsConfig.logger?.info("Setting O_NONBLOCK option on fd \(fd)")
+			XcodeToolsConfig.logger?.warning("Setting O_NONBLOCK option on fd \(fd)")
 		}
+		guard fcntl(fd.rawValue, F_SETFL, newFlags) != -1 else {
+			throw XcodeToolsError.systemError(Errno(rawValue: errno))
+		}
+	}
+	
+	private static func removeRequireNonBlockingIO(on fd: FileDescriptor) throws {
+		let curFlags = fcntl(fd.rawValue, F_GETFL)
+		guard curFlags != -1 else {
+			throw XcodeToolsError.systemError(Errno(rawValue: errno))
+		}
+		
+		let newFlags = curFlags & ~O_NONBLOCK
+		guard newFlags != curFlags else {
+			/* Nothing to do */
+			return
+		}
+		
 		guard fcntl(fd.rawValue, F_SETFL, newFlags) != -1 else {
 			throw XcodeToolsError.systemError(Errno(rawValue: errno))
 		}
@@ -502,15 +549,33 @@ extension Process {
 	
 	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (String) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
 		do {
-			/* A bit more than estimates to get everything. */
-			let toRead = Int(estimatedBytesAvailable * 2 + 1)
-			XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
+			let toRead = Int(min(max(estimatedBytesAvailable, 1), UInt(Int.max)))
+#if !os(Linux)
 			/* We do not need to check the number of bytes actually read. If EOF
 			 * was reached (nothing was read), the stream reader will remember it,
 			 * and the readLine method will properly return nil without even trying
 			 * to read from the stream. Which matters, because we forbid the reader
-			 * from reading from the underlying stream (except in this read). */
+			 * from reading from the underlying stream (except in these read). */
+			XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
 			_ = try streamReader.readStreamInBuffer(size: toRead, allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
+#else
+			XcodeToolsConfig.logger?.trace("In libdispatch callback for \(streamReader.sourceStream)")
+			/* On Linux we have to use non-blocking IO for some reason. I’d say
+			 * it’s a libdispatch bug, but I’m not sure.
+			 * https://stackoverflow.com/questions/39173429/one-shot-level-triggered-epoll-does-epolloneshot-imply-epollet/46142976#comment121697690_46142976 */
+			let read: () throws -> Int = {
+				XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
+				return try streamReader.readStreamInBuffer(size: toRead, allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
+			}
+			let processError: (Error) -> Result<Int, Error> = { e in
+				if case Errno.resourceTemporarilyUnavailable = e {
+					XcodeToolsConfig.logger?.trace("Masking resource temporarily unavailable error")
+					return .success(0)
+				}
+				return .failure(e)
+			}
+			while try Result(catching: read).flatMapError(processError).get() >= toRead {/*nop*/}
+#endif
 			
 			while let (lineData, eolData) = try streamReader.readLine() {
 				guard let line = String(data: lineData, encoding: .utf8),
@@ -527,9 +592,6 @@ extension Process {
 			
 		} catch StreamReaderError.streamReadForbidden {
 			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): stream read forbidden (this is normal)")
-			
-		} catch Errno.resourceTemporarilyUnavailable {
-			XcodeToolsConfig.logger?.trace("Error reading from \(streamReader.sourceStream): resource temporarily unavailable")
 			
 		} catch {
 			XcodeToolsConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")

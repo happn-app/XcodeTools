@@ -50,30 +50,21 @@ final class ProcessTests : XCTestCase {
 	
 	func testProcessSpawnAndStreamStdin() throws {
 		struct ReadError : Error {}
-		let filePath = Self.filesPath.appending("three_lines.txt")
-		let fd = try FileDescriptor.open(filePath, .readOnly)
-		let fileContents = try fd.closeAfter{ () -> String in
-			guard let r = try String(data: FileDescriptorReader(stream: fd, bufferSize: 256, bufferSizeIncrement: 128).readDataToEnd(), encoding: .utf8) else {
-				throw ReadError()
+		for file in ["three-lines.txt", "big.txt"] {
+			let filePath = Self.filesPath.appending(file)
+			let fileContents = try String(contentsOf: filePath.url)
+			
+			let fd = try FileDescriptor.open(filePath, .readOnly)
+			let (exitStatus, exitReason, outputs) = try fd.closeAfter{
+				try Process.spawnAndGetOutput("/bin/cat", stdin: fd, signalsToForward: [])
 			}
-			return r
+			
+			XCTAssertEqual(exitStatus, 0)
+			XCTAssertEqual(exitReason, .exit)
+			
+			XCTAssertNil(outputs[FileDescriptor.standardError])
+			XCTAssertEqual(outputs[FileDescriptor.standardOutput], fileContents)
 		}
-		
-		var linesByFd = [FileDescriptor: [String]]()
-		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
-			"/bin/cat", args: [],
-			stdin: FileDescriptor.open(filePath, .readOnly),
-			stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
-			outputHandler: { line, fd in
-				linesByFd[fd, default: []].append(line)
-			}
-		)
-		
-		XCTAssertEqual(terminationStatus, 0)
-		XCTAssertEqual(terminationReason, .exit)
-		
-		XCTAssertNil(linesByFd[FileDescriptor.standardError])
-		XCTAssertEqual(linesByFd[FileDescriptor.standardOutput, default: []].joined(), fileContents)
 	}
 	
 	func testProcessSpawnAndStreamStdoutAndStderr() throws {
@@ -217,6 +208,7 @@ final class ProcessTests : XCTestCase {
 		}
 	}
 	
+	/* Apparently, this test does not work in Docker, but works in an Ununtu VM. */
 	func testSpawnProcessWithResourceStarving() throws {
 		/* Let’s starve the fds first */
 		var fds = Set<FileDescriptor>()
@@ -260,6 +252,20 @@ final class ProcessTests : XCTestCase {
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
+#if os(Linux)
+		/* Apparently Linux uses more fds to launch a subprocess. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+#endif
 		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, signalsToForward: []
