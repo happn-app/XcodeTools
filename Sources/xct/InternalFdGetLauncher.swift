@@ -34,7 +34,22 @@ struct InternalFdGetLauncher : ParsableCommand {
 		var destinationFdToReceivedFd = [CInt: CInt]()
 		var receivedFdToDestinationFd = [CInt: CInt]()
 		try FileDescriptor.standardInput.closeAfter{
-			while let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.standardInput.rawValue) {
+			/* First we read the number of fds to expect */
+			let buffer = UnsafeMutableBufferPointer<Int32>.allocate(capacity: 1)
+			defer {buffer.deallocate()}
+			
+			let rawBuffer = UnsafeMutableRawBufferPointer(buffer)
+			guard try FileDescriptor.standardInput.read(into: rawBuffer) == rawBuffer.count else {
+				/* TODO: Use an actual error */
+				Xct.logger.error("unexpected number of bytes read from stdin")
+				throw ExitCode(rawValue: 1)
+			}
+			let nFds = buffer.baseAddress!.pointee
+			Xct.logger.trace("Will receive \(nFds) fds")
+			
+			/* Then we read the fds */
+			for _ in 0..<nFds {
+				let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.standardInput.rawValue)
 				Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
 				/* As we have not closed any received fd yet, it should not be possible
 				 * to received the same fd twice. */
@@ -56,6 +71,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 				receivedFdToDestinationFd[receivedFd] = destinationFd
 				destinationFdToReceivedFd[destinationFd] = receivedFd
 			}
+			Xct.logger.trace("Received all fds")
 		}
 		
 		/* We may modify destinationFdToReceivedFd values, so no (key, value)
@@ -120,7 +136,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 	}
 	
 	/* https://stackoverflow.com/a/28005250 (last variant) */
-	private func receiveFd(from socket: CInt) throws -> (receivedFd: CInt, expectedDestinationFd: CInt)? {
+	private func receiveFd(from socket: CInt) throws -> (receivedFd: CInt, expectedDestinationFd: CInt) {
 		var msg = msghdr()
 		
 		/* We receive the destination fd (a simple CInt) in an iovec. */
@@ -150,16 +166,19 @@ struct InternalFdGetLauncher : ParsableCommand {
 		let receivedBytes = recvmsg(socket, &msg, 0)
 		guard receivedBytes >= 0 else {
 			/* The socket is not a TCP socket, so we cannot know whether the
-			 * connexion was closed before reading it. We check error after reading
-			 * and ignore connection reset error. */
-			let ok = (receivedBytes == 0 || errno == ECONNRESET)
-			if ok {return nil}
-			else {
-				/* TODO: Is it ok to log in this context? I’d say probably yeah, but
-				 * too tired to validate now. */
-				Xct.logger.error("cannot read from socket: \(Errno(rawValue: errno))")
-				/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
-			}
+			 * connexion was closed before reading it.
+			 * We used to check the error after reading and ignore connection reset
+			 * errors. On Linux however, recvmsg simply blocks when there are no
+			 * more fds to read.
+			 * So now we send the number of fds to expect beforehand, and we should
+			 * always be able to read all the fds.
+			 * For posterity, the test was this:
+			 *    let ok = (receivedBytes == 0 || errno == ECONNRESET)
+			 * And we returned nil if ok was true. */
+			/* TODO: Is it ok to log in this context? I’d say probably yeah, but
+			 * too tired to validate now. */
+			Xct.logger.error("cannot read from socket: \(Errno(rawValue: errno))")
+			/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
 		}
 		
 		let expectedDestinationFd = iovBase.pointee

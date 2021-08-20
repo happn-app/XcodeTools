@@ -14,3 +14,5 @@ public enum XcodeToolsError : Error {
 	case internalError(String)
 	
 }
+
+typealias Err = XcodeToolsError

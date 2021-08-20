@@ -410,6 +410,11 @@ extension Process {
 			}
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
+				try withUnsafeBytes(of: Int32(fileDescriptorsToSend.count), { bytes in
+					guard try fdToSendFds.write(bytes) == bytes.count else {
+						throw Err.internalError("Unexpected count of sent bytes to fdToSendFds")
+					}
+				})
 				for (fdInChild, fdToSend) in fileDescriptorsToSend {
 					try send(fd: fdToSend.rawValue, destfd: fdInChild.rawValue, to: fdToSendFds.rawValue)
 				}
