@@ -103,6 +103,18 @@ final class ProcessTests : XCTestCase {
 		XCTAssert(linesByFd[FileDescriptor.standardError, default: []].joined().hasSuffix(expectedStderr))
 	}
 	
+	func testProcessTerminationHandler() throws {
+		var wentIn = false
+		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_ in }, terminationHandler: { t in
+			wentIn = true
+		})
+		
+		p.waitUntilExit()
+		g.wait()
+		
+		XCTAssertTrue(wentIn)
+	}
+	
 	@available(macOS 10.15.4, *)
 	func testNonStandardFdCapture() throws {
 		struct ReadError : Error {}

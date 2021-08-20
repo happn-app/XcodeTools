@@ -146,7 +146,8 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
+		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void,
+		terminationHandler: ((Process) -> Void)? = nil
 	) throws -> (Process, DispatchGroup) {
 #if canImport(eXtenderZ)
 		let p = Process()
@@ -154,6 +155,7 @@ extension Process {
 		let p = XcodeToolsProcess()
 #endif
 		
+		p.terminationHandler = terminationHandler
 		if let environment      = environment      {p.environment         = environment}
 		if let workingDirectory = workingDirectory {p.currentDirectoryURL = workingDirectory}
 		
