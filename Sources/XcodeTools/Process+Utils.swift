@@ -389,7 +389,8 @@ extension Process {
 				} catch {
 					let nserror = error as NSError
 					switch (nserror.domain, nserror.code) {
-						case (NSCocoaErrorDomain, NSFileNoSuchFileError):
+						case (NSCocoaErrorDomain, NSFileNoSuchFileError) /* Apple platforms */,
+							  (NSCocoaErrorDomain, CocoaError.Code.fileReadNoSuchFile.rawValue) /* Linux */:
 							let nextIndex = actualPATH.index(after: index)
 							if nextIndex < actualPATH.endIndex {
 								try tryPaths(from: nextIndex, executableComponent: executableComponent)
