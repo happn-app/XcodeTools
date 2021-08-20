@@ -42,7 +42,7 @@ final class ProcessTests : XCTestCase {
 		
 		let expectedEnvValue = UUID().uuidString
 		
-		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(checkPwdAndEnvPath, args: ["XCT_PROCESS_TEST_VALUE"], workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue])
+		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(checkPwdAndEnvPath, args: ["XCT_PROCESS_TEST_VALUE"], workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue], signalsToForward: [])
 		XCTAssertEqual(exitCode, 0)
 		XCTAssertEqual(exitReason, .exit)
 		XCTAssertEqual(outputs, [.standardOutput: expectedWorkingDirectory + "\n" + expectedEnvValue + "\n"])
@@ -289,8 +289,8 @@ final class ProcessTests : XCTestCase {
 	
 	func testSpawnProcessWithNonExistentExecutable() throws {
 		let inexistentScriptURL = Self.scriptsPath.appending("inexistent.swift")
-		XCTAssertThrowsError(try Process.spawnAndGetOutput(inexistentScriptURL))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __")) /* We hope nobody will ever create the "__ inexistent __" executable :-) */
+		XCTAssertThrowsError(try Process.spawnAndGetOutput(inexistentScriptURL, signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", signalsToForward: [])) /* We hope nobody will ever create the "__ inexistent __" executable :-) */
 	}
 	
 	func testPathSearch() throws {
@@ -299,11 +299,11 @@ final class ProcessTests : XCTestCase {
 		let currentWD = FileManager.default.currentDirectoryPath
 		defer {FileManager.default.changeCurrentDirectoryPath(currentWD)}
 		
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:], signalsToForward: []))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:], signalsToForward: []))
 		
 		let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 		defer {
@@ -314,20 +314,20 @@ final class ProcessTests : XCTestCase {
 		let newPath = path + (path.isEmpty ? "" : ":") + scriptsPath.string
 		setenv("PATH", newPath, 1)
 		
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", usePATH: true, environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:]))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", usePATH: true, environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:], signalsToForward: []))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:], signalsToForward: []))
 		
 		FileManager.default.changeCurrentDirectoryPath(scriptsPath.string)
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:]))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:]))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:]))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
+		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:], signalsToForward: []))
 		/* Sadly the error we get is a file not found */
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:]))
+		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:], signalsToForward: []))
 	}
 	
 	/* Disabled because long, but allowed me to find multiple memory leaks.
@@ -336,10 +336,10 @@ final class ProcessTests : XCTestCase {
 //	func disabledTestLotsOfRuns() throws {
 //		try autoreleasepool{
 //			for _ in 0..<50 {
-//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift")))
-//				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift")))
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
+//				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
+//				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift"), signalsToForward: []))
 //			}
 //		}
 //	}
