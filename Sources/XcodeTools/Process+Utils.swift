@@ -425,21 +425,17 @@ extension Process {
 		}
 		
 		let streamGroup = DispatchGroup()
-		var readSources = [DispatchSourceRead]()
 		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
 			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
-			readSources.append(streamSource)
-			
 			streamSource.setRegistrationHandler(handler: streamGroup.enter)
 			streamSource.setCancelHandler{
 				_ = try? fd.close()
 				streamGroup.leave()
 			}
-			
 			streamSource.setEventHandler{
 				/* `source.data`: see doc of dispatch_source_get_data in objc */
 				/* `source.mask`: see doc of dispatch_source_get_mask in objc (is always 0 for read source) */
@@ -451,8 +447,8 @@ extension Process {
 					estimatedBytesAvailable: streamSource.data
 				)
 			}
+			streamSource.activate()
 		}
-		readSources.forEach{ $0.activate() }
 		
 		return (p, streamGroup)
 	}
