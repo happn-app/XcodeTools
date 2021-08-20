@@ -630,9 +630,8 @@ extension Process {
 		msg.msg_iovlen = 1
 		
 		/* Ancillary data. This is where we send the actual fd. */
-		let buf = UnsafeMutablePointer<CInt>.allocate(capacity: 1)
+		let buf = UnsafeMutableRawPointer.allocate(byteCount: XCT_CMSG_SPACE(sizeOfFd), alignment: MemoryLayout<cmsghdr>.alignment)
 		defer {buf.deallocate()}
-		buf.initialize(to: -1)
 		
 #if !os(Linux)
 		msg.msg_control = UnsafeMutableRawPointer(buf)
