@@ -218,6 +218,7 @@ extension Process {
 				fdToCloseInCaseOfError.insert(fdForReading)
 				fdToCloseInCaseOfError.insert(fdForWriting)
 				
+				Conf.logger?.trace("stdout read end is \(fdForReading)")
 				p.standardOutput = pipe
 		}
 		switch stderrRedirect {
@@ -238,6 +239,7 @@ extension Process {
 				fdToCloseInCaseOfError.insert(fdForReading)
 				fdToCloseInCaseOfError.insert(fdForWriting)
 				
+				Conf.logger?.trace("stderr read end is \(fdForReading)")
 				p.standardError = pipe
 		}
 		
@@ -409,6 +411,7 @@ extension Process {
 				p.executableURL = URL(fileURLWithPath: actualExecutablePath.string)
 				try p.run()
 			}
+			mustCallTerminationHandlerInCaseOfError = false
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
 				try withUnsafeBytes(of: Int32(fileDescriptorsToSend.count), { bytes in
@@ -483,8 +486,11 @@ extension Process {
 			outputHandler: outputHandler
 		)
 		
+		Conf.logger?.trace("Waiting for process to exit...")
 		p.waitUntilExit()
+		Conf.logger?.trace("Waiting for io to finish...")
 		g.wait()
+		Conf.logger?.trace("Wait is over.")
 		return (p.terminationStatus, p.terminationReason)
 	}
 	

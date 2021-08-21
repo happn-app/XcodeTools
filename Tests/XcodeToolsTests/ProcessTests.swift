@@ -118,13 +118,25 @@ final class ProcessTests : XCTestCase {
 	@available(macOS 10.15.4, *)
 	func testNonStandardFdCapture() throws {
 		struct ReadError : Error {}
+		struct PipeAllocError : Error {}
 		let scriptURL = Self.scriptsPath.appending("write-500-lines.swift")
 		
 		let n = 50
 		
-		let pipe = Pipe()
-		let fdRead = pipe.fileHandleForReading.fileDescriptor
-		let fdWrite = pipe.fileHandleForWriting.fileDescriptor
+		/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it). Pipe
+		 * closes both ends of the pipe on dealloc, but we need to close one at a
+		 * specific time and leave the other open (it is closed in child process). */
+		let pipepointer = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
+		defer {pipepointer.deallocate()}
+		pipepointer.initialize(to: -1)
+		
+		guard pipe(pipepointer) == 0 else {
+			throw PipeAllocError()
+		}
+		
+		let fdRead  = pipepointer.advanced(by: 0).pointee
+		let fdWrite = pipepointer.advanced(by: 1).pointee
+		assert(fdRead != -1 && fdWrite != -1)
 		
 		var count = 0
 		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
