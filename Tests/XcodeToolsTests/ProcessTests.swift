@@ -115,7 +115,6 @@ final class ProcessTests : XCTestCase {
 		XCTAssertTrue(wentIn)
 	}
 	
-	@available(macOS 10.15.4, *)
 	func testNonStandardFdCapture() throws {
 		struct ReadError : Error {}
 		struct PipeAllocError : Error {}
