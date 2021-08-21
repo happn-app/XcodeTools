@@ -147,8 +147,9 @@ extension Process {
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void,
-		terminationHandler: ((Process) -> Void)? = nil
-	) throws -> (Process, DispatchGroup) {
+		terminationHandler: ((Process) -> Void)? = nil,
+		ioDispatchGroup: DispatchGroup? = nil
+	) throws -> Process {
 #if canImport(eXtenderZ)
 		let p = Process()
 #else
@@ -427,17 +428,15 @@ extension Process {
 			}
 		}
 		
-		let streamGroup = DispatchGroup()
-		let streamQueue = DispatchQueue(label: "com.xcode-actions.spawn-and-stream")
 		for fd in outputFileDescriptors {
 			let streamReader = FileDescriptorReader(stream: fd, bufferSize: 1024, bufferSizeIncrement: 512)
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
-			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: streamQueue)
-			streamSource.setRegistrationHandler(handler: streamGroup.enter)
+			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: Self.streamQueue)
+			streamSource.setRegistrationHandler(handler: ioDispatchGroup?.enter)
 			streamSource.setCancelHandler{
 				_ = try? fd.close()
-				streamGroup.leave()
+				ioDispatchGroup?.leave()
 			}
 			streamSource.setEventHandler{
 				/* `source.data`: see doc of dispatch_source_get_data in objc */
@@ -453,7 +452,7 @@ extension Process {
 			streamSource.activate()
 		}
 		
-		return (p, streamGroup)
+		return p
 	}
 	
 	/**
@@ -472,8 +471,94 @@ extension Process {
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
+	) async throws -> (Int32, Process.TerminationReason) {
+		try await withCheckedThrowingContinuation{ continuation in
+			do {
+				let g = DispatchGroup()
+				_ = try spawnedAndStreamedProcess(
+					executable, args: args, usePATH: usePATH, customPATH: customPATH,
+					workingDirectory: workingDirectory, environment: environment,
+					stdin: stdin, stdoutRedirect: stdoutRedirect, stderrRedirect: stderrRedirect,
+					fileDescriptorsToSend: fileDescriptorsToSend,
+					additionalOutputFileDescriptors: additionalOutputFileDescriptors,
+					signalsToForward: signalsToForward,
+					outputHandler: outputHandler,
+					terminationHandler: { p in
+						g.notify(queue: Self.streamQueue, execute: {
+							continuation.resume(returning: (p.terminationStatus, p.terminationReason))
+						})
+					},
+					ioDispatchGroup: g
+				)
+			} catch {
+				continuation.resume(throwing: error)
+			}
+		}
+	}
+	
+	public static func spawnAndGetOutput(
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
+		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses
+	) async throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: String]) {
+		var outputs = [FileDescriptor: String]()
+		let (exitCode, exitReason) = try await spawnAndStream(
+			executable, args: args, usePATH: usePATH, customPATH: customPATH,
+			workingDirectory: workingDirectory, environment: environment,
+			stdin: stdin, stdoutRedirect: .capture, stderrRedirect: .capture,
+			fileDescriptorsToSend: fileDescriptorsToSend,
+			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
+			signalsToForward: signalsToForward,
+			outputHandler: { line, fd in outputs[fd, default: ""] += line }
+		)
+		
+		return (exitCode, exitReason, outputs)
+	}
+	
+	public static func checkedSpawnAndGetOutput(
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
+		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
+		expectedTerminationStatus: Int32 = 0, expectedTerminationReason: Process.TerminationReason = .exit
+	) async throws -> [FileDescriptor: String] {
+		let (exitCode, exitReason, outputs) = try await spawnAndGetOutput(
+			executable, args: args, usePATH: usePATH, customPATH: customPATH,
+			workingDirectory: workingDirectory, environment: environment,
+			stdin: stdin, fileDescriptorsToSend: fileDescriptorsToSend, additionalOutputFileDescriptors: additionalOutputFileDescriptors,
+			signalsToForward: signalsToForward
+		)
+		guard exitCode == expectedTerminationStatus, exitReason == expectedTerminationReason else {
+			throw Err.unexpectedSubprocessExit(terminationStatus: exitCode, terminationReason: exitReason)
+		}
+		return outputs
+	}
+	
+	/**
+	 Exactly the same as `spawnedAndStreamedProcess`, but the process and the
+	 streamed file descriptors are waited on and you get the termination status
+	 and reason on return.
+	 
+	 - Returns: The exit status of the process and its termination reason. */
+	@available(macOS, deprecated: 12, message: "Use async version of this method")
+	public static func spawnAndStream(
+		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
+		workingDirectory: URL? = nil, environment: [String: String]? = nil,
+		stdin: FileDescriptor? = FileDescriptor.standardInput,
+		stdoutRedirect: RedirectMode = RedirectMode.none,
+		stderrRedirect: RedirectMode = RedirectMode.none,
+		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
+		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
+		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
-		let (p, g) = try spawnedAndStreamedProcess(
+		let g = DispatchGroup()
+		let p = try spawnedAndStreamedProcess(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory,
 			environment: environment,
@@ -483,7 +568,8 @@ extension Process {
 			fileDescriptorsToSend: fileDescriptorsToSend,
 			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: outputHandler
+			outputHandler: outputHandler,
+			ioDispatchGroup: g
 		)
 		
 		Conf.logger?.trace("Waiting for process to exit...")
@@ -494,6 +580,7 @@ extension Process {
 		return (p.terminationStatus, p.terminationReason)
 	}
 	
+	@available(macOS, deprecated: 12, message: "Use async version of this method")
 	public static func spawnAndGetOutput(
 		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
@@ -518,6 +605,32 @@ extension Process {
 		
 		return (exitCode, exitReason, outputs)
 	}
+	
+	/**
+	 Returns a simple pipe. Different than using the `Pipe()` object from
+	 Foundation because you get control on when the fds are closed.
+	 
+	 - Important: The FileDescriptor returned **must** be closed manually. */
+	public static func unownedPipe() throws -> (fdRead: FileDescriptor, fdWrite: FileDescriptor) {
+		/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it). Pipe
+		 * closes both ends of the pipe on dealloc, but we need to close one at a
+		 * specific time and leave the other open (it is closed in child process). */
+		let pipepointer = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
+		defer {pipepointer.deallocate()}
+		pipepointer.initialize(to: -1)
+		
+		guard pipe(pipepointer) == 0 else {
+			throw Err.systemError(Errno(rawValue: errno))
+		}
+		
+		let fdRead  = pipepointer.advanced(by: 0).pointee
+		let fdWrite = pipepointer.advanced(by: 1).pointee
+		assert(fdRead != -1 && fdWrite != -1)
+		
+		return (FileDescriptor(rawValue: fdRead), FileDescriptor(rawValue: fdWrite))
+	}
+	
+	private static let streamQueue = DispatchQueue(label: "com.xcode-actions.process-spawn")
 	
 	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
 		let curFlags = fcntl(fd.rawValue, F_GETFL)

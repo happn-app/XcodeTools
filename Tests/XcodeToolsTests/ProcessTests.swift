@@ -105,9 +105,10 @@ final class ProcessTests : XCTestCase {
 	
 	func testProcessTerminationHandler() throws {
 		var wentIn = false
-		let (p, g) = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_ in }, terminationHandler: { t in
+		let g = DispatchGroup()
+		let p = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_ in }, terminationHandler: { t in
 			wentIn = true
-		})
+		}, ioDispatchGroup: g)
 		
 		p.waitUntilExit()
 		g.wait()
@@ -125,34 +126,25 @@ final class ProcessTests : XCTestCase {
 		/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it). Pipe
 		 * closes both ends of the pipe on dealloc, but we need to close one at a
 		 * specific time and leave the other open (it is closed in child process). */
-		let pipepointer = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
-		defer {pipepointer.deallocate()}
-		pipepointer.initialize(to: -1)
-		
-		guard pipe(pipepointer) == 0 else {
-			throw PipeAllocError()
-		}
-		
-		let fdRead  = pipepointer.advanced(by: 0).pointee
-		let fdWrite = pipepointer.advanced(by: 1).pointee
-		assert(fdRead != -1 && fdWrite != -1)
+		let (fdRead, fdWrite) = try Process.unownedPipe()
 		
 		var count = 0
-		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
-			scriptURL, args: ["\(n)", "\(fdWrite)"], stdin: nil,
+		let outputGroup = DispatchGroup()
+		let process = try Process.spawnedAndStreamedProcess(
+			scriptURL, args: ["\(n)", "\(fdWrite.rawValue)"], stdin: nil,
 			stdoutRedirect: .none, stderrRedirect: .none,
-			fileDescriptorsToSend: [FileDescriptor(rawValue: fdWrite): FileDescriptor(rawValue: fdWrite)],
-			additionalOutputFileDescriptors: [FileDescriptor(rawValue: fdRead)],
+			fileDescriptorsToSend: [fdWrite: fdWrite],
+			additionalOutputFileDescriptors: [fdRead],
 			signalsToForward: [],
 			outputHandler: { line, fd in
-				guard fd.rawValue != FileHandle.standardError.fileDescriptor else {
+				guard fd != FileDescriptor.standardError else {
 					/* When a Swift script is launched, swift can output some shit on
 					 * stderr… */
 					NSLog("%@", "Got err from script: \(line)")
 					return
 				}
 				
-				XCTAssertEqual(fd.rawValue, fdRead)
+				XCTAssertEqual(fd, fdRead)
 				XCTAssertEqual(line, "I will not leave books on the ground.\n")
 				Thread.sleep(forTimeInterval: 0.05) /* Greater than wait time in script. */
 				if count == 0 {
@@ -160,10 +152,11 @@ final class ProcessTests : XCTestCase {
 				}
 				
 				count += 1
-			}
+			},
+			ioDispatchGroup: outputGroup
 		)
 		
-		try FileDescriptor(rawValue: fdWrite).close()
+		try fdWrite.close()
 		process.waitUntilExit()
 		
 		XCTAssertLessThan(count, n)

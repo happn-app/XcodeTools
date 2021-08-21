@@ -40,10 +40,7 @@ struct XctBuild : ParsableCommand {
 //		XcodeToolsConfig.logger?.logLevel = .trace
 		XctBuild.logger.logLevel = .trace
 		
-		let pipe = Pipe()
-		let fhXcodeReadOutput = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
-		let fhXcodeWriteOutput = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
-		
+		let (fhXcodeReadOutput, fhXcodeWriteOutput) = try Process.unownedPipe()
 		guard let outputFdComponent = FilePath.Component(String(fhXcodeWriteOutput.rawValue)) else {
 			/* TODO: Error */
 			throw NSError(domain: "yo", code: 1, userInfo: nil)
@@ -59,7 +56,8 @@ struct XctBuild : ParsableCommand {
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath.string
 		]
-		let (process, outputGroup) = try Process.spawnedAndStreamedProcess(
+		let outputGroup = DispatchGroup()
+		let process = try Process.spawnedAndStreamedProcess(
 			"/usr/bin/xcodebuild", args: args,
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
@@ -88,10 +86,10 @@ struct XctBuild : ParsableCommand {
 					case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(line)")
 					default:                            XctBuild.logger.trace("unknown 😱: \(line)")
 				}
-			}
+			},
+			ioDispatchGroup: outputGroup
 		)
-		/* TODO: spawnedAndStreamedProcess should close the file descriptor to
-		 *       send, maybe w/ an option not to. For now we close it manually. */
+		/* TODO: Maybe spawnedAndStreamedProcess should close the file descriptor to send, maybe w/ an option not to. For now we close it manually. */
 		try fhXcodeWriteOutput.close()
 		process.waitUntilExit()
 		outputGroup.wait()
