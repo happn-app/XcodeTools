@@ -88,7 +88,13 @@ public struct UntarPhase : BuildPhase {
 			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
 		}
 		if verifyNoLostFilesFromStrip && stripComponents > 0 {
-			
+			let outputs = try await Process.checkedSpawnAndGetOutput("tar", args: ["-tf", unarchivedFile.string], usePATH: true)
+			for (lineData, _) in outputs[FileDescriptor.standardOutput] ?? [] {
+				guard let filePath = String(data: lineData, encoding: .utf8).flatMap({ FilePath($0) }) else {
+					throw Err.nonUtf8Output(lineData)
+				}
+				Conf.logger?.debug("got \(filePath)")
+			}
 		}
 		throw Err.notImplemented
 	}

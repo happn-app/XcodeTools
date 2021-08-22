@@ -70,19 +70,36 @@ class SourceBuilderTests : XCTestCase {
 		let group = DispatchGroup()
 		group.enter()
 		Task{
+			defer {group.leave()}
 			/* LINUXASYNC STOP --------- */
-		
+			
 			XCTAssertThrowsError(try UntarPhase(unarchivedFile: "/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tgz").destinationFolder,     FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.gz").destinationFolder,  FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.bz2").destinationFolder, FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.1.bob").destinationFolder,   FilePath("/a/b/c.1"))
 			
-				/* LINUXASYNC START --------- */
-				group.leave()
-			}
-			group.wait()
-			/* LINUXASYNC STOP --------- */
+			let tarPhase = try UntarPhase(unarchivedFile: Self.filesPath.appending("test-0.1.tar.bz2"), stripComponents: 1, verifyNoLostFilesFromStrip: true)
+			try await tarPhase.execute()
+			
+			/* LINUXASYNC START --------- */
+		}
+		group.wait()
+		/* LINUXASYNC STOP --------- */
+	}
+	
+	private static var testsDataPath: FilePath {
+		return FilePath(#filePath)
+			.removingLastComponent().removingLastComponent().removingLastComponent()
+			.appending("TestsData")
+	}
+	
+	private static var scriptsPath: FilePath {
+		return testsDataPath.appending("scripts")
+	}
+	
+	private static var filesPath: FilePath {
+		return testsDataPath.appending("files")
 	}
 	
 }

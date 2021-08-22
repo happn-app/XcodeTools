@@ -39,6 +39,11 @@ extension Process {
 		case toFd(FileDescriptor)
 	}
 	
+	public enum LineSeparators {
+		case newLine(unix: Bool, legacyMacOS: Bool, windows: Bool)
+		case customCharacters(Set<UInt8>)
+	}
+	
 	/**
 	 Spawns a process, and streams all of its outputs (stdout, stderr and all
 	 additional output file descriptors) in the handler (line by line, each line
@@ -146,7 +151,8 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void,
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false),
+		outputHandler: @escaping (_ line: Data, _ separator: Data, _ sourceFd: FileDescriptor) -> Void,
 		terminationHandler: ((Process) -> Void)? = nil,
 		ioDispatchGroup: DispatchGroup? = nil
 	) throws -> Process {
@@ -444,7 +450,8 @@ extension Process {
 				Process.handleProcessOutput(
 					streamSource: streamSource,
 					streamQueue: streamQueue,
-					outputHandler: { str in outputHandler(str, fdRedirects[fd] ?? fd) },
+					lineSeparators: lineSeparators,
+					outputHandler: { line, sep in outputHandler(line, sep, fdRedirects[fd] ?? fd) },
 					streamReader: streamReader,
 					estimatedBytesAvailable: streamSource.data
 				)
@@ -470,7 +477,8 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false),
+		outputHandler: @escaping (_ line: Data, _ separator: Data, _ sourceFd: FileDescriptor) -> Void
 	) async throws -> (Int32, Process.TerminationReason) {
 		try await withCheckedThrowingContinuation{ continuation in
 			do {
@@ -482,6 +490,7 @@ extension Process {
 					fileDescriptorsToSend: fileDescriptorsToSend,
 					additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 					signalsToForward: signalsToForward,
+					lineSeparators: lineSeparators,
 					outputHandler: outputHandler,
 					terminationHandler: { p in
 						g.notify(queue: Self.streamQueue, execute: {
@@ -502,9 +511,10 @@ extension Process {
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
-		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses
-	) async throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: String]) {
-		var outputs = [FileDescriptor: String]()
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false)
+	) async throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: [(Data, Data)]]) {
+		var outputs = [FileDescriptor: [(Data, Data)]]()
 		let (exitCode, exitReason) = try await spawnAndStream(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory, environment: environment,
@@ -512,7 +522,8 @@ extension Process {
 			fileDescriptorsToSend: fileDescriptorsToSend,
 			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: { line, fd in outputs[fd, default: ""] += line }
+			lineSeparators: lineSeparators,
+			outputHandler: { line, separator, fd in outputs[fd, default: []].append((line, separator)) }
 		)
 		
 		return (exitCode, exitReason, outputs)
@@ -525,13 +536,15 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false),
 		expectedTerminationStatus: Int32 = 0, expectedTerminationReason: Process.TerminationReason = .exit
-	) async throws -> [FileDescriptor: String] {
+	) async throws -> [FileDescriptor: [(Data, Data)]] {
 		let (exitCode, exitReason, outputs) = try await spawnAndGetOutput(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory, environment: environment,
 			stdin: stdin, fileDescriptorsToSend: fileDescriptorsToSend, additionalOutputFileDescriptors: additionalOutputFileDescriptors,
-			signalsToForward: signalsToForward
+			signalsToForward: signalsToForward,
+			lineSeparators: lineSeparators
 		)
 		guard exitCode == expectedTerminationStatus, exitReason == expectedTerminationReason else {
 			throw Err.unexpectedSubprocessExit(terminationStatus: exitCode, terminationReason: exitReason)
@@ -555,7 +568,8 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping (_ line: String, _ sourceFd: FileDescriptor) -> Void
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false),
+		outputHandler: @escaping (_ line: Data, _ separator: Data, _ sourceFd: FileDescriptor) -> Void
 	) throws -> (Int32, Process.TerminationReason) {
 		let g = DispatchGroup()
 		let p = try spawnedAndStreamedProcess(
@@ -568,6 +582,7 @@ extension Process {
 			fileDescriptorsToSend: fileDescriptorsToSend,
 			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
+			lineSeparators: lineSeparators,
 			outputHandler: outputHandler,
 			ioDispatchGroup: g
 		)
@@ -587,9 +602,10 @@ extension Process {
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
-		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses
-	) throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: String]) {
-		var outputs = [FileDescriptor: String]()
+		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
+		lineSeparators: LineSeparators = .newLine(unix: true, legacyMacOS: false, windows: false)
+	) throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: [(Data, Data)]]) {
+		var outputs = [FileDescriptor: [(Data, Data)]]()
 		let (exitCode, exitReason) = try spawnAndStream(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory,
@@ -600,7 +616,8 @@ extension Process {
 			fileDescriptorsToSend: fileDescriptorsToSend,
 			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: { line, fd in outputs[fd, default: ""] += line }
+			lineSeparators: lineSeparators,
+			outputHandler: { line, separator, fd in outputs[fd, default: []].append((line, separator)) }
 		)
 		
 		return (exitCode, exitReason, outputs)
@@ -670,7 +687,7 @@ extension Process {
 		}
 	}
 	
-	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (String) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
+	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, lineSeparators: LineSeparators, outputHandler: @escaping (Data, Data) -> Void, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
 		do {
 			let toRead = Int(min(max(estimatedBytesAvailable, 1), UInt(Int.max)))
 #if !os(Linux)
@@ -700,14 +717,25 @@ extension Process {
 			while try Result(catching: read).flatMapError(processError).get() >= toRead {/*nop*/}
 #endif
 			
-			while let (lineData, eolData) = try streamReader.readLine() {
-				guard let line = String(data: lineData, encoding: .utf8),
-						let eol = String(data: eolData, encoding: .utf8)
-				else {
-					XcodeToolsConfig.logger?.error("Got unreadable line or eol from fd \(streamReader.sourceStream): eol = \(eolData.reduce("", { $0 + String(format: "%02x", $1) })); line = \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
-					return
-				}
-				outputHandler(line + eol)
+			let readLine: () throws -> (Data, Data)?
+			switch lineSeparators {
+				case .newLine(let unix, let legacyMacOS, let windows):
+					readLine = {
+						try streamReader.readLine(allowUnixNewLines: unix, allowLegacyMacOSNewLines: legacyMacOS, allowWindowsNewLines: windows)
+					}
+					
+				case .customCharacters(let set):
+					readLine = {
+						let ret = try streamReader.readData(upTo: set.map{ Data([$0]) }, matchingMode: .shortestDataWins, failIfNotFound: false, includeDelimiter: false)
+						_ = try streamReader.readData(size: ret.delimiter.count, allowReadingLess: false)
+						guard !ret.data.isEmpty || !ret.delimiter.isEmpty else {
+							return nil
+						}
+						return ret
+					}
+			}
+			while let (lineData, eolData) = try readLine() {
+				outputHandler(lineData, eolData)
 			}
 			/* We have read all the stream, we can stop */
 			XcodeToolsConfig.logger?.debug("End of stream reached; cancelling read stream for \(streamReader.sourceStream)")

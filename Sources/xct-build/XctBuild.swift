@@ -62,9 +62,11 @@ struct XctBuild : ParsableCommand {
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
 			additionalOutputFileDescriptors: [fhXcodeReadOutput],
-			outputHandler: { line, fd in
-				var line = line
-				if line.last == "\n" {line.removeLast()}
+			outputHandler: { lineData, _, fd in
+				guard let line = String(data: lineData, encoding: .utf8) else {
+					XctBuild.logger.error("Cannot convert line data to string: \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
+					return
+				}
 				switch fd {
 					case fhXcodeReadOutput:
 //						XctBuild.logger.trace("json: \(line)")

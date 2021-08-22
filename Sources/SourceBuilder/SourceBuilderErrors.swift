@@ -16,6 +16,8 @@ enum SourceBuilderError : Error {
 	
 	case filepathHasNoExtensions(FilePath)
 	case filepathHasNoStem(FilePath)
+	
+	case nonUtf8Output(Data)
 
 	/* Also open error to handle… */
 //	case urlSessionError(Error)
