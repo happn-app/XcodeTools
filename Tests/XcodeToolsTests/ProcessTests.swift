@@ -28,80 +28,112 @@ final class ProcessTests : XCTestCase {
 	}
 	
 	func testProcessSpawnWithWorkdirAndEnvChange() throws {
-		let checkPwdAndEnvPath = Self.scriptsPath.appending("check-pwd+env.swift")
-		
-		let workingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-		try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
-		defer {_ = try? FileManager.default.removeItem(at: workingDirectory)}
-		
-		guard let realpathDir = realpath(workingDirectory.path, nil) else {
-			struct CannotGetRealPath : Error {var sourcePath: String}
-			throw CannotGetRealPath(sourcePath: workingDirectory.path)
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			let checkCwdAndEnvPath = Self.scriptsPath.appending("check-cwd+env.swift")
+			
+			let workingDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+			try FileManager.default.createDirectory(at: workingDirectory, withIntermediateDirectories: true, attributes: nil)
+			defer {_ = try? FileManager.default.removeItem(at: workingDirectory)}
+			
+			guard let realpathDir = realpath(workingDirectory.path, nil) else {
+				struct CannotGetRealPath : Error {var sourcePath: String}
+				throw CannotGetRealPath(sourcePath: workingDirectory.path)
+			}
+			let expectedWorkingDirectory = String(cString: realpathDir)
+			
+			let expectedEnvValue = UUID().uuidString
+			
+			let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(checkCwdAndEnvPath, args: ["XCT_PROCESS_TEST_VALUE"], workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue], signalsToForward: [])
+			XCTAssertEqual(exitCode, 0)
+			XCTAssertEqual(exitReason, .exit)
+			XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: expectedWorkingDirectory + "\n" + expectedEnvValue + "\n"])
+			
+			/* LINUXASYNC START --------- */
+			group.leave()
 		}
-		let expectedWorkingDirectory = String(cString: realpathDir)
-		
-		let expectedEnvValue = UUID().uuidString
-		
-		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(checkPwdAndEnvPath, args: ["XCT_PROCESS_TEST_VALUE"], workingDirectory: workingDirectory, environment: ["XCT_PROCESS_TEST_VALUE": expectedEnvValue], signalsToForward: [])
-		XCTAssertEqual(exitCode, 0)
-		XCTAssertEqual(exitReason, .exit)
-		XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: expectedWorkingDirectory + "\n" + expectedEnvValue + "\n"])
+		group.wait()
+		/* LINUXASYNC STOP --------- */
 	}
 	
 	func testProcessSpawnAndStreamStdin() throws {
-		struct ReadError : Error {}
-		for file in ["three-lines.txt", "big.txt"] {
-			let filePath = Self.filesPath.appending(file)
-			let fileContents = try String(contentsOf: filePath.url)
-			
-			let fd = try FileDescriptor.open(filePath, .readOnly)
-			let (exitStatus, exitReason, outputs) = try fd.closeAfter{
-				try Process.spawnAndGetOutput("/bin/cat", stdin: fd, signalsToForward: [])
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			struct ReadError : Error {}
+			for file in ["three-lines.txt", "big.txt"] {
+				let filePath = Self.filesPath.appending(file)
+				let fileContents = try String(contentsOf: filePath.url)
+				
+				let fd = try FileDescriptor.open(filePath, .readOnly)
+				let (exitStatus, exitReason, outputs) = try await Process.spawnAndGetOutput("/bin/cat", stdin: fd, signalsToForward: [])
+				try fd.close()
+				
+				XCTAssertEqual(exitStatus, 0)
+				XCTAssertEqual(exitReason, .exit)
+				
+				XCTAssertNil(outputs[FileDescriptor.standardError])
+				XCTAssertEqual(try textOutputFromOutputs(outputs)[FileDescriptor.standardOutput], fileContents)
 			}
 			
-			XCTAssertEqual(exitStatus, 0)
-			XCTAssertEqual(exitReason, .exit)
-			
-			XCTAssertNil(outputs[FileDescriptor.standardError])
-			XCTAssertEqual(try textOutputFromOutputs(outputs)[FileDescriptor.standardOutput], fileContents)
+			/* LINUXASYNC START --------- */
+			group.leave()
 		}
+		group.wait()
+		/* LINUXASYNC STOP --------- */
 	}
 	
 	func testProcessSpawnAndStreamStdoutAndStderr() throws {
-		struct ReadError : Error {}
-		let scriptURL = Self.scriptsPath.appending("slow-and-interleaved-output.swift")
-		
-		let n = 3 /* Not lower than 2 to get fdSwitchCount high enough */
-		let t = 0.25
-		
-		var fdSwitchCount = 0
-		var previousFd: FileDescriptor?
-		var linesByFd = [FileDescriptor: [(Data, Data)]]()
-		let (terminationStatus, terminationReason) = try Process.spawnAndStream(
-			scriptURL, args: ["\(n)", "\(t)"], stdin: nil,
-			stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
-			outputHandler: { line, sep, fd in
-				if previousFd != fd {
-					fdSwitchCount += 1
-					previousFd = fd
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			struct ReadError : Error {}
+			let scriptURL = Self.scriptsPath.appending("slow-and-interleaved-output.swift")
+			
+			let n = 3 /* Not lower than 2 to get fdSwitchCount high enough */
+			let t = 0.25
+			
+			var fdSwitchCount = 0
+			var previousFd: FileDescriptor?
+			var linesByFd = [FileDescriptor: [(Data, Data)]]()
+			let (terminationStatus, terminationReason) = try await Process.spawnAndStream(
+				scriptURL, args: ["\(n)", "\(t)"], stdin: nil,
+				stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
+				outputHandler: { line, sep, fd in
+					if previousFd != fd {
+						fdSwitchCount += 1
+						previousFd = fd
+					}
+					linesByFd[fd, default: []].append((line, sep))
 				}
-				linesByFd[fd, default: []].append((line, sep))
-			}
-		)
-		let textLinesByFd = try textOutputFromOutputs(linesByFd)
-		
-		XCTAssertGreaterThan(fdSwitchCount, 2)
-		
-		XCTAssertEqual(terminationStatus, 0)
-		XCTAssertEqual(terminationReason, .exit)
-		
-		let expectedStdout = (1...n).map{ String(repeating: "*", count: $0)           }.joined(separator: "\n") + "\n"
-		let expectedStderr = (1...n).map{ String(repeating: "*", count: (n - $0 + 1)) }.joined(separator: "\n") + "\n"
-		
-		XCTAssertEqual(textLinesByFd[FileDescriptor.standardOutput] ?? "", expectedStdout)
-		/* We do not check for equality here because swift sometimes log errors on
-		 * stderr before launching the script… */
-		XCTAssertTrue((textLinesByFd[FileDescriptor.standardError] ?? "").hasSuffix(expectedStderr))
+			)
+			let textLinesByFd = try textOutputFromOutputs(linesByFd)
+			
+			XCTAssertGreaterThan(fdSwitchCount, 2)
+			
+			XCTAssertEqual(terminationStatus, 0)
+			XCTAssertEqual(terminationReason, .exit)
+			
+			let expectedStdout = (1...n).map{ String(repeating: "*", count: $0)           }.joined(separator: "\n") + "\n"
+			let expectedStderr = (1...n).map{ String(repeating: "*", count: (n - $0 + 1)) }.joined(separator: "\n") + "\n"
+			
+			XCTAssertEqual(textLinesByFd[FileDescriptor.standardOutput] ?? "", expectedStdout)
+			/* We do not check for equality here because swift sometimes log errors on
+			 * stderr before launching the script… */
+			XCTAssertTrue((textLinesByFd[FileDescriptor.standardError] ?? "").hasSuffix(expectedStderr))
+			
+			/* LINUXASYNC START --------- */
+			group.leave()
+		}
+		group.wait()
+		/* LINUXASYNC STOP --------- */
 	}
 	
 	func testProcessTerminationHandler() throws {
@@ -118,15 +150,14 @@ final class ProcessTests : XCTestCase {
 	}
 	
 	func testNonStandardFdCapture() throws {
-		struct ReadError : Error {}
-		struct PipeAllocError : Error {}
 		let scriptURL = Self.scriptsPath.appending("write-500-lines.swift")
 		
 		let n = 50
 		
 		/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it). Pipe
 		 * closes both ends of the pipe on dealloc, but we need to close one at a
-		 * specific time and leave the other open (it is closed in child process). */
+		 * specific time and leave the other open (it is closed by the spawn
+		 * function). */
 		let (fdRead, fdWrite) = try Process.unownedPipe()
 		
 		var count = 0
@@ -168,69 +199,36 @@ final class ProcessTests : XCTestCase {
 		XCTAssertEqual(count, n)
 	}
 	
-	/* This disabled test has allowed the discovery of a leak of fds: the reading
-	 * ends of the pipes that are created when capturing the output of a process
-	 * were not closed when the end of the streams were reached.
-	 * The test is now disabled because it is excessively long.
-	 *
-	 * For reference the bug manifested in three ways that can still happen in
-	 * case of starvation of file descriptors in the process, but that I don’t
-	 * think I can detect and/or prevent (well I have a theory now for the two
-	 * last cases, which might be detectable though; see the third case for
-	 * explanation):
-	 *    - The test crashes because of an ObjC exception: Process is not
-	 *      launched. The exception is thrown when the `terminationStatus`
-	 *      property is read inside the `spawnAndStream` method.
-	 *    - The test simply stops forever. This is because the stream group never
-	 *      reaches the end, and the `spawnAndStream` method simply waits forever
-	 *      for the group to be over.
-	 *      Apparently this is *not* due to fd starvation as I got this in a
-	 *      normal run. It was highly likely to have been due to a leak in the
-	 *      stream sources that were never cancelled when a Process failed to
-	 *      launch. I never confirmed it because reproducibility was hard, but it
-	 *      is very likely. See f499ac28b08fc9f4bb8611c34b40baebd1b12d03.
-	 *    - More rare, but it happened, we can get an assertion failure inside
-	 *      the `spawnedAndStreamedProcess` method, when adding the reading ends
-	 *      of the pipes created in the output file descriptors variable. I think
-	 *      this one might actually be the same of the previous one: the reading
-	 *      end of the pipe would be an invalid fd. If both the pipe for stdout
-	 *      and stderr have an invalid fd for their reading ends, we’d add the
-	 *      same fd in the output fds twice, which is protected by an assert. In
-	 *      the previous case, maybe the stream group never reaches the end
-	 *      because the reading is done on an invalid fd which simply never
-	 *      triggers a read.
-	 *      This explanation is a theory. I have actually verified that we get an
-	 *      invalid Pipe object when initializing a Pipe when no more fds are
-	 *      available, which did trigger the assertion failure, and now properly
-	 *      detect this problem. See `testLaunchProcessWithResourceStarving` for
-	 *      more info. For the rest of the cases, I’m not sure how to reproduce
-	 *      them exactly. */
-	func disabledTestSpawnProcessWithResourceStarving() throws {
+	/* This disabled (disabled because too long) test and some variants of it
+	 * have allowed the discovery of some bugs:
+	 *    - Leaks of file descriptors;
+	 *    - Pipe fails to allocate new fds, but Pipe object init is non-fallible
+	 *      in Swift… so we check either way (now we do not use the Pipe object
+	 *      anyway, we get more control over the lifecycle of the fds);
+	 *    - Race between executable end and io group, leading to potentially
+	 *      closed fds _while setting up a new run_, leading to a lot of weird
+	 *      behaviour, such as `process not launched exception`, assertion
+	 *      failures in the spawn and stream method (same fd added twice in a
+	 *      set, which is not possible), dead-lock with the io group being waited
+	 *      on forever, partial data being read, etc.;
+	 *    - Some fds were not closed at the proper location (this was more likely
+	 *      discovered through `testNonStandardFdCapture`, but this one helped
+	 *      too IIRC). */
+	func disabledTestSpawnProcessWithResourceStarvingFirstDraft() async throws {
 		/* It has been observed that on my computer, things starts to go bad when
 		 * there are roughly 6500 fds open.
 		 * So we start by opening 6450 fds. */
 		for _ in 0..<6450 {
 			_ = try FileDescriptor.open("/dev/random", .readOnly)
 		}
-		for _ in 0..<5000 {
-			let (exitCode, exitReason) = try Process.spawnAndStream(
-				"/bin/sh", args: ["-c", "echo hello"],
-				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-				signalsToForward: [],
-				outputHandler: { _,_,_ in }
-			)
-			guard exitCode == 0, exitReason == .exit else {
-				struct UnexpectedExit : Error {}
-				throw UnexpectedExit()
-			}
+		for i in 0..<5000 {
+			NSLog("%@", "***** NEW RUN: \(i+1) *****")
+			let outputs = try await Process.checkedSpawnAndGetOutput("/bin/sh", args: ["-c", "echo hello"], signalsToForward: [])
+			XCTAssertEqual(try textOutputFromOutputs(outputs), [FileDescriptor.standardOutput: "hello\n"])
 		}
 	}
 	
-	/* Apparently, this test does not work in Docker, but works in an Ununtu VM.
-	 * Because I never run an Ubuntu VM and always use Docker, I disable the test
-	 * on Linux :-) */
-#if !os(Linux)
-	func testSpawnProcessWithResourceStarving() throws {
+	func testSpawnProcessWithResourceStarving() async throws {
 		/* Let’s starve the fds first */
 		var fds = Set<FileDescriptor>()
 		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
@@ -245,7 +243,7 @@ final class ProcessTests : XCTestCase {
 		}
 		
 		/* Now we try and use Process */
-		XCTAssertThrowsError(try Process.spawnAndStream(
+		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			signalsToForward: [],
@@ -259,7 +257,7 @@ final class ProcessTests : XCTestCase {
 		 * stderr, not stdout. To verify, the test would have to be modified, but
 		 * the check would not be very stable, so we simply verify we still get a
 		 * failure. */
-		XCTAssertThrowsError(try Process.spawnAndStream(
+		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			signalsToForward: [],
@@ -267,9 +265,11 @@ final class ProcessTests : XCTestCase {
 		))
 		
 		/* Now let’s release more fds.
-		 * If we release two, we get an error with a read from a bad fd. Not sure
-		 * why, but it’s not very much surprising.
+		 * If we release three, we get an error with a read from a bad fd. Not
+		 * sure why, but it’s not very much surprising.
 		 * If we release one more it seems to work. */
+		try releaseRandomFd()
+		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
@@ -286,8 +286,11 @@ final class ProcessTests : XCTestCase {
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
 #endif
-		let (exitCode, exitReason, outputs) = try Process.spawnAndGetOutput(
+		let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, signalsToForward: []
 		)
@@ -295,25 +298,28 @@ final class ProcessTests : XCTestCase {
 		XCTAssertEqual(exitReason, .exit)
 		XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
 	}
-#endif
 	
-	func testSpawnProcessWithNonExistentExecutable() throws {
-		let inexistentScriptURL = Self.scriptsPath.appending("inexistent.swift")
-		XCTAssertThrowsError(try Process.spawnAndGetOutput(inexistentScriptURL, signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", signalsToForward: [])) /* We hope nobody will ever create the "__ inexistent __" executable :-) */
-	}
-	
-	func testPathSearch() throws {
-		let scriptsPath = Self.scriptsPath
+	func testPathSearch() async throws {
+		let nonexistentScriptComponent = FilePath.Component(" this-file-does-not-and-must-not-exist.txt ") /* We hope nobody will create an executable with this name in the PATH */
+		let notExecutableScriptComponent = FilePath.Component("not-executable.swift")
+		let checkCwdAndEnvScriptComponent = FilePath.Component("check-cwd+env.swift")
+		
+		let nonexistentScriptPath = FilePath(root: nil, components: nonexistentScriptComponent)
+		
+		let notExecutablePathInCwd = FilePath(root: nil, components: ".", notExecutableScriptComponent)
+
+		let checkCwdAndEnvPath      = FilePath(root: nil, components:      checkCwdAndEnvScriptComponent)
+		let checkCwdAndEnvPathInCwd = FilePath(root: nil, components: ".", checkCwdAndEnvScriptComponent)
 		
 		let currentWD = FileManager.default.currentDirectoryPath
 		defer {FileManager.default.changeCurrentDirectoryPath(currentWD)}
 		
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:], signalsToForward: []))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [scriptsPath], environment: [:], signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
 		
 		let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 		defer {
@@ -321,23 +327,24 @@ final class ProcessTests : XCTestCase {
 			else                     {unsetenv("PATH")}
 		}
 		let path = curPath ?? ""
-		let newPath = path + (path.isEmpty ? "" : ":") + scriptsPath.string
+		let newPath = path + (path.isEmpty ? "" : ":") + Self.scriptsPath.string
 		setenv("PATH", newPath, 1)
 		
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("__ inexistent __", usePATH: true, environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: .some(nil), environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:], signalsToForward: []))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, environment: [:], signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, usePATH: true, signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, signalsToForward: []))
 		
-		FileManager.default.changeCurrentDirectoryPath(scriptsPath.string)
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("check-pwd+env.swift", usePATH: true, customPATH: [""], environment: [:], signalsToForward: []))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: true, customPATH: nil, environment: [:], signalsToForward: []))
-		XCTAssertNoThrow(try Process.spawnAndGetOutput("./check-pwd+env.swift", usePATH: false, environment: [:], signalsToForward: []))
+		FileManager.default.changeCurrentDirectoryPath(Self.scriptsPath.string)
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
+		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
 		/* Sadly the error we get is a file not found */
-		XCTAssertThrowsError(try Process.spawnAndGetOutput("./not-executable.swift", usePATH: false, environment: [:], signalsToForward: []))
+		FileManager.default.changeCurrentDirectoryPath(Self.filesPath.string)
+		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(notExecutablePathInCwd, usePATH: false, signalsToForward: []))
 	}
 	
 	/* Disabled because long, but allowed me to find multiple memory leaks.
@@ -349,10 +356,22 @@ final class ProcessTests : XCTestCase {
 //				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
 //				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
 //				XCTAssertThrowsError(try Process.spawnAndGetOutput(Self.scriptsPath.appending("not-executable.swift"), signalsToForward: []))
-//				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending("check-pwd+env.swift"), signalsToForward: []))
+//				XCTAssertNoThrow(try Process.spawnAndGetOutput(Self.scriptsPath.appending(checkCwdAndEnvPath), signalsToForward: []))
 //			}
 //		}
 //	}
+	
+	/* While XCTest does not have support for async for XCTAssertThrowsError */
+	private func tempAsyncAssertThrowsError<T>(_ block: @autoclosure () async throws -> T, _ message: @escaping @autoclosure () -> String = "", file: StaticString = #filePath, line: UInt = #line, _ errorHandler: (_ error: Error) -> Void = { _ in }) async {
+		do    {_ = try await block(); XCTAssertThrowsError(    {             }(), message(), file: file, line: line, errorHandler)}
+		catch {                       XCTAssertThrowsError(try { throw error }(), message(), file: file, line: line, errorHandler)}
+	}
+	
+	/* While XCTest does not have support for async for XCTAssertNoThrow */
+	private func tempAsyncAssertNoThrow<T>(_ block: @autoclosure () async throws -> T, _ message: @escaping @autoclosure () -> String = "", file: StaticString = #filePath, line: UInt = #line, _ errorHandler: (_ error: Error) -> Void = { _ in }) async {
+		do    {_ = try await block(); XCTAssertNoThrow(    {             }(), message(), file: file, line: line)}
+		catch {                       XCTAssertNoThrow(try { throw error }(), message(), file: file, line: line)}
+	}
 	
 	private func textOutputFromOutputs(_ outputs: [FileDescriptor: [(Data, Data)]]) throws -> [FileDescriptor: String] {
 		struct InvalidLine : Error {var hexLine: String}

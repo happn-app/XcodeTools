@@ -98,7 +98,7 @@ extension Process {
 	 IMHO).
 	 
 	 - Important: AFAICT the absolute ref for `PATH` resolution is
-	 https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html
+	 [from exec function in FreeBSD source](https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html)
 	 (end of file). Sadly `Process` does not report the actual errors and seem to
 	 always report “File not found” errors when the executable cannot be run. So
 	 we do not fully emulate exec’s behaviour.
@@ -173,9 +173,9 @@ extension Process {
 		var fdsToCloseInCaseOfError = Set<FileDescriptor>()
 		var fdToSwitchToBlockingInCaseOfError = Set<FileDescriptor>()
 		var countOfLeaveIODispatchGroupInCaseOfError = 0
-		var mustCallTerminationHandlerInCaseOfError = false
+		var signalCleaningOnError: (() -> Void)?
 		func cleanupAndThrow(_ error: Error) throws -> Never {
-			if mustCallTerminationHandlerInCaseOfError {p.terminationHandler?(p)}
+			signalCleaningOnError?()
 			if let g = ioDispatchGroup {for _ in 0..<countOfLeaveIODispatchGroupInCaseOfError {g.leave()}}
 			
 			/* Only the fds that are not ours, and thus not in additional output
@@ -224,7 +224,7 @@ extension Process {
 				fdsToCloseInCaseOfError.insert(fdForReading)
 				fdsToCloseInCaseOfError.insert(fdForWriting)
 				
-				Conf.logger?.trace("stdout pipe is r:\(fdForReading.rawValue)-w:\(fdForWriting.rawValue)")
+				Conf.logger?.trace("stdout pipe is r:\(fdForReading.rawValue) w:\(fdForWriting.rawValue)")
 				p.standardOutput = FileHandle(fileDescriptor: fdForWriting.rawValue, closeOnDealloc: false)
 		}
 		switch stderrRedirect {
@@ -244,7 +244,7 @@ extension Process {
 				fdsToCloseInCaseOfError.insert(fdForReading)
 				fdsToCloseInCaseOfError.insert(fdForWriting)
 				
-				Conf.logger?.trace("stderr pipe is r:\(fdForReading.rawValue)-w:\(fdForWriting.rawValue)")
+				Conf.logger?.trace("stderr pipe is r:\(fdForReading.rawValue) w:\(fdForWriting.rawValue)")
 				p.standardError = FileHandle(fileDescriptor: fdForWriting.rawValue, closeOnDealloc: false)
 		}
 		
@@ -373,18 +373,22 @@ extension Process {
 			guard p.isRunning else {return}
 			kill(p.processIdentifier, signal.rawValue)
 		}) }
-		
-		let terminationHandler: (Process) -> Void = { _ in
-			XcodeToolsConfig.logger?.debug("Called in termination handler of process")
+		let signalCleanupHandler = {
 			let errors = SigactionDelayer_Unsig.unregisterDelayedSigactions(Set(delayedSigations.values))
 			for (signal, error) in errors {
 				XcodeToolsConfig.logger?.error("Cannot unregister delayed sigaction: \(error)", metadata: ["signal": "\(signal)"])
 			}
 		}
+		signalCleaningOnError = signalCleanupHandler
+		
+		let additionalTerminationHandler: (Process) -> Void = { _ in
+			XcodeToolsConfig.logger?.debug("Called in termination handler of process")
+			signalCleanupHandler()
+		}
 #if canImport(eXtenderZ)
-		p.hpn_add(XcodeToolsProcessExtender(terminationHandler))
+		p.hpn_add(XcodeToolsProcessExtender(additionalTerminationHandler))
 #else
-		p.privateTerminationHandler = terminationHandler
+		p.privateTerminationHandler = additionalTerminationHandler
 #endif
 		
 		/* We used to enter the dispatch group in the registration handlers of the
@@ -399,7 +403,6 @@ extension Process {
 		}
 		
 		XcodeToolsConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
-		mustCallTerminationHandlerInCaseOfError = true
 		try cleanupIfThrows{
 			let actualPATH = [forcedPreprendedPATH].compactMap{ $0 } + PATH
 			func tryPaths(from index: Int, executableComponent: FilePath.Component) throws {
@@ -435,7 +438,7 @@ extension Process {
 				try $0.close()
 				fdsToCloseInCaseOfError.remove($0)
 			}
-			mustCallTerminationHandlerInCaseOfError = false
+			signalCleaningOnError = nil
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
 				try withUnsafeBytes(of: Int32(fileDescriptorsToSend.count), { bytes in
