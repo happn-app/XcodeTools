@@ -33,7 +33,7 @@ class SourceBuilderTests : XCTestCase {
 		group.enter()
 		Task{
 			/* LINUXASYNC STOP --------- */
-		
+			
 			let tmpFolder = FilePath(FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))!
 			let expectedDestinationFile = tmpFolder.appending("constant.txt")
 			defer {_ = try? FileManager.default.ensureDirectoryDeleted(path: tmpFolder)}
@@ -54,7 +54,7 @@ class SourceBuilderTests : XCTestCase {
 			
 			_ = try await downloadPhase.execute()
 			let skip4 = try await downloadPhase.canBeSkipped; XCTAssertTrue(skip4)
-		
+			
 			/* LINUXASYNC START --------- */
 			group.leave()
 		}

@@ -36,7 +36,11 @@ extension Process {
 		case none
 		case toNull
 		case capture
-		case toFd(FileDescriptor)
+		/**
+		 The stream should be redirected to this fd. If `giveOwnership` is true,
+		 the fd will be closed when the process is run. Otherwise it is your
+		 responsability to close it when needed. */
+		case toFd(FileDescriptor, giveOwnership: Bool)
 	}
 	
 	public enum LineSeparators {
@@ -166,7 +170,7 @@ extension Process {
 		if let environment      = environment      {p.environment         = environment}
 		if let workingDirectory = workingDirectory {p.currentDirectoryURL = workingDirectory}
 		
-		var fdToCloseInCaseOfError = Set<FileDescriptor>()
+		var fdsToCloseInCaseOfError = Set<FileDescriptor>()
 		var fdToSwitchToBlockingInCaseOfError = Set<FileDescriptor>()
 		var mustCallTerminationHandlerInCaseOfError = false
 		func cleanupAndThrow(_ error: Error) throws -> Never {
@@ -174,18 +178,18 @@ extension Process {
 			
 			/* Only the fds that are not ours, and thus not in additional output
 			 * fds are allowed to be closed in case of error. */
-			assert(additionalOutputFileDescriptors.intersection(fdToCloseInCaseOfError).isEmpty)
+			assert(additionalOutputFileDescriptors.intersection(fdsToCloseInCaseOfError).isEmpty)
 			/* We only try and revert fds to blocking for fds we don’t own. Only
 			 * those in additional output fds. */
 			assert(additionalOutputFileDescriptors.isSuperset(of: fdToSwitchToBlockingInCaseOfError))
 			/* The assert below is a consequence of the two above. */
-			assert(fdToCloseInCaseOfError.intersection(fdToSwitchToBlockingInCaseOfError).isEmpty)
+			assert(fdsToCloseInCaseOfError.intersection(fdToSwitchToBlockingInCaseOfError).isEmpty)
 			
 			fdToSwitchToBlockingInCaseOfError.forEach{ fd in
 				do    {try removeRequireNonBlockingIO(on: fd)}
 				catch {Conf.logger?.error("Cannot revert fd \(fd.rawValue) to blocking.")}
 			}
-			fdToCloseInCaseOfError.forEach{ try? $0.close() }
+			fdsToCloseInCaseOfError.forEach{ try? $0.close() }
 			
 			throw error
 		}
@@ -196,58 +200,50 @@ extension Process {
 			}
 		}
 		
+		var fdsToCloseAfterRun = Set<FileDescriptor>()
 		var fdRedirects = [FileDescriptor: FileDescriptor]()
 		var outputFileDescriptors = additionalOutputFileDescriptors
 		switch stdoutRedirect {
-			case .none:         (/*nop*/)
-			case .toNull:       p.standardOutput = nil
-			case .toFd(let fd): p.standardOutput = FileHandle(fileDescriptor: fd.rawValue)
-			case .capture:
-				/* The Pipe init is non-fallible, but can fail. So we cast the Pipe
-				 * returned by the init to a `Pipe?`.
-				 * On Linux the instantiation is indeed non-fallible, however the
-				 * reading and writing ends of the pipes might be invalid (< 0).*/
-				guard let pipe = Pipe() as Pipe?, pipe.fileHandleForReading.fileDescriptor >= 0, pipe.fileHandleForWriting.fileDescriptor >= 0 else {
-					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stdout"))
-				}
-				/* An alternative to the guard above:
-				let pipe = Pipe()
-				guard Unmanaged.passUnretained(pipe).toOpaque() != UnsafeMutableRawPointer(bitPattern: 0) else {
-					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe"))
-				}*/
+			case .none: (/*nop*/)
+			case .toNull: p.standardOutput = nil
+			case .toFd(let fd, let shouldClose):
+				p.standardOutput = FileHandle(fileDescriptor: fd.rawValue, closeOnDealloc: false)
+				if shouldClose {fdsToCloseAfterRun.insert(fd)}
 				
-				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
-				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+			case .capture:
+				/* We use an unowned pipe because we want absolute control on when
+				 * either side of the pipe is closed. */
+				let (fdForReading, fdForWriting) = try Self.unownedPipe()
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardOutput
 				
-				fdToCloseInCaseOfError.insert(fdForReading)
-				fdToCloseInCaseOfError.insert(fdForWriting)
+				fdsToCloseAfterRun.insert(fdForWriting)
+				fdsToCloseInCaseOfError.insert(fdForReading)
+				fdsToCloseInCaseOfError.insert(fdForWriting)
 				
-				Conf.logger?.trace("stdout read end is \(fdForReading)")
-				p.standardOutput = pipe
+				Conf.logger?.trace("stdout pipe is r:\(fdForReading.rawValue)-w:\(fdForWriting.rawValue)")
+				p.standardOutput = FileHandle(fileDescriptor: fdForWriting.rawValue, closeOnDealloc: false)
 		}
 		switch stderrRedirect {
-			case .none:         (/*nop*/)
-			case .toNull:       p.standardError = nil
-			case .toFd(let fd): p.standardError = FileHandle(fileDescriptor: fd.rawValue)
-			case .capture:
-				guard let pipe = Pipe() as Pipe?, pipe.fileHandleForReading.fileDescriptor >= 0, pipe.fileHandleForWriting.fileDescriptor >= 0 else {
-					try cleanupAndThrow(XcodeToolsError.internalError("Cannot open Pipe for stderr"))
-				}
+			case .none: (/*nop*/)
+			case .toNull: p.standardError = nil
+			case .toFd(let fd, let shouldClose):
+				p.standardError = FileHandle(fileDescriptor: fd.rawValue, closeOnDealloc: false)
+				if shouldClose {fdsToCloseAfterRun.insert(fd)}
 				
-				let fdForReading = FileDescriptor(rawValue: pipe.fileHandleForReading.fileDescriptor)
-				let fdForWriting = FileDescriptor(rawValue: pipe.fileHandleForWriting.fileDescriptor)
+			case .capture:
+				let (fdForReading, fdForWriting) = try Self.unownedPipe()
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
 				fdRedirects[fdForReading] = FileDescriptor.standardError
 				
-				fdToCloseInCaseOfError.insert(fdForReading)
-				fdToCloseInCaseOfError.insert(fdForWriting)
+				fdsToCloseAfterRun.insert(fdForWriting)
+				fdsToCloseInCaseOfError.insert(fdForReading)
+				fdsToCloseInCaseOfError.insert(fdForWriting)
 				
-				Conf.logger?.trace("stderr read end is \(fdForReading)")
-				p.standardError = pipe
+				Conf.logger?.trace("stderr pipe is r:\(fdForReading.rawValue)-w:\(fdForWriting.rawValue)")
+				p.standardError = FileHandle(fileDescriptor: fdForWriting.rawValue, closeOnDealloc: false)
 		}
 		
 #if os(Linux)
@@ -260,7 +256,7 @@ extension Process {
 				if isFromClient {
 					/* The fd is not ours. We must try and revert it to its original
 					 * state if the function throws an error. */
-					assert(!fdToCloseInCaseOfError.contains(fd))
+					assert(!fdsToCloseInCaseOfError.contains(fd))
 					fdToSwitchToBlockingInCaseOfError.insert(fd)
 				}
 			}
@@ -304,7 +300,8 @@ extension Process {
 		
 		let actualExecutablePath: FilePath
 		if fileDescriptorsToSend.isEmpty {
-			p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue) }
+			/* We add closeOnDealloc:false to be explicit, but it’s the default. */
+			p.standardInput = stdin.flatMap{ FileHandle(fileDescriptor: $0.rawValue, closeOnDealloc: false) }
 			p.arguments = args
 			actualExecutablePath = executable
 			forcedPreprendedPATH = nil
@@ -341,12 +338,13 @@ extension Process {
 				/* TODO: Throw a more informative error? */
 				try cleanupAndThrow(XcodeToolsError.systemError(Errno(rawValue: errno)))
 			}
-			let fdRaw0 = sv.advanced(by: 0).pointee
-			let fdRaw1 = sv.advanced(by: 1).pointee
-			assert(fdRaw0 != -1 && fdRaw1 != -1)
+			let fd0 = FileDescriptor(rawValue: sv.advanced(by: 0).pointee)
+			let fd1 = FileDescriptor(rawValue: sv.advanced(by: 1).pointee)
+			assert(fd0.rawValue != -1 && fd1.rawValue != -1)
 			
-			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw0))
-			fdToCloseInCaseOfError.insert(FileDescriptor(rawValue: fdRaw1))
+			fdsToCloseAfterRun.insert(fd1)
+			fdsToCloseInCaseOfError.insert(fd0)
+			fdsToCloseInCaseOfError.insert(fd1)
 			
 			let cwd = FilePath(FileManager.default.currentDirectoryPath)
 			if !cwd.isAbsolute {XcodeToolsConfig.logger?.error("currentDirectoryPath is not abolute! Madness may ensue.", metadata: ["path": "\(cwd)"])}
@@ -355,11 +353,13 @@ extension Process {
 			let PATHoption = PATHstr.flatMap{ ["--path", $0] } ?? []
 			
 			p.arguments = ["internal-fd-get-launcher", usePATH ? "--use-path" : "--no-use-path"] + PATHoption + [executable.string] + args
-			p.standardInput = FileHandle(fileDescriptor: fdRaw1)
-			fdToSendFds = FileDescriptor(rawValue: fdRaw0)
+			p.standardInput = FileHandle(fileDescriptor: fd1.rawValue, closeOnDealloc: false)
+			fdToSendFds = fd0
 			
 			if fileDescriptorsToSend[FileDescriptor.standardInput] == nil {
-				/* We must add stdin in the list of file descriptors to send. */
+				/* We must add stdin in the list of file descriptors to send so that
+				 * stdin is restored to its original value when the final process is
+				 * exec’d from xct. */
 				fileDescriptorsToSend[FileDescriptor.standardInput] = FileDescriptor.standardInput
 			}
 		}
@@ -418,6 +418,10 @@ extension Process {
 				p.executableURL = URL(fileURLWithPath: actualExecutablePath.string)
 				try p.run()
 			}
+			try fdsToCloseAfterRun.forEach{
+				try $0.close()
+				fdsToCloseInCaseOfError.remove($0)
+			}
 			mustCallTerminationHandlerInCaseOfError = false
 			if !fileDescriptorsToSend.isEmpty {
 				let fdToSendFds = fdToSendFds!
@@ -431,6 +435,7 @@ extension Process {
 				}
 				XcodeToolsConfig.logger?.trace("Closing fd to send fds")
 				try fdToSendFds.close()
+				fdsToCloseInCaseOfError.remove(fdToSendFds) /* Not really useful there cannot be any more errors from there. */
 			}
 		}
 		
