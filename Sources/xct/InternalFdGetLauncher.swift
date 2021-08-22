@@ -181,11 +181,14 @@ struct InternalFdGetLauncher : ParsableCommand {
 			/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
 		}
 		
-		let expectedDestinationFd = iovBase.pointee
-		
 		var receivedFd: Int32 = -1
-		let cmsg = XCT_CMSG_FIRSTHDR(&msg)
+		guard let cmsg = XCT_CMSG_FIRSTHDR(&msg), cmsg.pointee.cmsg_type == SCM_RIGHTS else {
+			/* TODO: Use an actual error (internal error) */
+			throw ExitCode(rawValue: 1)
+		}
 		memmove(&receivedFd, XCT_CMSG_DATA(cmsg), MemoryLayout.size(ofValue: receivedFd))
+		
+		let expectedDestinationFd = iovBase.pointee
 		
 		guard receivedFd != -1, expectedDestinationFd != -1 else {
 			/* TODO: Use an actual error (internal error) */
