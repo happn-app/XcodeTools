@@ -330,14 +330,13 @@ final class ProcessTests : XCTestCase {
 		Task{
 			/* LINUXASYNC STOP --------- */
 			
-			let nonexistentScriptComponent = FilePath.Component(" this-file-does-not-and-must-not-exist.txt ") /* We hope nobody will create an executable with this name in the PATH */
+			let spyScriptPath = FilePath("spy.swift")
+			let nonexistentScriptPath = FilePath(" this-file-does-not-and-must-not-exist.txt ") /* We hope nobody will create an executable with this name in the PATH */
+			
 			let notExecutableScriptComponent = FilePath.Component("not-executable.swift")
-			let checkCwdAndEnvScriptComponent = FilePath.Component("check-cwd+env.swift")
-			
-			let nonexistentScriptPath = FilePath(root: nil, components: nonexistentScriptComponent)
-			
 			let notExecutablePathInCwd = FilePath(root: nil, components: ".", notExecutableScriptComponent)
 			
+			let checkCwdAndEnvScriptComponent = FilePath.Component("check-cwd+env.swift")
 			let checkCwdAndEnvPath      = FilePath(root: nil, components:      checkCwdAndEnvScriptComponent)
 			let checkCwdAndEnvPathInCwd = FilePath(root: nil, components: ".", checkCwdAndEnvScriptComponent)
 			
@@ -350,6 +349,12 @@ final class ProcessTests : XCTestCase {
 			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
 			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
+			
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(spyScriptPath, usePATH: false,                                                 signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(spyScriptPath, usePATH: true,  customPATH: [Self.filesPath],                   signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath],                 signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath, Self.filesPath], signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.filesPath, Self.scriptsPath], signalsToForward: []))
 			
 			let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 			defer {
