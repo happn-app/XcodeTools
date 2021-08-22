@@ -172,9 +172,11 @@ extension Process {
 		
 		var fdsToCloseInCaseOfError = Set<FileDescriptor>()
 		var fdToSwitchToBlockingInCaseOfError = Set<FileDescriptor>()
+		var countOfLeaveIODispatchGroupInCaseOfError = 0
 		var mustCallTerminationHandlerInCaseOfError = false
 		func cleanupAndThrow(_ error: Error) throws -> Never {
 			if mustCallTerminationHandlerInCaseOfError {p.terminationHandler?(p)}
+			if let g = ioDispatchGroup {for _ in 0..<countOfLeaveIODispatchGroupInCaseOfError {g.leave()}}
 			
 			/* Only the fds that are not ours, and thus not in additional output
 			 * fds are allowed to be closed in case of error. */
@@ -385,6 +387,17 @@ extension Process {
 		p.privateTerminationHandler = terminationHandler
 #endif
 		
+		/* We used to enter the dispatch group in the registration handlers of the
+		 * dispatch sources, but we got races where the executable ended before
+		 * the distatch sources were even registered. So now we enter the group
+		 * before launching the executable. */
+		if let ioDispatchGroup = ioDispatchGroup {
+			countOfLeaveIODispatchGroupInCaseOfError = outputFileDescriptors.count
+			for _ in 0..<countOfLeaveIODispatchGroupInCaseOfError {
+				ioDispatchGroup.enter()
+			}
+		}
+		
 		XcodeToolsConfig.logger?.info("Launching process \(executable)\(fileDescriptorsToSend.isEmpty ? "" : " through xct")")
 		mustCallTerminationHandlerInCaseOfError = true
 		try cleanupIfThrows{
@@ -444,7 +457,6 @@ extension Process {
 			streamReader.underlyingStreamReadSizeLimit = 0
 			
 			let streamSource = DispatchSource.makeReadSource(fileDescriptor: fd.rawValue, queue: Self.streamQueue)
-			streamSource.setRegistrationHandler(handler: ioDispatchGroup?.enter)
 			streamSource.setCancelHandler{
 				_ = try? fd.close()
 				ioDispatchGroup?.leave()
@@ -499,6 +511,7 @@ extension Process {
 					outputHandler: outputHandler,
 					terminationHandler: { p in
 						g.notify(queue: Self.streamQueue, execute: {
+							Conf.logger?.trace("io group wait is over")
 							continuation.resume(returning: (p.terminationStatus, p.terminationReason))
 						})
 					},
