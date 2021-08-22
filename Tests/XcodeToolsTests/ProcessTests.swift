@@ -214,137 +214,173 @@ final class ProcessTests : XCTestCase {
 	 *    - Some fds were not closed at the proper location (this was more likely
 	 *      discovered through `testNonStandardFdCapture`, but this one helped
 	 *      too IIRC). */
-	func disabledTestSpawnProcessWithResourceStarvingFirstDraft() async throws {
-		/* It has been observed that on my computer, things starts to go bad when
-		 * there are roughly 6500 fds open.
-		 * So we start by opening 6450 fds. */
-		for _ in 0..<6450 {
-			_ = try FileDescriptor.open("/dev/random", .readOnly)
-		}
-		for i in 0..<5000 {
-			NSLog("%@", "***** NEW RUN: \(i+1) *****")
-			let outputs = try await Process.checkedSpawnAndGetOutput("/bin/sh", args: ["-c", "echo hello"], signalsToForward: [])
-			XCTAssertEqual(try textOutputFromOutputs(outputs), [FileDescriptor.standardOutput: "hello\n"])
-		}
-	}
-	
-	func testSpawnProcessWithResourceStarving() async throws {
-		/* Let’s starve the fds first */
-		var fds = Set<FileDescriptor>()
-		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
-		defer {fds.forEach{ try? $0.close() }}
-		
-		func releaseRandomFd() throws {
-			guard let randomFd = fds.randomElement() else {
-				throw XcodeToolsError.internalError("We starved the fds without opening a lot of files it seems.")
+	func disabledTestSpawnProcessWithResourceStarvingFirstDraft() throws {
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			
+			/* It has been observed that on my computer, things starts to go bad when
+			 * there are roughly 6500 fds open.
+			 * So we start by opening 6450 fds. */
+			for _ in 0..<6450 {
+				_ = try FileDescriptor.open("/dev/random", .readOnly)
 			}
-			try randomFd.close()
-			fds.remove(randomFd)
+			for i in 0..<5000 {
+				NSLog("%@", "***** NEW RUN: \(i+1) *****")
+				let outputs = try await Process.checkedSpawnAndGetOutput("/bin/sh", args: ["-c", "echo hello"], signalsToForward: [])
+				XCTAssertEqual(try textOutputFromOutputs(outputs), [FileDescriptor.standardOutput: "hello\n"])
+			}
+			
+			/* LINUXASYNC START --------- */
+			group.leave()
 		}
-		
-		/* Now we try and use Process */
-		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
-			"/bin/sh", args: ["-c", "echo hello"],
-			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-			signalsToForward: [],
-			outputHandler: { _,_,_ in }
-		))
-		
-		/* We release two fds. */
-		try releaseRandomFd()
-		try releaseRandomFd()
-		/* Using process should still fail, but with error when opening Pipe for
-		 * stderr, not stdout. To verify, the test would have to be modified, but
-		 * the check would not be very stable, so we simply verify we still get a
-		 * failure. */
-		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
-			"/bin/sh", args: ["-c", "echo hello"],
-			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-			signalsToForward: [],
-			outputHandler: { _,_,_ in }
-		))
-		
-		/* Now let’s release more fds.
-		 * If we release three, we get an error with a read from a bad fd. Not
-		 * sure why, but it’s not very much surprising.
-		 * If we release one more it seems to work. */
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-#if os(Linux)
-		/* Apparently Linux uses more fds to launch a subprocess. */
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-#endif
-		let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(
-			"/bin/sh", args: ["-c", "echo hello"],
-			stdin: nil, signalsToForward: []
-		)
-		XCTAssertEqual(exitCode, 0)
-		XCTAssertEqual(exitReason, .exit)
-		XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
+		group.wait()
+		/* LINUXASYNC STOP --------- */
 	}
 	
-	func testPathSearch() async throws {
-		let nonexistentScriptComponent = FilePath.Component(" this-file-does-not-and-must-not-exist.txt ") /* We hope nobody will create an executable with this name in the PATH */
-		let notExecutableScriptComponent = FilePath.Component("not-executable.swift")
-		let checkCwdAndEnvScriptComponent = FilePath.Component("check-cwd+env.swift")
-		
-		let nonexistentScriptPath = FilePath(root: nil, components: nonexistentScriptComponent)
-		
-		let notExecutablePathInCwd = FilePath(root: nil, components: ".", notExecutableScriptComponent)
-
-		let checkCwdAndEnvPath      = FilePath(root: nil, components:      checkCwdAndEnvScriptComponent)
-		let checkCwdAndEnvPathInCwd = FilePath(root: nil, components: ".", checkCwdAndEnvScriptComponent)
-		
-		let currentWD = FileManager.default.currentDirectoryPath
-		defer {FileManager.default.changeCurrentDirectoryPath(currentWD)}
-		
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
-		
-		let curPath = getenv("PATH").flatMap{ String(cString: $0) }
-		defer {
-			if let curPath = curPath {setenv("PATH", curPath, 1)}
-			else                     {unsetenv("PATH")}
+	func testSpawnProcessWithResourceStarving() throws {
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			
+			/* Let’s starve the fds first */
+			var fds = Set<FileDescriptor>()
+			while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
+			defer {fds.forEach{ try? $0.close() }}
+			
+			func releaseRandomFd() throws {
+				guard let randomFd = fds.randomElement() else {
+					throw XcodeToolsError.internalError("We starved the fds without opening a lot of files it seems.")
+				}
+				try randomFd.close()
+				fds.remove(randomFd)
+			}
+			
+			/* Now we try and use Process */
+			await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
+				"/bin/sh", args: ["-c", "echo hello"],
+				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+				signalsToForward: [],
+				outputHandler: { _,_,_ in }
+			))
+			
+			/* We release two fds. */
+			try releaseRandomFd()
+			try releaseRandomFd()
+			/* Using process should still fail, but with error when opening Pipe for
+			 * stderr, not stdout. To verify, the test would have to be modified, but
+			 * the check would not be very stable, so we simply verify we still get a
+			 * failure. */
+			await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
+				"/bin/sh", args: ["-c", "echo hello"],
+				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+				signalsToForward: [],
+				outputHandler: { _,_,_ in }
+			))
+			
+			/* Now let’s release more fds.
+			 * If we release three, we get an error with a read from a bad fd. Not
+			 * sure why, but it’s not very much surprising.
+			 * If we release one more it seems to work. */
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+#if os(Linux)
+			/* Apparently Linux uses more fds to launch a subprocess. */
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+			try releaseRandomFd()
+#endif
+			let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(
+				"/bin/sh", args: ["-c", "echo hello"],
+				stdin: nil, signalsToForward: []
+			)
+			XCTAssertEqual(exitCode, 0)
+			XCTAssertEqual(exitReason, .exit)
+			XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
+			
+			/* LINUXASYNC START --------- */
+			group.leave()
 		}
-		let path = curPath ?? ""
-		let newPath = path + (path.isEmpty ? "" : ":") + Self.scriptsPath.string
-		setenv("PATH", newPath, 1)
-		
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, usePATH: true, signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, signalsToForward: []))
-		
-		FileManager.default.changeCurrentDirectoryPath(Self.scriptsPath.string)
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
-		await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
-		/* Sadly the error we get is a file not found */
-		FileManager.default.changeCurrentDirectoryPath(Self.filesPath.string)
-		await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(notExecutablePathInCwd, usePATH: false, signalsToForward: []))
+		group.wait()
+		/* LINUXASYNC STOP --------- */
+	}
+	
+	func testPathSearch() throws {
+		/* LINUXASYNC START --------- */
+		let group = DispatchGroup()
+		group.enter()
+		Task{
+			/* LINUXASYNC STOP --------- */
+			
+			let nonexistentScriptComponent = FilePath.Component(" this-file-does-not-and-must-not-exist.txt ") /* We hope nobody will create an executable with this name in the PATH */
+			let notExecutableScriptComponent = FilePath.Component("not-executable.swift")
+			let checkCwdAndEnvScriptComponent = FilePath.Component("check-cwd+env.swift")
+			
+			let nonexistentScriptPath = FilePath(root: nil, components: nonexistentScriptComponent)
+			
+			let notExecutablePathInCwd = FilePath(root: nil, components: ".", notExecutableScriptComponent)
+			
+			let checkCwdAndEnvPath      = FilePath(root: nil, components:      checkCwdAndEnvScriptComponent)
+			let checkCwdAndEnvPathInCwd = FilePath(root: nil, components: ".", checkCwdAndEnvScriptComponent)
+			
+			let currentWD = FileManager.default.currentDirectoryPath
+			defer {FileManager.default.changeCurrentDirectoryPath(currentWD)}
+			
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [Self.scriptsPath], signalsToForward: []))
+			
+			let curPath = getenv("PATH").flatMap{ String(cString: $0) }
+			defer {
+				if let curPath = curPath {setenv("PATH", curPath, 1)}
+				else                     {unsetenv("PATH")}
+			}
+			let path = curPath ?? ""
+			let newPath = path + (path.isEmpty ? "" : ":") + Self.scriptsPath.string
+			setenv("PATH", newPath, 1)
+			
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(nonexistentScriptPath, usePATH: true, signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: .some(nil), signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: nil, signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, signalsToForward: []))
+			
+			FileManager.default.changeCurrentDirectoryPath(Self.scriptsPath.string)
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
+			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
+			/* Sadly the error we get is a file not found */
+			FileManager.default.changeCurrentDirectoryPath(Self.filesPath.string)
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(notExecutablePathInCwd, usePATH: false, signalsToForward: []))
+			
+			/* LINUXASYNC START --------- */
+			group.leave()
+		}
+		group.wait()
+		/* LINUXASYNC STOP --------- */
 	}
 	
 	/* Disabled because long, but allowed me to find multiple memory leaks.
