@@ -31,7 +31,7 @@ class SourceBuilderTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
 			let tmpFolder = FilePath(FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))!
@@ -57,7 +57,7 @@ class SourceBuilderTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -69,21 +69,22 @@ class SourceBuilderTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
-			defer {group.leave()}
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
 			XCTAssertThrowsError(try UntarPhase(unarchivedFile: "/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tgz").destinationFolder,     FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.gz").destinationFolder,  FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.bz2").destinationFolder, FilePath("/a/b/c"))
+			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.bob").destinationFolder, FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.1.bob").destinationFolder,   FilePath("/a/b/c.1"))
-			
+
 			let tarPhase = try UntarPhase(unarchivedFile: Self.filesPath.appending("test-0.1.tar.bz2"), stripComponents: 1, verifyNoLostFilesFromStrip: true)
 			try await tarPhase.execute()
 			
 			/* LINUXASYNC START --------- */
-		}
+			group.leave()
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}

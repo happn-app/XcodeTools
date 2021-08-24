@@ -31,7 +31,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			let checkCwdAndEnvPath = Self.scriptsPath.appending("check-cwd+env.swift")
 			
@@ -54,7 +54,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -63,7 +63,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			struct ReadError : Error {}
 			for file in ["three-lines.txt", "big.txt"] {
@@ -83,7 +83,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -92,7 +92,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			struct ReadError : Error {}
 			let scriptURL = Self.scriptsPath.appending("slow-and-interleaved-output.swift")
@@ -131,7 +131,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -218,7 +218,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
 			/* It has been observed that on my computer, things starts to go bad when
@@ -235,7 +235,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -244,7 +244,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
 			/* Let’s starve the fds first */
@@ -318,7 +318,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -327,7 +327,7 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
 		group.enter()
-		Task{
+		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
 			let spyScriptPath = FilePath("spy.swift")
@@ -383,7 +383,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}
+		}/* catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}*/}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
