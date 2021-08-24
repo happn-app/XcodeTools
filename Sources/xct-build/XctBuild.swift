@@ -62,7 +62,7 @@ struct XctBuild : ParsableCommand {
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
 			additionalOutputFileDescriptors: [fhXcodeReadOutput],
-			outputHandler: { lineData, _, fd in
+			outputHandler: { lineData, _, fd, _, _ in
 				guard let line = String(data: lineData, encoding: .utf8) else {
 					XctBuild.logger.error("Cannot convert line data to string: \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
 					return
@@ -88,6 +88,7 @@ struct XctBuild : ParsableCommand {
 					case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(line)")
 					default:                            XctBuild.logger.trace("unknown 😱: \(line)")
 				}
+				return
 			},
 			ioDispatchGroup: outputGroup
 		)

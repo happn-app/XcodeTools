@@ -34,11 +34,12 @@ var products = [Product]()
 products.append(.library(name: "SourceBuilder", targets: ["SourceBuilder"]))
 targets.append(contentsOf: [
 	.target(name: "SourceBuilder", dependencies: [
-		.product(name: "Crypto",        package: "swift-crypto"), /* If we supported macOS only we’d use CryptoKit instead of this… */
-		.product(name: "Logging",       package: "swift-log"),
-		.product(name: "StreamReader",  package: "stream-reader"),
-		.product(name: "SystemPackage", package: "swift-system"),
-		.product(name: "XibLoc",        package: "XibLoc"),
+		.product(name: "Crypto",         package: "swift-crypto"), /* If we supported macOS only we’d use CryptoKit instead of this… */
+		.product(name: "Logging",        package: "swift-log"),
+		.product(name: "SignalHandling", package: "swift-signal-handling"),
+		.product(name: "StreamReader",   package: "stream-reader"),
+		.product(name: "SystemPackage",  package: "swift-system"),
+		.product(name: "XibLoc",         package: "XibLoc"),
 		.target(name: "Utils"),
 		.target(name: "XcodeTools")
 	]),

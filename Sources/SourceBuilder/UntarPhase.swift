@@ -1,6 +1,8 @@
 import Foundation
 
+import SignalHandling
 import SystemPackage
+import Utils
 import XcodeTools
 
 
@@ -51,7 +53,7 @@ public struct UntarPhase : BuildPhase {
 		throw Err.notImplemented
 	}
 	
-	/*
+	/**
 	 Uses the tar filename to determine the destination folder.
 	 
 	 The destination folder is the same path as the unarchived file, minus the
@@ -88,13 +90,21 @@ public struct UntarPhase : BuildPhase {
 			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
 		}
 		if verifyNoLostFilesFromStrip && stripComponents > 0 {
-			let outputs = try await Process.checkedSpawnAndGetOutput("tar", args: ["-tf", unarchivedFile.string], usePATH: true)
-			for (lineData, _) in outputs[FileDescriptor.standardOutput] ?? [] {
-				guard let filePath = String(data: lineData, encoding: .utf8).flatMap({ FilePath($0) }) else {
-					throw Err.nonUtf8Output(lineData)
+			var streamError: Error?
+			try await Process.checkedSpawnAndStream("tar", args: ["--list", "--file", unarchivedFile.string], usePATH: true, outputHandler: { lineData, _, sourceFd, signalEOI, _ in
+				guard let lineStr = String(data: lineData, encoding: .utf8) else {
+					streamError = Err.nonUtf8Output(lineData)
+					return signalEOI()
 				}
-				Conf.logger?.debug("got \(filePath)")
-			}
+				guard sourceFd == .standardOutput else {
+					Conf.logger?.error("got line from fd \(sourceFd) of tar: \(lineStr)")
+					return
+				}
+				if lineStr.contains("NOOP") {return signalEOI()}
+				Conf.logger?.debug("got \(lineStr)")
+				return
+			})
+			try streamError?.throw()
 		}
 		throw Err.notImplemented
 	}

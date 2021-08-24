@@ -106,7 +106,7 @@ final class ProcessTests : XCTestCase {
 			let (terminationStatus, terminationReason) = try await Process.spawnAndStream(
 				scriptURL, args: ["\(n)", "\(t)"], stdin: nil,
 				stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
-				outputHandler: { line, sep, fd in
+				outputHandler: { line, sep, fd, _, _ in
 					if previousFd != fd {
 						fdSwitchCount += 1
 						previousFd = fd
@@ -139,7 +139,7 @@ final class ProcessTests : XCTestCase {
 	func testProcessTerminationHandler() throws {
 		var wentIn = false
 		let g = DispatchGroup()
-		let p = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_,_ in }, terminationHandler: { t in
+		let p = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_,_,_,_ in }, terminationHandler: { t in
 			wentIn = true
 		}, ioDispatchGroup: g)
 		
@@ -168,7 +168,7 @@ final class ProcessTests : XCTestCase {
 			fileDescriptorsToSend: [fdWrite: fdWrite],
 			additionalOutputFileDescriptors: [fdRead],
 			signalsToForward: [],
-			outputHandler: { line, separator, fd in
+			outputHandler: { line, separator, fd, _, _ in
 				guard fd != FileDescriptor.standardError else {
 					/* When a Swift script is launched, swift can output some shit on
 					 * stderr… */
@@ -265,7 +265,7 @@ final class ProcessTests : XCTestCase {
 				"/bin/sh", args: ["-c", "echo hello"],
 				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 				signalsToForward: [],
-				outputHandler: { _,_,_ in }
+				outputHandler: { _,_,_,_,_ in }
 			))
 			
 			/* We release two fds. */
@@ -279,7 +279,7 @@ final class ProcessTests : XCTestCase {
 				"/bin/sh", args: ["-c", "echo hello"],
 				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 				signalsToForward: [],
-				outputHandler: { _,_,_ in }
+				outputHandler: { _,_,_,_,_ in }
 			))
 			
 			/* Now let’s release more fds.
