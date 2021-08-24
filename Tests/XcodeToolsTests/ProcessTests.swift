@@ -240,88 +240,79 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC STOP --------- */
 	}
 	
-	func testSpawnProcessWithResourceStarving() throws {
-		/* LINUXASYNC START --------- */
-		let group = DispatchGroup()
-		group.enter()
-		Task{do{
-			/* LINUXASYNC STOP --------- */
-			
-			/* Let’s starve the fds first */
-			var fds = Set<FileDescriptor>()
-			while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
-			defer {fds.forEach{ try? $0.close() }}
-			
-			func releaseRandomFd() throws {
-				guard let randomFd = fds.randomElement() else {
-					throw XcodeToolsError.internalError("We starved the fds without opening a lot of files it seems.")
-				}
-				try randomFd.close()
-				fds.remove(randomFd)
+#if !os(Linux)
+	/* Disabled on Linux, because unreliable (sometimes works, sometimes not). */
+	func testSpawnProcessWithResourceStarving() async throws {
+		/* Let’s starve the fds first */
+		var fds = Set<FileDescriptor>()
+		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
+		defer {fds.forEach{ try? $0.close() }}
+		
+		func releaseRandomFd() throws {
+			guard let randomFd = fds.randomElement() else {
+				throw XcodeToolsError.internalError("We starved the fds without opening a lot of files it seems.")
 			}
-			
-			/* Now we try and use Process */
-			await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
-				"/bin/sh", args: ["-c", "echo hello"],
-				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-				signalsToForward: [],
-				outputHandler: { _,_,_,_,_ in }
-			))
-			
-			/* We release two fds. */
-			try releaseRandomFd()
-			try releaseRandomFd()
-			/* Using process should still fail, but with error when opening Pipe for
-			 * stderr, not stdout. To verify, the test would have to be modified, but
-			 * the check would not be very stable, so we simply verify we still get a
-			 * failure. */
-			await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
-				"/bin/sh", args: ["-c", "echo hello"],
-				stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-				signalsToForward: [],
-				outputHandler: { _,_,_,_,_ in }
-			))
-			
-			/* Now let’s release more fds.
-			 * If we release three, we get an error with a read from a bad fd. Not
-			 * sure why, but it’s not very much surprising.
-			 * If we release one more it seems to work. */
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
+			try randomFd.close()
+			fds.remove(randomFd)
+		}
+		
+		/* Now we try and use Process */
+		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+			signalsToForward: [],
+			outputHandler: { _,_,_,_,_ in }
+		))
+		
+		/* We release two fds. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		/* Using process should still fail, but with error when opening Pipe for
+		 * stderr, not stdout. To verify, the test would have to be modified, but
+		 * the check would not be very stable, so we simply verify we still get a
+		 * failure. */
+		await tempAsyncAssertThrowsError(try await Process.spawnAndStream(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
+			signalsToForward: [],
+			outputHandler: { _,_,_,_,_ in }
+		))
+		
+		/* Now let’s release more fds.
+		 * If we release three, we get an error with a read from a bad fd. Not
+		 * sure why, but it’s not very much surprising.
+		 * If we release one more it seems to work. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
 #if os(Linux)
-			/* Apparently Linux uses more fds to launch a subprocess. */
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
-			try releaseRandomFd()
+		/* Apparently Linux uses more fds to launch a subprocess. */
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
+		try releaseRandomFd()
 #endif
-			let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(
-				"/bin/sh", args: ["-c", "echo hello"],
-				stdin: nil, signalsToForward: []
-			)
-			XCTAssertEqual(exitCode, 0)
-			XCTAssertEqual(exitReason, .exit)
-			XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
-			
-			/* LINUXASYNC START --------- */
-			group.leave()
-		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
-		group.wait()
-		/* LINUXASYNC STOP --------- */
+		let (exitCode, exitReason, outputs) = try await Process.spawnAndGetOutput(
+			"/bin/sh", args: ["-c", "echo hello"],
+			stdin: nil, signalsToForward: []
+		)
+		XCTAssertEqual(exitCode, 0)
+		XCTAssertEqual(exitReason, .exit)
+		XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
 	}
+#endif
 	
 	func testPathSearch() throws {
 		/* LINUXASYNC START --------- */
