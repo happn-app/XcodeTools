@@ -354,7 +354,16 @@ final class ProcessTests : XCTestCase {
 			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(spyScriptPath, usePATH: true,  customPATH: [Self.filesPath],                   signalsToForward: []))
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath],                 signalsToForward: []))
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath, Self.filesPath], signalsToForward: []))
+#if os(Linux)
+			/* On Linux, the error when trying to execute a non-executable file is
+			 * correct (no permission), and so we don’t try next path available. */
+			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(spyScriptPath, usePATH: true,  customPATH: [Self.filesPath, Self.scriptsPath], signalsToForward: []))
+#else
+			/* On macOS the error is file not found, even if the actual problem is
+			 * a permission thing. */
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(spyScriptPath,     usePATH: true,  customPATH: [Self.filesPath, Self.scriptsPath], signalsToForward: []))
+#endif
+			
 			
 			let curPath = getenv("PATH").flatMap{ String(cString: $0) }
 			defer {
@@ -377,7 +386,8 @@ final class ProcessTests : XCTestCase {
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []))
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []))
 			await tempAsyncAssertNoThrow(try await Process.spawnAndGetOutput(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []))
-			/* Sadly the error we get is a file not found */
+			/* Sadly the error we get is a file not found on macOS. On Linux, the
+			 * error makes sense. */
 			FileManager.default.changeCurrentDirectoryPath(Self.filesPath.string)
 			await tempAsyncAssertThrowsError(try await Process.spawnAndGetOutput(notExecutablePathInCwd, usePATH: false, signalsToForward: []))
 			
