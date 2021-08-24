@@ -156,10 +156,10 @@ extension Process {
 	 which case the default `PATH` is used (`_PATH_DEFPATH`, see `exec(3)`) or a
 	 non-nil value, in which case this value is used.
 	 - Parameter fileDescriptorsToSend: The file descriptors (other than `stdin`,
-	 `stdout` and `stderr`, which are handled and differently) to clone in the
-	 child process. The **value** is the file descriptor to clone (from the
-	 parent process to the child), the key is the descriptor you’ll get in the
-	 child process.
+	 `stdout` and `stderr`, which are handled differently) to clone in the child
+	 process. The **value** is the file descriptor to clone (from the parent
+	 process to the child), the key is the descriptor you’ll get in the child
+	 process.
 	 - Parameter additionalOutputFileDescriptors: Additional output file
 	 descriptors to stream from the process. Usually used with
 	 `fileDescriptorsToSend` (you open a socket, give the write fd in fds to
@@ -174,8 +174,10 @@ extension Process {
 	 process. You are given a handler you can call to notify the end of interest
 	 in the stream (which closes the corresponding fd).
 	  **Important**: Do **not** close the fd yourself.
-	 - Returns: The _started_ `Process` object that was created and a dispatch
-	 group you can wait on to be sure the end of the streams was reached. */
+	 - Parameter ioDispatchGroup: An optional dispatch group you can give to wait
+	 on after the process has finished executing to wait for the streams to
+	 finish streaming.
+	 - Returns: The _started_ `Process` object that was created. */
 	public static func spawnedAndStreamedProcess(
 		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
