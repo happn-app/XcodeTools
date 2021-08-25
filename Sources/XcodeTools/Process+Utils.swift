@@ -730,7 +730,8 @@ extension Process {
 		return (FileDescriptor(rawValue: fdRead), FileDescriptor(rawValue: fdWrite))
 	}
 	
-	private static let streamQueue = DispatchQueue(label: "com.xcode-actions.process-spawn")
+	/* Internal, because used by the iterator too */
+	internal static let streamQueue = DispatchQueue(label: "com.xcode-actions.process-spawn")
 	
 	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
 		let curFlags = fcntl(fd.rawValue, F_GETFL)

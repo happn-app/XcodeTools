@@ -18,7 +18,7 @@ enum SourceBuilderError : Error {
 	case filepathHasNoStem(FilePath)
 	
 	case nonUtf8Output(Data)
-
+	
 	/* Also open error to handle… */
 //	case urlSessionError(Error)
 	case unknownNetworkingError /* We should not need that one once Linux has support for async/await */
