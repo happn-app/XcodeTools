@@ -97,6 +97,7 @@ public struct UntarPhase : BuildPhase {
 				Conf.logger?.debug("got line (fd=\(l.fd.rawValue)): \(lineStr)")
 				if lineStr.contains("NOOP") {break}
 			}
+			try iterator.checkNormalExit()
 //			try await Process.checkedSpawnAndStream("tar", args: ["--list", "--file", unarchivedFile.string], usePATH: true, outputHandler: { lineData, _, sourceFd, signalEOI, _ in
 //				guard let lineStr = String(data: lineData, encoding: .utf8) else {
 //					streamError = Err.nonUtf8Output(lineData)
