@@ -35,8 +35,8 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 		state = s
 		process = p
 		
-		s.waitForDataGroup.enter()
 		s.waitingForData = true
+		s.waitForDataGroup.enter()
 	}
 	
 	public mutating func next() async throws -> RawLineWithSource? {
@@ -49,6 +49,11 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 					return continuation.resume(returning: nil)
 				}
 				s.bufferedLines.removeFirst()
+				if s.bufferedLines.isEmpty {
+					s.waitingForData = true
+					s.waitForDataGroup.enter()
+				}
+				
 				switch l {
 					case .success(let l): return continuation.resume(returning: l)
 					case .failure(let e): return continuation.resume(throwing: e)
@@ -77,10 +82,11 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 		}
 	}
 	
-	/* Sometimes, check if can be made an actor… */
+	/* Maybe later, check if can be made an actor… */
 	private class State {
 		
 		var processIsDone = false
+		var gotOutputError = false
 		var bufferedLines = [Result<RawLineWithSource, Error>]()
 		
 		let ioDispatchGroup = DispatchGroup()
@@ -100,6 +106,9 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 		}
 		
 		func processNewLine(lineResult: Result<RawLineWithSource, Error>, signalEOI: () -> Void, process: Process) {
+			guard !gotOutputError else {return}
+			gotOutputError = ((try? lineResult.get()) == nil)
+			
 			bufferedLines.append(lineResult)
 			if waitingForData {
 				waitingForData = false
@@ -109,9 +118,8 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 		
 	}
 	
-	private var state: State
-	
 	private let process: Process
+	private var state: State
 	
 }
 
