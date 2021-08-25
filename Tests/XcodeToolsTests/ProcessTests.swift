@@ -77,7 +77,7 @@ final class ProcessTests : XCTestCase {
 				XCTAssertEqual(exitStatus, 0)
 				XCTAssertEqual(exitReason, .exit)
 				
-				XCTAssertNil(outputs[FileDescriptor.standardError])
+				XCTAssertFalse(outputs.contains(where: { $0.fd == .standardError }))
 				XCTAssertEqual(try textOutputFromOutputs(outputs)[FileDescriptor.standardOutput], fileContents)
 			}
 			
@@ -102,16 +102,19 @@ final class ProcessTests : XCTestCase {
 			
 			var fdSwitchCount = 0
 			var previousFd: FileDescriptor?
-			var linesByFd = [FileDescriptor: [(Data, Data)]]()
+			var linesByFd = [RawLineWithSource]()
 			let (terminationStatus, terminationReason) = try await Process.spawnAndStream(
 				scriptURL, args: ["\(n)", "\(t)"], stdin: nil,
 				stdoutRedirect: .capture, stderrRedirect: .capture, signalsToForward: [],
-				outputHandler: { line, sep, fd, _, _ in
-					if previousFd != fd {
-						fdSwitchCount += 1
-						previousFd = fd
+				outputHandler: { lineResult, _, _ in
+					guard let rawLine = try? lineResult.get() else {
+						return XCTFail("got output error: \(lineResult)")
 					}
-					linesByFd[fd, default: []].append((line, sep))
+					if previousFd != rawLine.fd {
+						fdSwitchCount += 1
+						previousFd = rawLine.fd
+					}
+					linesByFd.append(rawLine)
 				}
 			)
 			let textLinesByFd = try textOutputFromOutputs(linesByFd)
@@ -139,7 +142,7 @@ final class ProcessTests : XCTestCase {
 	func testProcessTerminationHandler() throws {
 		var wentIn = false
 		let g = DispatchGroup()
-		let p = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_,_,_,_ in }, terminationHandler: { t in
+		let p = try Process.spawnedAndStreamedProcess("/bin/cat", stdin: nil, signalsToForward: [], outputHandler: { _,_,_ in }, terminationHandler: { t in
 			wentIn = true
 		}, ioDispatchGroup: g)
 		
@@ -168,17 +171,20 @@ final class ProcessTests : XCTestCase {
 			fileDescriptorsToSend: [fdWrite: fdWrite],
 			additionalOutputFileDescriptors: [fdRead],
 			signalsToForward: [],
-			outputHandler: { line, separator, fd, _, _ in
-				guard fd != FileDescriptor.standardError else {
+			outputHandler: { lineResult, _, _ in
+				guard let rawLine = try? lineResult.get() else {
+					return XCTFail("got output error: \(lineResult)")
+				}
+				guard rawLine.fd != FileDescriptor.standardError else {
 					/* When a Swift script is launched, swift can output some shit on
 					 * stderr… */
-					NSLog("%@", "Got err from script: \(line)")
+					NSLog("%@", "Got err from script: \(rawLine.line)")
 					return
 				}
 				
-				XCTAssertEqual(fd, fdRead)
-				XCTAssertEqual(line, Data("I will not leave books on the ground.".utf8))
-				XCTAssertEqual(separator, Data("\n".utf8))
+				XCTAssertEqual(rawLine.fd, fdRead)
+				XCTAssertEqual(rawLine.line, Data("I will not leave books on the ground.".utf8))
+				XCTAssertEqual(rawLine.eol, Data("\n".utf8))
 				Thread.sleep(forTimeInterval: 0.05) /* Greater than wait time in script. */
 				if count == 0 {
 					Thread.sleep(forTimeInterval: 3)
@@ -261,7 +267,7 @@ final class ProcessTests : XCTestCase {
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			signalsToForward: [],
-			outputHandler: { _,_,_,_,_ in }
+			outputHandler: { _,_,_ in }
 		))
 		
 		/* We release two fds. */
@@ -275,7 +281,7 @@ final class ProcessTests : XCTestCase {
 			"/bin/sh", args: ["-c", "echo hello"],
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			signalsToForward: [],
-			outputHandler: { _,_,_,_,_ in }
+			outputHandler: { _,_,_ in }
 		))
 		
 		/* Now let’s release more fds.
@@ -415,20 +421,13 @@ final class ProcessTests : XCTestCase {
 		catch {                       XCTAssertNoThrow(try { throw error }(), message(), file: file, line: line)}
 	}
 	
-	private func textOutputFromOutputs(_ outputs: [FileDescriptor: [(Data, Data)]]) throws -> [FileDescriptor: String] {
-		struct InvalidLine : Error {var hexLine: String}
-		struct InvalidSeparator : Error {var hexSep: String}
-		return try outputs.mapValues{
-			try $0.reduce("", { current, lineAndSep in
-				guard let line = String(data: lineAndSep.0, encoding: .utf8) else {
-					throw InvalidLine(hexLine: lineAndSep.0.reduce("", { $0 + String(format: "%02x", $1) }))
-				}
-				guard let sep = String(data: lineAndSep.1, encoding: .utf8) else {
-					throw InvalidLine(hexLine: lineAndSep.1.reduce("", { $0 + String(format: "%02x", $1) }))
-				}
-				return current + line + sep
-			})
+	private func textOutputFromOutputs(_ outputs: [RawLineWithSource]) throws -> [FileDescriptor: String] {
+		var res = [FileDescriptor: String]()
+		for rawLine in outputs {
+			let line = try rawLine.lineWithSource
+			res[line.fd, default: ""] += line.line + line.eol
 		}
+		return res
 	}
 	
 	private static var testsDataPath: FilePath {

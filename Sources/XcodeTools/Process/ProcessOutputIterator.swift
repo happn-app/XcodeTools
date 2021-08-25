@@ -9,29 +9,6 @@ import Utils
 
 public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 	
-	public struct LineWithSource : Equatable {
-		
-		public var line: Data
-		public var eol: Data
-		
-		public var fd: FileDescriptor
-		
-		public var utf8Line: String {
-			get throws {
-				return try String(data: line, encoding: .utf8).get(orThrow: Err.nonUtf8Output(line))
-			}
-		}
-		
-		public var utf8EOL: String {
-			get throws {
-				return try String(data: line, encoding: .utf8).get(orThrow: Err.nonUtf8Output(line))
-			}
-		}
-		
-	}
-	
-	public typealias Element = LineWithSource
-	
 	public init(
 		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
@@ -50,8 +27,8 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 			stdin: stdin, stdoutRedirect: stdoutRedirect, stderrRedirect: stderrRedirect,
 			fileDescriptorsToSend: fileDescriptorsToSend, additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: s.processNewLine /* ok to call unsynchronized, because called from stream group (not “public” knowledge, but I know) */,
 			lineSeparators: lineSeparators,
+			outputHandler: s.processNewLine /* ok to call unsynchronized, because called from stream group (not “public” knowledge, but I know) */,
 			terminationHandler: { p in Process.streamQueue.sync(execute: s.processEndOfProcess) },
 			ioDispatchGroup: s.ioDispatchGroup
 		)
@@ -62,26 +39,34 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 		s.waitingForData = true
 	}
 	
-	public mutating func next() async throws -> LineWithSource? {
+	public mutating func next() async throws -> RawLineWithSource? {
+		try Task.checkCancellation()
+		
 		let s = state
-		return await withCheckedContinuation{ continuation in
+		return try await withCheckedThrowingContinuation{ continuation in
 			state.waitForDataGroup.notify(queue: Process.streamQueue, execute: {
 				guard let l = s.bufferedLines.first else {
 					return continuation.resume(returning: nil)
 				}
 				s.bufferedLines.removeFirst()
-				return continuation.resume(returning: l)
+				switch l {
+					case .success(let l): return continuation.resume(returning: l)
+					case .failure(let e): return continuation.resume(throwing: e)
+				}
 			})
 		}
 	}
 	
 	/** It is a programer error to call this while the iteration is not over. */
 	public var terminationStatus: Int32 {
-		process.terminationStatus
+		assert(state.processIsDone)
+		return process.terminationStatus
 	}
 	
+	/** It is a programer error to call this while the iteration is not over. */
 	public var terminationReason: Process.TerminationReason {
-		process.terminationReason
+		assert(state.processIsDone)
+		return process.terminationReason
 	}
 	
 	public func checkNormalExit(expectBrokenPipe: Bool = false) throws {
@@ -96,7 +81,7 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 	private class State {
 		
 		var processIsDone = false
-		var bufferedLines = [LineWithSource]()
+		var bufferedLines = [Result<RawLineWithSource, Error>]()
 		
 		let ioDispatchGroup = DispatchGroup()
 		
@@ -114,8 +99,8 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 			})
 		}
 		
-		func processNewLine(line: Data, eol: Data, sourceFd: FileDescriptor, signalEOI: () -> Void, process: Process) {
-			bufferedLines.append(LineWithSource(line: line, eol: eol, fd: sourceFd))
+		func processNewLine(lineResult: Result<RawLineWithSource, Error>, signalEOI: () -> Void, process: Process) {
+			bufferedLines.append(lineResult)
 			if waitingForData {
 				waitingForData = false
 				waitForDataGroup.leave()
@@ -132,17 +117,6 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 
 
 public struct ProcessUtf8OutputIterator : AsyncIteratorProtocol {
-	
-	public struct LineWithSource : Equatable {
-		
-		public var line: String
-		public var eol: String
-		
-		public var fd: FileDescriptor
-		
-	}
-	
-	public typealias Element = LineWithSource
 	
 	public mutating func next() async throws -> LineWithSource? {
 		return try await rawOutputIterator.next().flatMap{ try LineWithSource(line: $0.utf8Line, eol: $0.utf8EOL, fd: $0.fd) }

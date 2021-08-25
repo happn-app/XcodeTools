@@ -40,8 +40,8 @@ struct XctBuild : ParsableCommand {
 //		XcodeToolsConfig.logger?.logLevel = .trace
 		XctBuild.logger.logLevel = .trace
 		
-		let (fhXcodeReadOutput, fhXcodeWriteOutput) = try Process.unownedPipe()
-		guard let outputFdComponent = FilePath.Component(String(fhXcodeWriteOutput.rawValue)) else {
+		let (fdXcodeReadOutput, fdXcodeWriteOutput) = try Process.unownedPipe()
+		guard let outputFdComponent = FilePath.Component(String(fdXcodeWriteOutput.rawValue)) else {
 			/* TODO: Error */
 			throw NSError(domain: "yo", code: 1, userInfo: nil)
 		}
@@ -60,18 +60,15 @@ struct XctBuild : ParsableCommand {
 		let process = try Process.spawnedAndStreamedProcess(
 			"/usr/bin/xcodebuild", args: args,
 			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
-			fileDescriptorsToSend: [fhXcodeWriteOutput: fhXcodeWriteOutput],
-			additionalOutputFileDescriptors: [fhXcodeReadOutput],
-			outputHandler: { lineData, _, fd, _, _ in
-				guard let line = String(data: lineData, encoding: .utf8) else {
-					XctBuild.logger.error("Cannot convert line data to string: \(lineData.reduce("", { $0 + String(format: "%02x", $1) }))")
-					return
-				}
-				switch fd {
-					case fhXcodeReadOutput:
-//						XctBuild.logger.trace("json: \(line)")
-						do {
-							guard let streamedEvent = try Parser.parse(jsonString: line) as? StreamedEvent else {
+			fileDescriptorsToSend: [fdXcodeWriteOutput: fdXcodeWriteOutput],
+			additionalOutputFileDescriptors: [fdXcodeReadOutput],
+			outputHandler: { lineResult, _, _ in
+				do {
+					let strLineWithSource = try lineResult.get().lineWithSource
+					switch strLineWithSource.fd {
+						case fdXcodeReadOutput:
+//							XctBuild.logger.trace("json: \(strLineWithSource.line)")
+							guard let streamedEvent = try Parser.parse(jsonString: strLineWithSource.line) as? StreamedEvent else {
 								/* TODO: Error */
 								throw NSError(domain: "yo", code: 1, userInfo: nil)
 							}
@@ -80,20 +77,19 @@ struct XctBuild : ParsableCommand {
 							} else {
 //								XctBuild.logger.trace("skipped streamed event w/ no human readable description: \(streamedEvent)")
 							}
-						} catch {
-							XctBuild.logger.error("\(error)")
-						}
-						
-					case FileDescriptor.standardOutput: ()//XctBuild.logger.trace("stdout: \(line)")
-					case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(line)")
-					default:                            XctBuild.logger.trace("unknown 😱: \(line)")
+							
+						case FileDescriptor.standardOutput: ()//XctBuild.logger.trace("stdout: \(strLineWithSource.line)")
+						case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(strLineWithSource.line)")
+						default:                            XctBuild.logger.error("line from unknown fd: \(strLineWithSource)")
+					}
+				} catch {
+					XctBuild.logger.trace("error processing output line from xcodebuild: \(error)")
 				}
-				return
 			},
 			ioDispatchGroup: outputGroup
 		)
 		/* TODO: Maybe spawnedAndStreamedProcess should close the file descriptor to send, maybe w/ an option not to. For now we close it manually. */
-		try fhXcodeWriteOutput.close()
+		try fdXcodeWriteOutput.close()
 		process.waitUntilExit()
 		outputGroup.wait()
 		XctBuild.logger.trace("termination: \(process.terminationStatus), \(process.terminationReason.rawValue)")

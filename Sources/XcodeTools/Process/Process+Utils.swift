@@ -30,7 +30,7 @@ class XcodeToolsProcessExtender : NSObject, XCTTaskExtender {
 
 extension Process {
 	
-	public typealias ProcessLineOutputHandler = (_ line: Data, _ separator: Data, _ sourceFd: FileDescriptor, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
+	public typealias ProcessOutputHandler = (_ result: Result<RawLineWithSource, Error>, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
 	
 	/**
 	 How to redirect stdout and stderr? */
@@ -75,6 +75,9 @@ extension Process {
 	 additional output file descriptors) in the handler (line by line, each line
 	 containing the newline char, a valid newline is only "\n", but line might
 	 not end with a newline if last line of the output).
+	 
+	 You are guaranteed the method will throw (if it throws) before the first
+	 call to the output handler.
 	 
 	 The process will be launched in its own PGID. Which means, if your process
 	 is launched in a Terminal, then you spawn a process using this method, then
@@ -187,7 +190,7 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping ProcessLineOutputHandler, lineSeparators: LineSeparators = .default,
+		lineSeparators: LineSeparators = .default, outputHandler: @escaping ProcessOutputHandler,
 		terminationHandler: ((Process) -> Void)? = nil,
 		ioDispatchGroup: DispatchGroup? = nil
 	) throws -> Process {
@@ -501,7 +504,7 @@ extension Process {
 				Process.handleProcessOutput(
 					streamSource: streamSource,
 					streamQueue: streamQueue,
-					outputHandler: { line, sep, signalEOI in outputHandler(line, sep, fdRedirects[fd] ?? fd, signalEOI, p) },
+					outputHandler: { lineOrError, signalEOI in outputHandler(lineOrError.map{ RawLineWithSource(line: $0.0, eol: $0.1, fd: fdRedirects[fd] ?? fd) }, signalEOI, p) },
 					lineSeparators: lineSeparators,
 					streamReader: streamReader,
 					estimatedBytesAvailable: streamSource.data
@@ -528,7 +531,7 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping ProcessLineOutputHandler, lineSeparators: LineSeparators = .default
+		lineSeparators: LineSeparators = .default, outputHandler: @escaping ProcessOutputHandler
 	) async throws -> (Int32, Process.TerminationReason) {
 		try await withCheckedThrowingContinuation{ continuation in
 			do {
@@ -540,8 +543,8 @@ extension Process {
 					fileDescriptorsToSend: fileDescriptorsToSend,
 					additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 					signalsToForward: signalsToForward,
-					outputHandler: outputHandler,
 					lineSeparators: lineSeparators,
+					outputHandler: outputHandler,
 					terminationHandler: { p in
 						g.notify(queue: Self.streamQueue, execute: {
 							Conf.logger?.trace("io group wait is over")
@@ -564,8 +567,9 @@ extension Process {
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		lineSeparators: LineSeparators = .default
-	) async throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [FileDescriptor: [(Data, Data)]]) {
-		var outputs = [FileDescriptor: [(Data, Data)]]()
+	) async throws -> (exitCode: Int32, exitReason: Process.TerminationReason, outputs: [RawLineWithSource]) {
+		var gotOutputError = false
+		var outputs = [RawLineWithSource]()
 		let (exitCode, exitReason) = try await spawnAndStream(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory, environment: environment,
@@ -573,9 +577,20 @@ extension Process {
 			fileDescriptorsToSend: fileDescriptorsToSend,
 			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: { line, separator, fd, _, _ in outputs[fd, default: []].append((line, separator)) },
-			lineSeparators: lineSeparators
+			lineSeparators: lineSeparators,
+			outputHandler: { lineResult, _, _ in
+				/* Note: We do not signal EOI even in case of output errors even
+				 * though the output will be discareded to avoid a potential broken
+				 * pipe on process (though if we got a read error the stream is
+				 * probably in bad shape anyway). */
+				guard !gotOutputError else {return}
+				do    {try outputs.append(lineResult.get())}
+				catch {gotOutputError = true}
+			}
 		)
+		guard !gotOutputError else {
+			throw Err.outputReadError
+		}
 		
 		return (exitCode, exitReason, outputs)
 	}
@@ -596,7 +611,7 @@ extension Process {
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		outputHandler: @escaping ProcessLineOutputHandler, lineSeparators: LineSeparators = .default,
+		lineSeparators: LineSeparators = .default, outputHandler: @escaping ProcessOutputHandler,
 		validTerminations: [(Int32, Process.TerminationReason)] = [(0, .exit), (Signal.brokenPipe.rawValue, .uncaughtSignal)]
 	) async throws {
 		let (exitCode, exitReason) = try await spawnAndStream(
@@ -605,8 +620,8 @@ extension Process {
 			stdin: stdin, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: fileDescriptorsToSend, additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			signalsToForward: signalsToForward,
-			outputHandler: outputHandler,
-			lineSeparators: lineSeparators
+			lineSeparators: lineSeparators,
+			outputHandler: outputHandler
 		)
 		guard validTerminations.contains(where: { $0.0 == exitCode && $0.1 == exitReason }) else {
 			throw Err.unexpectedSubprocessExit(terminationStatus: exitCode, terminationReason: exitReason)
@@ -622,7 +637,7 @@ extension Process {
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
 		lineSeparators: LineSeparators = .default,
 		validTerminations: [(Int32, Process.TerminationReason)] = [(0, .exit)]
-	) async throws -> [FileDescriptor: [(Data, Data)]] {
+	) async throws -> [RawLineWithSource] {
 		let (exitCode, exitReason, outputs) = try await spawnAndGetOutput(
 			executable, args: args, usePATH: usePATH, customPATH: customPATH,
 			workingDirectory: workingDirectory, environment: environment,
@@ -640,11 +655,8 @@ extension Process {
 	 Returns a simple pipe. Different than using the `Pipe()` object from
 	 Foundation because you get control on when the fds are closed.
 	 
-	 - Important: The FileDescriptor returned **must** be closed manually. */
+	 - Important: The `FileDescriptor`s returned **must** be closed manually. */
 	public static func unownedPipe() throws -> (fdRead: FileDescriptor, fdWrite: FileDescriptor) {
-		/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it). Pipe
-		 * closes both ends of the pipe on dealloc, but we need to close one at a
-		 * specific time and leave the other open (it is closed in child process). */
 		let pipepointer = UnsafeMutablePointer<CInt>.allocate(capacity: 2)
 		defer {pipepointer.deallocate()}
 		pipepointer.initialize(to: -1)
@@ -701,7 +713,7 @@ extension Process {
 		}
 	}
 	
-	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (Data, Data, () -> Void) -> Void, lineSeparators: LineSeparators, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
+	private static func handleProcessOutput(streamSource: DispatchSourceRead, streamQueue: DispatchQueue, outputHandler: @escaping (Result<(Data, Data), Error>, () -> Void) -> Void, lineSeparators: LineSeparators, streamReader: GenericStreamReader, estimatedBytesAvailable: UInt) {
 		do {
 			let toRead = Int(min(max(estimatedBytesAvailable, 1), UInt(Int.max)))
 #if !os(Linux)
@@ -750,7 +762,7 @@ extension Process {
 			}
 			while let (lineData, eolData) = try readLine() {
 				var continueStream = true
-				outputHandler(lineData, eolData, { continueStream = false })
+				outputHandler(.success((lineData, eolData)), { continueStream = false })
 				guard continueStream else {
 					XcodeToolsConfig.logger?.debug("Client is not interested in stream anymore; cancelling read stream for \(streamReader.sourceStream)")
 					streamSource.cancel()
@@ -766,7 +778,8 @@ extension Process {
 			
 		} catch {
 			XcodeToolsConfig.logger?.warning("Error reading from \(streamReader.sourceStream): \(error)")
-			/* We stop everything at first unknown error. */
+			outputHandler(.failure(error), { })
+			/* We stop the stream at first unknown error. */
 			streamSource.cancel()
 		}
 	}
