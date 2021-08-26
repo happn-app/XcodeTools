@@ -90,28 +90,14 @@ public struct UntarPhase : BuildPhase {
 			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
 		}
 		if verifyNoLostFilesFromStrip && stripComponents > 0 {
-//			var streamError: Error?
-			var iterator = try ProcessRawOutputIterator("tar", args: ["--list", "--file", unarchivedFile.string], usePATH: true)
-			while let l = try await iterator.next() {
-				let lineStr = try l.utf8Line
+			let pi = ProcessInvocation(
+				"tar", "--list", "--file", unarchivedFile.string,
+				shouldContinueStreamHandler: { lfd, _ in (try? lfd.strLine(encoding: .utf8))?.contains("NOOP") == false }
+			)
+			for try await l in pi {
+				let lineStr = try l.strLine(encoding: .utf8)
 				Conf.logger?.debug("got line (fd=\(l.fd.rawValue)): \(lineStr)")
-				if lineStr.contains("NOOP") {break}
 			}
-			try iterator.checkNormalExit()
-//			try await Process.checkedSpawnAndStream("tar", args: ["--list", "--file", unarchivedFile.string], usePATH: true, outputHandler: { lineData, _, sourceFd, signalEOI, _ in
-//				guard let lineStr = String(data: lineData, encoding: .utf8) else {
-//					streamError = Err.nonUtf8Output(lineData)
-//					return signalEOI()
-//				}
-//				guard sourceFd == .standardOutput else {
-//					Conf.logger?.error("got line from fd \(sourceFd) of tar: \(lineStr)")
-//					return
-//				}
-//				if lineStr.contains("NOOP") {return signalEOI()}
-//				Conf.logger?.debug("got \(lineStr)")
-//				return
-//			})
-//			try streamError?.throw()
 		}
 		throw Err.notImplemented
 	}

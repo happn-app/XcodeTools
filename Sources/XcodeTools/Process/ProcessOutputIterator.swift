@@ -6,19 +6,19 @@ import SystemPackage
 import Utils
 
 
-
+/*
 public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 	
 	public init(
 		_ executable: FilePath, args: [String] = [], usePATH: Bool = false, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
 		stdin: FileDescriptor? = FileDescriptor.standardInput,
-		stdoutRedirect: Process.RedirectMode = .capture,
-		stderrRedirect: Process.RedirectMode = .capture,
+		stdoutRedirect: RedirectMode = .capture,
+		stderrRedirect: RedirectMode = .capture,
 		fileDescriptorsToSend: [FileDescriptor /* Value in parent */: FileDescriptor /* Value in child */] = [:],
 		additionalOutputFileDescriptors: Set<FileDescriptor> = [],
 		signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses,
-		lineSeparators: Process.LineSeparators = .default
+		lineSeparators: LineSeparators = .default
 	) throws {
 		let s = State()
 		let p = try Process.spawnedAndStreamedProcess(
@@ -122,14 +122,4 @@ public struct ProcessRawOutputIterator : AsyncIteratorProtocol {
 	private var state: State
 	
 }
-
-
-public struct ProcessUtf8OutputIterator : AsyncIteratorProtocol {
-	
-	public mutating func next() async throws -> LineWithSource? {
-		return try await rawOutputIterator.next().flatMap{ try LineWithSource(line: $0.utf8Line, eol: $0.utf8EOL, fd: $0.fd) }
-	}
-	
-	private var rawOutputIterator: ProcessRawOutputIterator
-	
-}
+*/

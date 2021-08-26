@@ -11,22 +11,16 @@ public struct RawLineWithSource : Equatable, Hashable {
 	
 	public var fd: FileDescriptor
 	
-	public var lineWithSource: LineWithSource {
-		get throws {
-			return try LineWithSource(line: utf8Line, eol: utf8EOL, fd: fd)
-		}
+	public func strLineWithSource(encoding: String.Encoding) throws -> LineWithSource {
+		return try LineWithSource(line: strLine(encoding: encoding), eol: strEOL(encoding: encoding), fd: fd)
 	}
 	
-	public var utf8Line: String {
-		get throws {
-			return try String(data: line, encoding: .utf8).get(orThrow: Err.nonUtf8Output(line))
-		}
+	public func strLine(encoding: String.Encoding) throws -> String {
+		return try String(data: line, encoding: encoding).get(orThrow: Err.invalidDataEncoding(line))
 	}
 	
-	public var utf8EOL: String {
-		get throws {
-			return try String(data: eol, encoding: .utf8).get(orThrow: Err.nonUtf8Output(line))
-		}
+	public func strEOL(encoding: String.Encoding) throws -> String {
+		return try String(data: eol, encoding: encoding).get(orThrow: Err.invalidDataEncoding(line))
 	}
 	
 }

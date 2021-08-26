@@ -11,7 +11,7 @@ public enum XcodeToolsError : Error {
 	case envVarXctExecPathNotSet
 	
 	case outputReadError
-	case nonUtf8Output(Data)
+	case invalidDataEncoding(Data)
 	case unexpectedSubprocessExit(terminationStatus: Int32, terminationReason: Process.TerminationReason)
 	
 	case systemError(Errno)

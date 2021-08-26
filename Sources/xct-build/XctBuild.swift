@@ -35,12 +35,12 @@ struct XctBuild : ParsableCommand {
 	@Option
 	var scheme: String
 	
-	func run() throws {
+	func run() async throws {
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 //		XcodeToolsConfig.logger?.logLevel = .trace
 		XctBuild.logger.logLevel = .trace
 		
-		let (fdXcodeReadOutput, fdXcodeWriteOutput) = try Process.unownedPipe()
+		let (fdXcodeReadOutput, fdXcodeWriteOutput) = try ProcessInvocation.unownedPipe()
 		guard let outputFdComponent = FilePath.Component(String(fdXcodeWriteOutput.rawValue)) else {
 			/* TODO: Error */
 			throw NSError(domain: "yo", code: 1, userInfo: nil)
@@ -56,43 +56,38 @@ struct XctBuild : ParsableCommand {
 			"-resultBundlePath", resultBundlePath,
 			"-resultStreamPath", resultStreamPath.string
 		]
-		let outputGroup = DispatchGroup()
-		let process = try Process.spawnedAndStreamedProcess(
+		let pi = ProcessInvocation(
 			"/usr/bin/xcodebuild", args: args,
-			stdin: nil, stdoutRedirect: .capture, stderrRedirect: .capture,
 			fileDescriptorsToSend: [fdXcodeWriteOutput: fdXcodeWriteOutput],
-			additionalOutputFileDescriptors: [fdXcodeReadOutput],
-			outputHandler: { lineResult, _, _ in
-				do {
-					let strLineWithSource = try lineResult.get().lineWithSource
-					switch strLineWithSource.fd {
-						case fdXcodeReadOutput:
-//							XctBuild.logger.trace("json: \(strLineWithSource.line)")
-							guard let streamedEvent = try Parser.parse(jsonString: strLineWithSource.line) as? StreamedEvent else {
-								/* TODO: Error */
-								throw NSError(domain: "yo", code: 1, userInfo: nil)
-							}
-							if let readable = streamedEvent.structuredPayload.humanReadableEvent(withColors: false) {
-								print(readable)
-							} else {
-//								XctBuild.logger.trace("skipped streamed event w/ no human readable description: \(streamedEvent)")
-							}
-							
-						case FileDescriptor.standardOutput: ()//XctBuild.logger.trace("stdout: \(strLineWithSource.line)")
-						case FileDescriptor.standardError:  ()//XctBuild.logger.trace("stderr: \(strLineWithSource.line)")
-						default:                            XctBuild.logger.error("line from unknown fd: \(strLineWithSource)")
-					}
-				} catch {
-					XctBuild.logger.trace("error processing output line from xcodebuild: \(error)")
-				}
-			},
-			ioDispatchGroup: outputGroup
+			additionalOutputFileDescriptors: [fdXcodeReadOutput]
 		)
+		for try await lfd in pi {
+			switch lfd.fd {
+				case fdXcodeReadOutput:
+//					XctBuild.logger.trace("json: \(strLineWithSource.line)")
+					guard let streamedEvent = try Parser.parse(json: lfd.line) as? StreamedEvent else {
+						/* TODO: Error */
+						throw NSError(domain: "yo", code: 1, userInfo: nil)
+					}
+					if let readable = streamedEvent.structuredPayload.humanReadableEvent(withColors: false) {
+						print(readable)
+					} else {
+//						XctBuild.logger.trace("skipped streamed event w/ no human readable description: \(streamedEvent)")
+					}
+					
+				default:
+					guard let lineStr = try? lfd.strLine(encoding: .utf8) else {
+						XctBuild.logger.error("invalid non-utf8 line from xcodebuild on fd \(lfd.fd.rawValue): \(lfd.line.reduce("", { $0 + String(format: "%02x", $1) }))")
+						continue
+					}
+					let level: Logger.Level
+					if lfd.fd == .standardOutput {level = .info}
+					else                         {level = .warning}
+					XctBuild.logger.log(level: level, "xcodebuild output on fd \(lfd.fd.rawValue): \(lineStr)")
+			}
+		}
 		/* TODO: Maybe spawnedAndStreamedProcess should close the file descriptor to send, maybe w/ an option not to. For now we close it manually. */
 		try fdXcodeWriteOutput.close()
-		process.waitUntilExit()
-		outputGroup.wait()
-		XctBuild.logger.trace("termination: \(process.terminationStatus), \(process.terminationReason.rawValue)")
 	}
 	
 }
