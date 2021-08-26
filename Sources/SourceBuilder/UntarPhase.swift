@@ -107,35 +107,36 @@ public struct UntarPhase : BuildPhase {
 	
 	public func execute() async throws -> [FilePath] {
 		if stripComponents < 0 {
-			Conf.logger?.warning("Strip components lower than 0 (\(stripComponents)). Ignoring.")
+			Conf.logger?.warning("Strip components lower than 0 (\(stripComponents)). Setting to 0.")
 		}
-		if verifyNoLostFilesFromStrip && stripComponents <= 0 {
-			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
-		}
-		if verifyNoLostFilesFromStrip && stripComponents > 0 {
-			var prefixes = Set<FilePath>()
-			var filesLost = Set<FilePath>()
-			for try await l in ProcessInvocation("tar", "--list", "--file", unarchivedFile.string) {
-				guard l.fd == .standardOutput else {
-					Conf.logger?.warning("tar stderr: \(l.strLineOrHex(encoding: .utf8))")
-					continue
-				}
-				let strLine = try l.strLine(encoding: .utf8)
-				let isDir = strLine.hasSuffix("/") /* Sadly FilePath does not seem to be aware of this */
-				let path = FilePath(strLine)
-				if path.components.count <= stripComponents {
-					if !isDir {
-						filesLost.insert(path)
+		if verifyNoLostFilesFromStrip {
+			if stripComponents <= 0 {
+				Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
+			} else {
+				var prefixes = Set<FilePath>()
+				var filesLost = Set<FilePath>()
+				for try await l in ProcessInvocation("tar", "--list", "--file", unarchivedFile.string) {
+					guard l.fd == .standardOutput else {
+						Conf.logger?.warning("tar stderr: \(l.strLineOrHex(encoding: .utf8))")
+						continue
 					}
-				} else {
-					let components = path.components
-					let startIndex = components.startIndex
-					let endIndex = components.index(startIndex, offsetBy: stripComponents)
-					prefixes.insert(FilePath(root: path.root, components[startIndex..<endIndex]))
+					let strLine = try l.strLine(encoding: .utf8)
+					let isDir = strLine.hasSuffix("/") /* Sadly FilePath does not seem to be aware of this */
+					let path = FilePath(strLine)
+					if path.components.count <= stripComponents {
+						if !isDir {
+							filesLost.insert(path)
+						}
+					} else {
+						let components = path.components
+						let startIndex = components.startIndex
+						let endIndex = components.index(startIndex, offsetBy: stripComponents)
+						prefixes.insert(FilePath(root: path.root, components[startIndex..<endIndex]))
+					}
 				}
-			}
-			guard filesLost.isEmpty, prefixes.count <= 1 else {
-				throw Err.stripWouldLoseFiles(filesLost: filesLost, prefixes: prefixes)
+				guard filesLost.isEmpty, prefixes.count <= 1 else {
+					throw Err.stripWouldLoseFiles(filesLost: filesLost, prefixes: prefixes)
+				}
 			}
 		}
 		throw Err.notImplemented
