@@ -11,6 +11,19 @@ import XibLoc
 
 public struct DownloadFilePhase : BuildPhase {
 	
+	public enum Err : Error {
+		
+		case notImplemented
+		
+		case unknownVariablesInURLTemplate(Set<String>)
+		case invalidURL(String)
+		case invalidURLResponse(URLResponse)
+		case invalidChecksumForDownloadedFile(URL, String)
+		
+		case unknownNetworkingError /* We should not need that one once Linux has support for async/await */
+		
+	}
+	
 	public var downloadedURL: URL
 	public var downloadDestination: FilePath
 	

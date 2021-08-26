@@ -9,6 +9,29 @@ import XcodeTools
 
 public struct UntarPhase : BuildPhase {
 	
+	public enum Err : Error {
+		
+		case notImplemented
+		
+		case filepathHasNoExtensions(FilePath)
+		case filepathHasNoStem(FilePath)
+		
+		/**
+		 If the strip is applied to the given tar files, some files would be lost,
+		 or written in the same folder though in different folders in the archive.
+		 
+		 The `filesLost` property contains the files whose path would completely
+		 be ignored when tar extracts the archive because their path component is
+		 too small.
+		 
+		 The `prefixes` property contains the different prefixes found for the
+		 given strip count. If it contains more than one entry, some files would
+		 be written in the same folder though they are in different folders in the
+		 tar archive. */
+		case stripWouldLoseFiles(filesLost: Set<FilePath>, prefixes: Set<FilePath>)
+		
+	}
+	
 	public var unarchivedFile: FilePath
 	public var destinationFolder: FilePath
 	
@@ -90,9 +113,29 @@ public struct UntarPhase : BuildPhase {
 			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
 		}
 		if verifyNoLostFilesFromStrip && stripComponents > 0 {
+			var prefixes = Set<FilePath>()
+			var filesLost = Set<FilePath>()
 			for try await l in ProcessInvocation("tar", "--list", "--file", unarchivedFile.string) {
-				let lineStr = try l.strLine(encoding: .utf8)
-				Conf.logger?.debug("got line (fd=\(l.fd.rawValue)): \(lineStr)")
+				guard l.fd == .standardOutput else {
+					Conf.logger?.warning("tar stderr: \(l.strLineOrHex(encoding: .utf8))")
+					continue
+				}
+				let strLine = try l.strLine(encoding: .utf8)
+				let isDir = strLine.hasSuffix("/") /* Sadly FilePath does not seem to be aware of this */
+				let path = FilePath(strLine)
+				if path.components.count <= stripComponents {
+					if !isDir {
+						filesLost.insert(path)
+					}
+				} else {
+					let components = path.components
+					let startIndex = components.startIndex
+					let endIndex = components.index(startIndex, offsetBy: stripComponents)
+					prefixes.insert(FilePath(root: path.root, components[startIndex..<endIndex]))
+				}
+			}
+			guard filesLost.isEmpty, prefixes.count <= 1 else {
+				throw Err.stripWouldLoseFiles(filesLost: filesLost, prefixes: prefixes)
 			}
 		}
 		throw Err.notImplemented

@@ -23,6 +23,14 @@ public struct RawLineWithSource : Equatable, Hashable {
 		return try String(data: eol, encoding: encoding).get(orThrow: Err.invalidDataEncoding(line))
 	}
 	
+	public func strLineOrHex(encoding: String.Encoding) -> String {
+		return String(data: line, encoding: encoding) ?? line.reduce("", { $0 + String(format: "%02x", $1) })
+	}
+	
+	public func strEOLOrHex(encoding: String.Encoding) -> String {
+		return String(data: eol, encoding: encoding) ?? line.reduce("", { $0 + String(format: "%02x", $1) })
+	}
+	
 }
 
 
