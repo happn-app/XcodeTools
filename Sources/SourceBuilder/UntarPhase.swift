@@ -13,6 +13,8 @@ public struct UntarPhase : BuildPhase {
 		
 		case notImplemented
 		
+		case unknownTarVersion(tarVersionOutput: [String])
+		
 		case filepathHasNoExtensions(FilePath)
 		case filepathHasNoStem(FilePath)
 		
@@ -117,7 +119,7 @@ public struct UntarPhase : BuildPhase {
 				var filesLost = Set<FilePath>()
 				for try await l in ProcessInvocation("tar", "--list", "--file", unarchivedFile.string) {
 					guard l.fd == .standardOutput else {
-						Conf.logger?.warning("tar stderr: \(l.strLineOrHex(encoding: .utf8))")
+						Conf.logger?.warning("tar output (fd=\(l.fd.rawValue)): \(l.strLineOrHex(encoding: .utf8))")
 						continue
 					}
 					let strLine = try l.strLine(encoding: .utf8)
@@ -139,7 +141,76 @@ public struct UntarPhase : BuildPhase {
 				}
 			}
 		}
-		throw Err.notImplemented
+		
+		let tarVersion = try await TarVersion.detectTarVersion()
+		
+		var ret = [FilePath]()
+		try Conf.fm.ensureDirectory(path: destinationFolder)
+		
+		let args = [
+			"--verbose",
+			"--directory", destinationFolder.string,
+			(keepOldFiles ? tarVersion.keepOldFilesOption : nil),
+			(stripComponents > 0 ? "--strip-components=\(stripComponents)" : nil),
+			"--extract", "--file", unarchivedFile.string
+		].compactMap{ $0 }
+		for try await l in ProcessInvocation("tar", args: args) {
+			guard let (p, isDir) = tarVersion.parseLineForExtractedFile(l, stripped: max(0, stripComponents)) else {
+				Conf.logger?.warning("tar output (fd=\(l.fd.rawValue)): \(l.strLineOrHex(encoding: .utf8))")
+				continue
+			}
+			guard !isDir else {
+				continue
+			}
+			ret.append(p)
+		}
+		return ret
+	}
+	
+	private enum TarVersion {
+		
+		case bsdTar
+		case gnuTar
+		
+		static func detectTarVersion() async throws -> TarVersion {
+			let stdout = try await ProcessInvocation("tar", "--version").invokeAndGetStdout()
+			let bsdTar = stdout.contains(where: { $0.contains("bsdtar") })
+			let gnuTar = stdout.contains(where: { $0.contains("GNU tar") })
+			switch (bsdTar, gnuTar) {
+				case (true, false): return .bsdTar
+				case (false, true): return .gnuTar
+				default: throw Err.unknownTarVersion(tarVersionOutput: stdout)
+			}
+		}
+		
+		var keepOldFilesOption: String {
+			switch self {
+				case .bsdTar: return "--keep-old-files"
+				case .gnuTar: return "--skip-old-files" /* --keep-old-files treats existing files as errors in gnu tar */
+			}
+		}
+		
+		func parseLineForExtractedFile(_ l: RawLineWithSource, stripped: Int) -> (FilePath, Bool)? {
+			guard let l = try? l.strLineWithSource(encoding: .utf8) else {
+				return nil
+			}
+			switch self {
+				case .bsdTar:
+					guard l.fd == .standardError, l.line.starts(with: "x ") else {
+						return nil
+					}
+					return (FilePath(String(l.line.dropFirst(2))), l.line.hasSuffix("/"))
+					
+				case .gnuTar:
+					guard l.fd == .standardOutput else {
+						return nil
+					}
+					let isDir = l.line.hasSuffix("/")
+					let path = FilePath(l.line)
+					return (FilePath(root: nil, path.components.dropFirst(stripped)), isDir)
+			}
+		}
+		
 	}
 	
 }
