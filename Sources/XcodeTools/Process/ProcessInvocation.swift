@@ -340,8 +340,8 @@ public struct ProcessInvocation : AsyncSequence {
 			})
 		}
 		let (exitStatus, exitReason) = (p.terminationStatus, p.terminationReason)
-		guard !checkValidTerminations || (expectedTerminations?.contains(where: { $0.0 == exitStatus && $0.1 == exitReason }) ?? true) else {
-			throw Err.unexpectedSubprocessExit(terminationStatus: exitStatus, terminationReason: exitReason)
+		if checkValidTerminations {
+			try Self.checkTermination(expectedTerminations: expectedTerminations, terminationStatus: exitStatus, terminationReason: exitReason)
 		}
 		return (exitStatus, exitReason)
 	}
@@ -718,18 +718,56 @@ public struct ProcessInvocation : AsyncSequence {
 		public typealias Element = RawLineWithSource
 		
 		public mutating func next() async throws -> RawLineWithSource? {
-			throw Err.internalError("not implemented")
+			if outputIterator == nil {
+				let outputSequence = AsyncThrowingStream<RawLineWithSource, Error>{ continuation in
+					do {
+						let (p, g) = try invocation.invoke{ result, _, _ in
+							continuation.yield(with: result)
+						}
+						process = p
+						g.notify(queue: ProcessInvocation.streamQueue, execute: {
+							continuation.finish(throwing: nil)
+						})
+					} catch {
+						continuation.finish(throwing: error)
+					}
+				}
+				outputIterator = outputSequence.makeAsyncIterator()
+			}
+			if let n = try await outputIterator!.next() {
+				return n
+			} else {
+				/* If there are no more elements, the process has ended. */
+				let p = process!
+				try ProcessInvocation.checkTermination(
+					expectedTerminations: invocation.expectedTerminations,
+					terminationStatus: p.terminationStatus, terminationReason: p.terminationReason
+				)
+				return nil
+			}
 		}
 		
 		internal init(invocation: ProcessInvocation) {
 			self.invocation = invocation
 		}
 		
+		private var process: Process?
+		
 		private let invocation: ProcessInvocation
+		private var outputIterator: AsyncThrowingStream<RawLineWithSource, Error>.Iterator?
 		
 	}
 	
 	private static let streamQueue = DispatchQueue(label: "com.xcode-actions.process")
+	
+	private static func checkTermination(expectedTerminations: [(Int32, Process.TerminationReason)]?, terminationStatus: Int32, terminationReason: Process.TerminationReason) throws {
+		guard let expectedTerminations = expectedTerminations else {
+			return
+		}
+		guard expectedTerminations.contains(where: { $0.0 == terminationStatus && $0.1 == terminationReason }) else {
+			throw Err.unexpectedSubprocessExit(terminationStatus: terminationStatus, terminationReason: terminationReason)
+		}
+	}
 	
 	private static func setRequireNonBlockingIO(on fd: FileDescriptor, logChange: Bool) throws {
 		let curFlags = fcntl(fd.rawValue, F_GETFL)

@@ -78,7 +78,7 @@ class SourceBuilderTests : XCTestCase {
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.bz2").destinationFolder, FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.tar.bob").destinationFolder, FilePath("/a/b/c"))
 			XCTAssertEqual(try UntarPhase(unarchivedFile: "/a/b/c.1.bob").destinationFolder,   FilePath("/a/b/c.1"))
-
+			
 			let tarPhase = try UntarPhase(unarchivedFile: Self.filesPath.appending("test-0.1.tar.bz2"), stripComponents: 1, verifyNoLostFilesFromStrip: true)
 			try await tarPhase.execute()
 			
