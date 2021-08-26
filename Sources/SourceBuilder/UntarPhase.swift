@@ -90,11 +90,7 @@ public struct UntarPhase : BuildPhase {
 			Conf.logger?.warning("Asked to verify loss of files from strip, but not stripping.")
 		}
 		if verifyNoLostFilesFromStrip && stripComponents > 0 {
-			let pi = ProcessInvocation(
-				"tar", "--list", "--file", unarchivedFile.string,
-				shouldContinueStreamHandler: { lfd, _ in (try? lfd.strLine(encoding: .utf8))?.contains("NOOP") == false }
-			)
-			for try await l in pi {
+			for try await l in ProcessInvocation("tar", "--list", "--file", unarchivedFile.string) {
 				let lineStr = try l.strLine(encoding: .utf8)
 				Conf.logger?.debug("got line (fd=\(l.fd.rawValue)): \(lineStr)")
 			}
