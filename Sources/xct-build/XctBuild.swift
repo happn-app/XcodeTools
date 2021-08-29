@@ -35,7 +35,16 @@ struct XctBuild : ParsableCommand {
 	@Option
 	var scheme: String
 	
-	func run() async throws {
+	func run() throws {
+		/* While swift-argument-parser does not compile w/ Xcode on async branch. */
+		/* NOASYNCINARGPARSER START --------- */
+		class ErrWrapper {var err: Error?}
+		let errw = ErrWrapper()
+		let group = DispatchGroup()
+		group.enter()
+		Task{do{
+			/* NOASYNCINARGPARSER END --------- */
+			
 		LoggingSystem.bootstrap{ _ in CLTLogger() }
 //		XcodeToolsConfig.logger?.logLevel = .trace
 		XctBuild.logger.logLevel = .trace
@@ -88,6 +97,13 @@ struct XctBuild : ParsableCommand {
 		}
 		/* TODO: Maybe spawnedAndStreamedProcess should close the file descriptor to send, maybe w/ an option not to. For now we close it manually. */
 		try fdXcodeWriteOutput.close()
+			
+			/* NOASYNCINARGPARSER START --------- */
+			group.leave()
+		} catch {errw.err = error; group.leave()}}
+		group.wait()
+		try errw.err?.throw()
+		/* NOASYNCINARGPARSER STOP --------- */
 	}
 	
 }
