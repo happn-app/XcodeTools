@@ -121,7 +121,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 #if !os(Linux)
 				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
 #else
-				/* TODO: Set PATH to newSearchPath and document it (we promise env is not changed in doc currently, this would break the promise) */
+				setenv("PATH", path ?? _PATH_DEFPATH, 1)
 				ret = execvp(toolName, cargs)
 #endif
 			} else {
@@ -129,7 +129,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			}
 			assert(ret != 0, "exec should not return if it was successful.")
 			Xct.logger.error("Error running executable \(toolName): \(Errno(rawValue: errno).description)")
-			throw ExitCode(errno)
+			/* TODO: Is this the exit code we really want? */throw ExitCode(errno)
 		})
 		
 		fatalError("Unreachable code reached")
