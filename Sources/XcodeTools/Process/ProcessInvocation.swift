@@ -669,7 +669,7 @@ public struct ProcessInvocation : AsyncSequence {
 				XcodeToolsConfig.logger?.trace("Closing fd to send fds")
 				try fdToSendFds.close()
 				XcodeToolsConfig.logger?.trace("Closing sent fds")
-				try fileDescriptorsToSend.values.forEach{ try $0.close() }
+				try fileDescriptorsToSend.values.forEach{ if $0 != .standardInput {try $0.close()} }
 				fdsToCloseInCaseOfError.remove(fdToSendFds) /* Not really useful there cannot be any more errors from there. */
 			}
 		}
