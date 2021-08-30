@@ -360,6 +360,9 @@ public struct ProcessInvocation : AsyncSequence {
 	 process, but you should wait on the dispatch group to be sure all of the
 	 outputs have finished streaming. */
 	public func invoke(outputHandler: @escaping ProcessInvocation.ProcessOutputHandler, terminationHandler: ((_ process: Process) -> Void)? = nil) throws -> (Process, DispatchGroup) {
+		assert(!fileDescriptorsToSend.values.contains(.standardOutput), "Standard output must be modified using stdoutRedirect")
+		assert(!fileDescriptorsToSend.values.contains(.standardError), "Standard error must be modified using stderrRedirect")
+		
 		let g = DispatchGroup()
 #if canImport(eXtenderZ)
 		let p = Process()
