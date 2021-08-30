@@ -95,8 +95,6 @@ struct XctBuild : ParsableCommand {
 					XctBuild.logger.log(level: level, "xcodebuild output on fd \(lfd.fd.rawValue): \(lineStr)")
 			}
 		}
-		/* TODO: Maybe spawnedAndStreamedProcess should close the file descriptor to send, maybe w/ an option not to. For now we close it manually. */
-		try fdXcodeWriteOutput.close()
 			
 			/* NOASYNCINARGPARSER START --------- */
 			group.leave()

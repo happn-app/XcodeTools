@@ -130,10 +130,15 @@ public struct ProcessInvocation : AsyncSequence {
 	
 	/**
 	 The file descriptors (other than `stdin`, `stdout` and `stderr`, which are
-	 handled differently) to clone in the child process.
+	 handled differently) to clone in the child process. They are closed once the
+	 process has been launched.
 	 
 	 The **value** is the file descriptor to clone (from the parent process to
-	 the child), the key is the descriptor you’ll get in the child process. */
+	 the child), the key is the descriptor you’ll get in the child process.
+	 
+	 - Important: The function takes ownership of these file descriptors, i.e. it
+	 closes them when the process has been launched. You should dup your fds if
+	 you need to keep a ref to them. */
 	public var fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:]
 	/**
 	 Additional output file descriptors to stream from the process.
@@ -142,7 +147,8 @@ public struct ProcessInvocation : AsyncSequence {
 	 write fd in fds to clone, and the read fd to additional output fds).
 	 
 	 - Important: The function takes ownership of these file descriptors, i.e. it
-	 closes them when the end of their respective streams is reached. */
+	 closes them when the end of their respective streams is reached. You should
+	 dup your fds if you need to keep a ref to them. */
 	public var additionalOutputFileDescriptors: Set<FileDescriptor> = []
 	
 	/**
@@ -207,7 +213,8 @@ public struct ProcessInvocation : AsyncSequence {
 			workingDirectory: workingDirectory, environment: environment,
 			stdin: stdin, stdoutRedirect: stdoutRedirect, stderrRedirect: stderrRedirect,
 			signalsToForward: signalsToForward,
-			fileDescriptorsToSend: fileDescriptorsToSend, additionalOutputFileDescriptors: additionalOutputFileDescriptors,
+			fileDescriptorsToSend: fileDescriptorsToSend,
+			additionalOutputFileDescriptors: additionalOutputFileDescriptors,
 			lineSeparators: lineSeparators,
 			shouldContinueStreamHandler: shouldContinueStreamHandler,
 			expectedTerminations: expectedTerminations
@@ -661,6 +668,8 @@ public struct ProcessInvocation : AsyncSequence {
 				}
 				XcodeToolsConfig.logger?.trace("Closing fd to send fds")
 				try fdToSendFds.close()
+				XcodeToolsConfig.logger?.trace("Closing sent fds")
+				try fileDescriptorsToSend.values.forEach{ try $0.close() }
 				fdsToCloseInCaseOfError.remove(fdToSendFds) /* Not really useful there cannot be any more errors from there. */
 			}
 		}

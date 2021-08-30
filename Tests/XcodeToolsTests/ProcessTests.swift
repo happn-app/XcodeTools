@@ -189,7 +189,6 @@ final class ProcessTests : XCTestCase {
 			count += 1
 		}
 		
-		try fdWrite.close()
 		p.waitUntilExit() /* Not needed anymore, but should not hurt either. */
 		
 		XCTAssertLessThan(count, n)
