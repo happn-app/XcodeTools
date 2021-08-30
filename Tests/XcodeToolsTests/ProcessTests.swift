@@ -347,6 +347,20 @@ final class ProcessTests : XCTestCase {
 			
 			
 			let curPath = getenv("PATH").flatMap{ String(cString: $0) }
+			
+			do {
+				let envBefore = EnvAndCwd()
+				let fd = try FileDescriptor.open("/dev/null", .readOnly)
+				let output = try await ProcessInvocation(checkCwdAndEnvPath, usePATH: true, customPATH: [Self.scriptsPath], stdoutRedirect: .capture, stderrRedirect: .toNull, signalsToForward: [], fileDescriptorsToSend: [fd: fd], lineSeparators: .none)
+					.invokeAndGetRawOutput()
+				let data = try XCTUnwrap(output.onlyElement)
+				XCTAssert(data.eol.isEmpty)
+				let envInside = try JSONDecoder().decode(EnvAndCwd.self, from: data.line)
+				let envAfter = EnvAndCwd()
+				XCTAssertEqual(envBefore, envInside)
+				XCTAssertEqual(envBefore, envAfter)
+			}
+			
 			defer {
 				if let curPath = curPath {setenv("PATH", curPath, 1)}
 				else                     {unsetenv("PATH")}
@@ -374,7 +388,7 @@ final class ProcessTests : XCTestCase {
 			
 			/* LINUXASYNC START --------- */
 			group.leave()
-		}/* catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}*/}
+		} catch {XCTFail("Error thrown during async test: \(error)"); group.leave()}}
 		group.wait()
 		/* LINUXASYNC STOP --------- */
 	}
@@ -424,6 +438,38 @@ final class ProcessTests : XCTestCase {
 #else
 		return Bundle.main.bundleURL
 #endif
+	}
+	
+	private struct EnvAndCwd : Codable, Equatable {
+#if os(macOS)
+		/* Default keys removed by spawn (or something else), or added by swift launcher */
+		static var defaultRemovedKeys = Set<String>(
+			arrayLiteral:
+				"DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FALLBACK_FRAMEWORK_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
+				"CPATH", "LIBRARY_PATH", "SDKROOT"
+		)
+#else
+		static var defaultRemovedKeys = Set<String>()
+#endif
+		
+		var cwd: String
+		var env: [String: String]
+		
+		init(removedEnvKeys: Set<String> = Self.defaultRemovedKeys) {
+			env = [String: String]()
+			cwd = FileManager.default.currentDirectoryPath
+			
+			/* Fill env */
+			var curEnvPtr = environ
+			while let curVarValC = curEnvPtr.pointee {
+				defer {curEnvPtr = curEnvPtr.advanced(by: 1)}
+				let curVarVal = String(cString: curVarValC)
+				let split = curVarVal.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
+				assert(split.count == 2) /* If this assert is false, the environ variable is invalid. As we’re a test script we don’t care about being fully safe. */
+				guard !removedEnvKeys.contains(split[0]) else {continue}
+				env[split[0]] = split[1] /* Same, if we get the same var twice, environ is invalid so we override without worrying. */
+			}
+		}
 	}
 	
 }
