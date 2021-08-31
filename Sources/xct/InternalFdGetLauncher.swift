@@ -118,11 +118,11 @@ struct InternalFdGetLauncher : ParsableCommand {
 			Xct.logger.trace("exec’ing \(toolName)")
 			let ret: Int32
 			if usePath {
+#if !os(Linux)
 				/* The P implementation of exec searches for the binary path in the
 				 * given search path.
 				 * The v means we pass an array to exec (as opposed to the variadic
 				 * exec variant, which is not available in Swift anyway). */
-#if !os(Linux)
 				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
 #else
 				/* execvP does not exist on Linux, so we simulate it by copying
