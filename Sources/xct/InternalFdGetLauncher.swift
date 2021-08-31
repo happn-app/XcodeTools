@@ -121,8 +121,44 @@ struct InternalFdGetLauncher : ParsableCommand {
 #if !os(Linux)
 				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
 #else
+				/* execvP does not exist on Linux, so we simulate it by copying
+				 * current env in a new buffer, modifying PATH, and using execvpe
+				 * which allows both passing an environment and using PATH. */
+				
+				/* First we count the number of env vars */
+				var countEnv = 0
+				var curEnv = environ
+				while let _ = curEnv.pointee {
+					curEnv = curEnv.successor()
+					countEnv += 1
+				}
+				
+				/* Then allocate the new env array */
+				let newEnv = UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>.allocate(capacity: countEnv + 1)
+				newEnv.initialize(repeating: nil, count: countEnv + 1)
+				defer {
+					var curEnv = newEnv
+					/* We assume there are no “holes” in newEnv */
+					while let e = curEnv.pointee {
+						curEnv = curEnv.successor()
+						e.deallocate()
+					}
+					newEnv.deallocate()
+				}
+				
+				/* And copy the values */
+				for i in 0..<countEnv {
+					/* Force-unwrap-proof because of the way countEnv is inited. */
+					newEnv.advanced(by: i).pointee = strdup(environ.advanced(by: i).pointee!)
+					guard newEnv.advanced(by: i).pointee != nil else {
+						/* TODO: Which error do we do? */throw ExitCode(errno)
+					}
+				}
+				
+				/* Finally set PATH */
 				setenv("PATH", path ?? _PATH_DEFPATH, 1)
-				ret = execvp(toolName, cargs)
+				/* And exec the process */
+				ret = execvpe(toolName, cargs, newEnv)
 #endif
 			} else {
 				ret = execv(toolName, cargs)

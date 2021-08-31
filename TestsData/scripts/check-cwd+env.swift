@@ -9,14 +9,16 @@ if let envName = envName {
 } else {
 	struct EnvAndCwd : Codable, Equatable {
 #if os(macOS)
-		/* Default keys removed by spawn (or something else), or added by swift launcher */
 		static var defaultRemovedKeys = Set<String>(
 			arrayLiteral:
+				/* Keys removed by spawn (or something else). */
 				"DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FALLBACK_FRAMEWORK_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
+				/* Keys added by Swift launcher (presumably). */
 				"CPATH", "LIBRARY_PATH", "SDKROOT"
 		)
 #else
-		static var defaultRemovedKeys = Set<String>()
+		/* Keys added by swift launcher (presumably). */
+		static var defaultRemovedKeys = Set<String>(arrayLiteral: "LD_LIBRARY_PATH")
 #endif
 		
 		var cwd: String
