@@ -8,6 +8,12 @@ import Foundation
  * public Foundation implementation is used), the eXtenderZ should be able to be
  * imported. See Process+Utils for reason why we use the eXtenderZ. */
 let needseXtenderZ = (NSStringFromClass(Process().classForCoder) != "NSTask")
+/* Do we need the _GNU_SOURCE exports? This allows using execvpe on Linux. */
+#if !os(Linux)
+let needsGNUSourceExports = false
+#else
+let needsGNUSourceExports = true
+#endif
 
 
 var dependencies: [Package.Dependency] = [
@@ -96,6 +102,9 @@ let eXtenderZDeps: [Target.Dependency] = [
 	.product(name: "eXtenderZ-static", package: "eXtenderZ"),
 	.target(name: "CNSTaskHelptender")
 ]
+let gnuSourceExportsDeps: [Target.Dependency] = [
+	.target(name: "CGNUSourceExports")
+]
 targets.append(contentsOf: [
 	.target(name: "XcodeTools", dependencies: [
 		.product(name: "Logging",        package: "swift-log"),
@@ -108,7 +117,7 @@ targets.append(contentsOf: [
 		 * additional file descriptors. To avoid a cyclic dependency, we do not
 		 * add it in the deps. */
 //		.target(name: "xct"),
-	] + (needseXtenderZ ? eXtenderZDeps : [])),
+	] + (needseXtenderZ ? eXtenderZDeps : []) + (needsGNUSourceExports ? gnuSourceExportsDeps : [])),
 	.testTarget(name: "XcodeToolsTests", dependencies: [
 		.target(name: "XcodeTools"),
 		
@@ -201,6 +210,15 @@ targets.append(contentsOf: [
 
 /* Some complex macros exported as functions to be used in Swift. */
 targets.append(.target(name: "CMacroExports"))
+
+
+/* ************************* */
+/* *** CGNUSourceExports *** */
+/* ************************* */
+
+if needsGNUSourceExports {
+	targets.append(.target(name: "CGNUSourceExports"))
+}
 
 
 /* ***************** */

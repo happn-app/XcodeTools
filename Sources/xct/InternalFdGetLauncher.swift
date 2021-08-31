@@ -6,6 +6,10 @@ import CMacroExports
 import Logging
 import SystemPackage
 
+#if os(Linux)
+import CGNUSourceExports
+#endif
+
 
 
 struct InternalFdGetLauncher : ParsableCommand {
@@ -158,7 +162,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 				/* Finally set PATH */
 				setenv("PATH", path ?? _PATH_DEFPATH, 1)
 				/* And exec the process */
-				ret = execvpe(toolName, cargs, newEnv)
+				ret = xct_execvpe(toolName, cargs, newEnv)
 #endif
 			} else {
 				ret = execv(toolName, cargs)
