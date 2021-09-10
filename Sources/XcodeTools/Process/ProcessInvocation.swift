@@ -5,6 +5,7 @@ import SystemPackage
 
 import CMacroExports
 import SignalHandling
+import Utils
 
 #if canImport(eXtenderZ)
 import CNSTaskHelptender
@@ -309,6 +310,10 @@ public struct ProcessInvocation : AsyncSequence {
 		return try (rawOutput.map{ try $0.strLineWithSource(encoding: encoding) }, exitStatus, exitReason)
 	}
 	
+	/**
+	 Launch the invocation and returns the output of the process. If there are
+	 any I/O issues while reading the output file descriptors from the Process,
+	 the whole invocation is considered failed and an error is thrown. */
 	public func invokeAndGetRawOutput(checkValidTerminations: Bool) async throws -> ([RawLineWithSource], Int32, Process.TerminationReason) {
 		var outputError: Error?
 		var lines = [RawLineWithSource]()
@@ -323,10 +328,15 @@ public struct ProcessInvocation : AsyncSequence {
 				case .failure(let error): outputError = error
 			}
 		})
+		try outputError?.throw()
 		return (lines, exitStatus, exitReason)
 	}
 	
 	/**
+	 Launch the invocation and streams the output in the given handler.
+	 Does **not** throw if there are I/O issues, contrary to the other “invoke
+	 and get output” methods. You have to catch those yourself in the handler.
+	 
 	 - Parameter outputHandler: This handler is called after a new line is caught
 	 from any of the output file descriptors. You get the line and the separator
 	 as `Data`, the source fd that generated this data (if `stdout` or `stderr`
