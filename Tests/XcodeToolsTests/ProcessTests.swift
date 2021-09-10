@@ -105,10 +105,7 @@ final class ProcessTests : XCTestCase {
 			var previousFd: FileDescriptor?
 			var linesByFd = [RawLineWithSource]()
 			let (terminationStatus, terminationReason) = try await ProcessInvocation(scriptURL, "\(n)", "\(t)", signalsToForward: [])
-				.invokeAndStreamOutput(checkValidTerminations: false, outputHandler: { lineResult, _, _ in
-					guard let rawLine = try? lineResult.get() else {
-						return XCTFail("got output error: \(lineResult)")
-					}
+				.invokeAndStreamOutput(checkValidTerminations: false, outputHandler: { rawLine, _, _ in
 					if previousFd != rawLine.fd {
 						fdSwitchCount += 1
 						previousFd = rawLine.fd

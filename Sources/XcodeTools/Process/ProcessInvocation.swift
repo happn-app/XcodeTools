@@ -72,7 +72,7 @@ import eXtenderZ
  do not fully emulate exec’s behavior. */
 public struct ProcessInvocation : AsyncSequence {
 	
-	public typealias ProcessOutputHandler = (_ result: Result<RawLineWithSource, Error>, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
+	public typealias ProcessOutputHandler = (_ rawLineWithSource: RawLineWithSource, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
 	
 	public typealias AsyncIterator = Iterator
 	public typealias Element = RawLineWithSource
@@ -315,27 +315,20 @@ public struct ProcessInvocation : AsyncSequence {
 	 any I/O issues while reading the output file descriptors from the Process,
 	 the whole invocation is considered failed and an error is thrown. */
 	public func invokeAndGetRawOutput(checkValidTerminations: Bool) async throws -> ([RawLineWithSource], Int32, Process.TerminationReason) {
-		var outputError: Error?
 		var lines = [RawLineWithSource]()
-		let (exitStatus, exitReason) = try await invokeAndStreamOutput(checkValidTerminations: checkValidTerminations, outputHandler: { result, _, _ in
-			guard outputError == nil else {
-				/* We do not signal end of interest in stream when we have an output
-				 * error to avoid forcing a broken pipe error. */
-				return
-			}
-			switch result {
-				case .success(let line): lines.append(line)
-				case .failure(let error): outputError = error
-			}
+		let (exitStatus, exitReason) = try await invokeAndStreamOutput(checkValidTerminations: checkValidTerminations, outputHandler: { line, _, _ in
+			lines.append(line)
 		})
-		try outputError?.throw()
 		return (lines, exitStatus, exitReason)
 	}
 	
 	/**
-	 Launch the invocation and streams the output in the given handler.
-	 Does **not** throw if there are I/O issues, contrary to the other “invoke
-	 and get output” methods. You have to catch those yourself in the handler.
+	 Launch the invocation and streams the output in the given handler. If there
+	 is at least one error reading from _any_ of the input stream at any given
+	 time, the whole function will throw an ``XcodeToolsError`` `outputReadError`
+	 error, and any new lines that might be received on other streams are not
+	 sent to the handler anymore. The process is not stopped though, and it is
+	 waited on normally.
 	 
 	 - Parameter outputHandler: This handler is called after a new line is caught
 	 from any of the output file descriptors. You get the line and the separator
@@ -350,16 +343,34 @@ public struct ProcessInvocation : AsyncSequence {
 		/* We want this variable to be immutable once the process is launched. */
 		let expectedTerminations = expectedTerminations
 		
-		let (p, g) = try invoke(outputHandler: outputHandler)
+		/* 1. First launch the process. */
+		var outputError: Error?
+		let (p, g) = try invoke{ result, signalEndOfInterestForStream, process in
+			guard outputError == nil else {
+				/* We do not signal end of interest in stream when we have an output
+				 * error to avoid forcing a broken pipe error, _but_ we stop reading
+				 * from any stream as soon as we get at least one error. */
+				return
+			}
+			switch result {
+				case .success(let line): outputHandler(line, signalEndOfInterestForStream, process)
+				case .failure(let error): outputError = error
+			}
+		}
+		/* 2. Then wait for it to quit and all the stream to be read fully. */
 		await withCheckedContinuation{ continuation in
 			g.notify(queue: ProcessInvocation.streamQueue, execute: {
 				continuation.resume()
 			})
 		}
+		/* 3. If there was an error reading the process output, we throw. */
+		try outputError?.throw{ Err.outputReadError($0) }
+		/* 4. Retreive process termination status+reason and check them if needed. */
 		let (exitStatus, exitReason) = (p.terminationStatus, p.terminationReason)
 		if checkValidTerminations {
 			try Self.checkTermination(expectedTerminations: expectedTerminations, terminationStatus: exitStatus, terminationReason: exitReason)
 		}
+		/* 5. We’re done, everything went well! */
 		return (exitStatus, exitReason)
 	}
 	
@@ -369,7 +380,7 @@ public struct ProcessInvocation : AsyncSequence {
 	 its outputs are done. You can also set the termination handler of the
 	 process, but you should wait on the dispatch group to be sure all of the
 	 outputs have finished streaming. */
-	public func invoke(outputHandler: @escaping ProcessInvocation.ProcessOutputHandler, terminationHandler: ((_ process: Process) -> Void)? = nil) throws -> (Process, DispatchGroup) {
+	public func invoke(outputHandler: @escaping (_ result: Result<RawLineWithSource, Error>, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void, terminationHandler: ((_ process: Process) -> Void)? = nil) throws -> (Process, DispatchGroup) {
 		assert(!fileDescriptorsToSend.values.contains(.standardOutput), "Standard output must be modified using stdoutRedirect")
 		assert(!fileDescriptorsToSend.values.contains(.standardError), "Standard error must be modified using stderrRedirect")
 		
@@ -380,7 +391,7 @@ public struct ProcessInvocation : AsyncSequence {
 		let p = XcodeToolsProcess()
 #endif
 		
-		let actualOutputHandler: ProcessInvocation.ProcessOutputHandler
+		let actualOutputHandler: (_ result: Result<RawLineWithSource, Error>, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
 		if let shouldContinueStreamHandler = shouldContinueStreamHandler {
 			actualOutputHandler = { result, signalEndOfInterestForStream, process in
 				outputHandler(result, signalEndOfInterestForStream, process)

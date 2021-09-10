@@ -17,8 +17,8 @@ public extension Error {
 	try err?.throw()
 	...
 	```` */
-	func `throw`() throws {
-		throw self
+	func `throw`(_ wrapped: (Self) -> Error = { $0 }) throws {
+		throw wrapped(self)
 	}
 	
 }
