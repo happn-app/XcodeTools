@@ -240,9 +240,8 @@ final class ProcessTests : XCTestCase {
 		/* LINUXASYNC STOP --------- */
 	}
 	
-#if !os(Linux)
-	/* Disabled on Linux, because unreliable (sometimes works, sometimes not). */
-	func testSpawnProcessWithResourceStarving() async throws {
+	/* Disabled because unreliable (sometimes works, sometimes not). */
+	func disabledTestSpawnProcessWithResourceStarving() async throws {
 		/* Let’s starve the fds first */
 		var fds = Set<FileDescriptor>()
 		while let fd = try? FileDescriptor.open("/dev/random", .readOnly) {fds.insert(fd)}
@@ -270,36 +269,15 @@ final class ProcessTests : XCTestCase {
 		 * failure. */
 		await tempAsyncAssertThrowsError(try await pi.invokeAndGetOutput(encoding: .utf8))
 		
-		/* Now let’s release more fds.
-		 * If we release three, we get an error with a read from a bad fd. Not
-		 * sure why, but it’s not very much surprising.
-		 * If we release one more it seems to work. */
+		/* Now let’s release more fds. Hopefully enough to get enough available. */
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
 		try releaseRandomFd()
-#if os(Linux)
-		/* Apparently Linux uses more fds to launch a subprocess. */
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-		try releaseRandomFd()
-#endif
 		let outputs = try await pi.invokeAndGetRawOutput()
 		XCTAssertEqual(try textOutputFromOutputs(outputs), [.standardOutput: "hello\n"])
 	}
-#endif
 	
 	func testPathSearch() throws {
 		/* LINUXASYNC START --------- */
