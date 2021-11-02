@@ -41,9 +41,16 @@ public extension FileManager {
 	}
 	
 	/**
-	 Call the handler with the files. If the handler returns false, the iteration
-	 is stopped. */
-	func iterateFiles(in folder: FilePath, exclude: [NSRegularExpression], handler: (_ fullPath: FilePath, _ relativePath: FilePath, _ isDirectory: Bool) -> Bool) throws {
+	 Call the handler with the files.
+	 If the handler returns `false`, the iteration is stopped.
+	 
+	 First the include regexps are evaluated.
+	 If `nil`, no include check is done, and all files go to next step.
+	 (Note that if include is an empty array, no files will match and all will be skipped.)
+	 
+	 Then the exclude regexps are evaluated.
+	 If regexp match, the file is skipped. */
+	func iterateFiles(in folder: FilePath, include: [NSRegularExpression]? = nil, exclude: [NSRegularExpression] = [], handler: (_ fullPath: FilePath, _ relativePath: FilePath, _ isDirectory: Bool) throws -> Bool) throws {
 		let folder = folder.lexicallyNormalized()
 		guard let enumerator = enumerator(at: folder.url, includingPropertiesForKeys: [.isDirectoryKey]) else {
 			struct CannotCreateEnumerator : Error {var path: FilePath}
@@ -62,6 +69,9 @@ public extension FileManager {
 				throw EnumeratorReturnedAnURLOutsideOfRootFolder(enumeratedPath: folder, returnedPath: path)
 			}
 			let relativePathString = relativePath.string
+			guard include.flatMap({ $0.contains(where: { $0.rangeOfFirstMatch(in: relativePathString, range: NSRange(relativePathString.startIndex..<relativePathString.endIndex, in: relativePathString)).location != NSNotFound }) }) ?? true else {
+				continue
+			}
 			guard !exclude.contains(where: { $0.rangeOfFirstMatch(in: relativePathString, range: NSRange(relativePathString.startIndex..<relativePathString.endIndex, in: relativePathString)).location != NSNotFound }) else {
 				continue
 			}
@@ -69,7 +79,7 @@ public extension FileManager {
 				struct CannotGetIsDirectory : Error {var enumeratedPath: FilePath; var currentPath: FilePath}
 				throw CannotGetIsDirectory(enumeratedPath: folder, currentPath: relativePath)
 			}
-			guard handler(fullPath, relativePath, isDir) else {return}
+			guard try handler(fullPath, relativePath, isDir) else {return}
 		}
 	}
 	

@@ -153,7 +153,8 @@ targets.append(
 		 * does not work (Xcode 12.5). One can add the targets in the xct scheme
 		 * manually though. */
 		.target(name: "xct-build"),
-//		.target(name: "xct-versions")
+		.target(name: "xct-gen"),
+		.target(name: "xct-versions")
 	])
 )
 products.append(.executable(name: "xct-build",    targets: ["xct-build"]))
@@ -169,6 +170,14 @@ targets.append(
 	])
 )
 #if canImport(CoreData)
+products.append(.executable(name: "xct-gen", targets: ["xct-gen"]))
+targets.append(
+	.executableTarget(name: "xct-gen", dependencies: [
+		.product(name: "ArgumentParser", package: "swift-argument-parser"),
+		.target(name: "XcodeProj"),
+		.target(name: "XcodeTools")
+	])
+)
 products.append(.executable(name: "xct-versions", targets: ["xct-versions"]))
 targets.append(
 	.executableTarget(name: "xct-versions", dependencies: [

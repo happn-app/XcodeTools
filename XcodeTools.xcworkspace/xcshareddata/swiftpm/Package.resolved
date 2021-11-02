@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/xcode-actions/clt-logger.git",
         "state": {
           "branch": null,
-          "revision": "654b94141e65cac7abd7b0792f424628a088e8f3",
-          "version": "0.3.0"
+          "revision": "5d3db055e9db2827136c1acf335e136fe759917e",
+          "version": "0.3.6"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/xcode-actions/stream-reader.git",
         "state": {
           "branch": null,
-          "revision": "c929a9700ed0592b6ba05cd631722694657b4e45",
-          "version": "3.2.1"
+          "revision": "09104092cb7e87dc6d1086d40c06d7606fc6cb94",
+          "version": "3.2.3"
         }
       },
       {
@@ -33,8 +33,17 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "831ed5e860a70e745bc1337830af4786b2576881",
-          "version": "0.4.1"
+          "revision": "d2930e8fcf9c33162b9fcc1d522bc975e2d4179b",
+          "version": "1.0.1"
+        }
+      },
+      {
+        "package": "swift-crypto",
+        "repositoryURL": "https://github.com/apple/swift-crypto.git",
+        "state": {
+          "branch": null,
+          "revision": "3bea268b223651c4ab7b7b9ad62ef9b2d4143eb6",
+          "version": "1.1.6"
         }
       },
       {
@@ -51,8 +60,8 @@
         "repositoryURL": "https://github.com/xcode-actions/swift-signal-handling.git",
         "state": {
           "branch": null,
-          "revision": "1fd84e624b31161307490e454347ce1535b646bb",
-          "version": "0.2.0"
+          "revision": "6005fac2f6da1c8afa53c2e996e5dff92e334b43",
+          "version": "1.0.0"
         }
       },
       {
@@ -60,8 +69,17 @@
         "repositoryURL": "https://github.com/apple/swift-system.git",
         "state": {
           "branch": null,
-          "revision": "8ffa04c0a0592e6f4f9c30926dedd8fa1c5371f9",
-          "version": "0.0.1"
+          "revision": "ce8b4910730114fa1eb46967a031a04f7594f42d",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "package": "XibLoc",
+        "repositoryURL": "https://github.com/happn-tech/XibLoc.git",
+        "state": {
+          "branch": null,
+          "revision": "e3fc0c240c87e9c3549420f16f6e8ee39809cf19",
+          "version": "1.1.1"
         }
       }
     ]
