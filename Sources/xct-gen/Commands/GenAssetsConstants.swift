@@ -88,17 +88,18 @@ struct GenAssetsConstants : ParsableCommand {
 				}
 				var generatedFile = """
 					import Foundation
+					import UIKit
 					
 					
 					
 					public struct XctAssetsConstants {
 					
 					"""
-				for (swiftColorName, colorName) in colorNames {
+				for (swiftColorName, colorName) in colorNames.sorted(by: { $0.key < $1.key }) {
 					/* For now we assume colorName won’t contain #" */
 					generatedFile += #"""
 							
-							public static let \#(swiftColorName) = #"\#(colorName)"#
+							public static let \#(swiftColorName) = UIColor(named: #"\#(colorName)"#)!
 						"""#
 				}
 				generatedFile += """
