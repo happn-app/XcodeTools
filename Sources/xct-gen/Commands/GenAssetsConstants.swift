@@ -59,6 +59,7 @@ struct GenAssetsConstants : ParsableCommand {
 							guard let colorName = relativePath.stem else {
 								return true
 							}
+							/* Note: We’re aggressive in name normalization. Swift would accept accents, emoji and co. */
 							guard var swiftColorName = colorName
 										.applyingTransform(.stripCombiningMarks, reverse: false)?
 										.applyingTransform(.stripDiacritics, reverse: false)?
