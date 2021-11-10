@@ -153,8 +153,9 @@ targets.append(
 		 * does not work (Xcode 12.5). One can add the targets in the xct scheme
 		 * manually though. */
 		.target(name: "xct-build"),
-		.target(name: "xct-gen"),
-		.target(name: "xct-versions")
+		/* The targets below are commented for Linux. */
+//		.target(name: "xct-gen"),
+//		.target(name: "xct-versions")
 	])
 )
 products.append(.executable(name: "xct-build",    targets: ["xct-build"]))
