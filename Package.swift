@@ -4,9 +4,9 @@ import PackageDescription
 import Foundation
 
 
-/* Detect if we need the eXtenderZ. If we do (on Apple platforms where the non-
- * public Foundation implementation is used), the eXtenderZ should be able to be
- * imported. See Process+Utils for reason why we use the eXtenderZ. */
+/* Detect if we need the eXtenderZ.
+ * If we do (on Apple platforms where the non-public Foundation implementation is used), the eXtenderZ should be able to be imported.
+ * See Process+Utils for reason why we use the eXtenderZ. */
 let needseXtenderZ = (NSStringFromClass(Process().classForCoder) != "NSTask")
 /* Do we need the _GNU_SOURCE exports? This allows using execvpe on Linux. */
 #if !os(Linux)
@@ -113,9 +113,8 @@ targets.append(contentsOf: [
 		.product(name: "SystemPackage",  package: "swift-system"),
 		.target(name: "CMacroExports"),
 		.target(name: "Utils"),
-		/* XcodeTools depends (indirectly) on xct to launch processes with
-		 * additional file descriptors. To avoid a cyclic dependency, we do not
-		 * add it in the deps. */
+		/* XcodeTools depends (indirectly) on xct to launch processes with additional file descriptors.
+		 * To avoid a cyclic dependency, we do not add it in the deps. */
 //		.target(name: "xct"),
 	] + (needseXtenderZ ? eXtenderZDeps : []) + (needsGNUSourceExports ? gnuSourceExportsDeps : [])),
 	.testTarget(name: "XcodeToolsTests", dependencies: [
@@ -148,10 +147,9 @@ targets.append(
 		.target(name: "CMacroExports"),
 		.target(name: "XcodeTools"),
 		
-		/* Not _actual_ dependencies, but it is easier to have these recompiled
-		 * when modified and current scheme is xct. This is the theory, but it
-		 * does not work (Xcode 12.5). One can add the targets in the xct scheme
-		 * manually though. */
+		/* Not _actual_ dependencies, but it is easier to have these recompiled when modified and current scheme is xct.
+		 * This is the theory, but it does not work (Xcode 12.5).
+		 * One can add the targets in the xct scheme manually though. */
 		.target(name: "xct-build"),
 		/* The targets below are commented for Linux. */
 //		.target(name: "xct-gen"),
@@ -243,9 +241,7 @@ if needseXtenderZ {
 
 let package = Package(
 	name: "XcodeTools",
-	platforms: [
-		.macOS(.v12)
-	],
+	platforms: [.macOS(.v12)],
 	products: products,
 	dependencies: dependencies,
 	targets: targets

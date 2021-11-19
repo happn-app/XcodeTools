@@ -1,7 +1,7 @@
 #!/usr/bin/env swift
 
 /* Usage: Replace calling `swift build` w/ this script. Example:
- *    ./Scripts/build-sans-sandbox.swift -c release */
+ *    ./Scripts/build-sans-sandbox.swift -c release */
 
 import Foundation
 
@@ -51,8 +51,8 @@ func setupCleanupSigaction() throws {
 	newAction.sa_flags = 0
 	sigemptyset(&newAction.sa_mask)
 	newAction.__sigaction_u.__sa_handler = { signal in
-		/* In theory we shouldn’t handle the cleanup in the handler directly, but
-		 * here we won’t care… Using swift-signal-handling wouldv’e been handy! */
+		/* In theory we shouldn’t handle the cleanup in the handler directly, but here we won’t care…
+		 * Using swift-signal-handling wouldv’e been handy! */
 		waitForProcessesAndCleanup(fromSignal: true)
 		exit(signal)
 	}
@@ -69,12 +69,11 @@ func waitForProcessesAndCleanup(fromSignal: Bool) {
 	let fm = FileManager.default
 	
 	for p in CleanupInfo.processes {
-		/* We’ll assume the process has had time to be launched (there is race
-		 * possible where the interrupt is caught after the process was added to
-		 * the list but before it was launched. But if we go that way, there is
-		 * also a possibility the interrupt was caught when the list was in the
-		 * process of being modified, thus being invalid in memory, so… but we do
-		 * not really care about all of that in a script, do we?) */
+		/* We’ll assume the process has had time to be launched.
+		 * (There is race possible where the interrupt is caught after the process was added to the list but before it was launched.
+		 *  But if we go that way, there is also a possibility the interrupt was caught when the list was in the process of being modified,
+		 *  thus being invalid in memory, so………
+		 *  But we do not really care about all of that in a script, do we?) */
 		if p.isRunning {
 			_ = try? FileHandle.standardError.write(contentsOf: Data("Killing sub-process pid \(p.processIdentifier)\n".utf8))
 			kill(p.processIdentifier, 15)
@@ -129,8 +128,8 @@ func processModel(xcdatamodeldURL: URL, moduleName: String, tokenInPackageFile: 
 	/* Tweak Package.swift */
 	let packageURL = URL(fileURLWithPath: "Package.swift")
 	if !hasBackedUpPackageFile {
-		/* First let’s make a backup of the Package.swift file. We assume we won’t
-		 * have a file already created at given random UUID path… */
+		/* First let’s make a backup of the Package.swift file.
+		 * We assume we won’t have a file already created at given random UUID path… */
 		let dest = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 		
 		CleanupInfo.toMoveBack.append((source: dest.absoluteURL, destination: packageURL.absoluteURL))
@@ -143,8 +142,7 @@ func processModel(xcdatamodeldURL: URL, moduleName: String, tokenInPackageFile: 
 	}.joined(separator: "\n")
 	try Data(modifiedPackage.utf8).write(to: packageURL)
 	
-	/* Finally, move the xcdatamodeld file away (once again, we assume we won’t
-	 * get a collision on the destination file name). */
+	/* Finally, move the xcdatamodeld file away (once again, we assume we won’t get a collision on the destination file name). */
 	let dest = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 	CleanupInfo.toMoveBack.append((source: dest.absoluteURL, destination: xcdatamodeldURL.absoluteURL))
 	try fm.moveItem(at: xcdatamodeldURL, to: dest)
