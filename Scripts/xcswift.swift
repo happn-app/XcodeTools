@@ -1,7 +1,7 @@
 #!/usr/bin/env swift
 
-/* Usage: Replace calling `swift build` w/ this script. Example:
- *    ./Scripts/build-sans-sandbox.swift -c release */
+/* Usage: Replace calling `swift` w/ this script. Example:
+ *    ./Scripts/xcswift.swift build -c release */
 
 import Foundation
 
@@ -160,7 +160,7 @@ do {
 	try processModel(xcdatamodeldURL: URL(fileURLWithPath: "./Sources/XcodeProj/PBXModel.xcdatamodeld"), moduleName: "XcodeProj", tokenInPackageFile: "__COREDATA_TOKEN_XcodeProj_PBXModel")
 	
 	/* Run swift */
-	try shell("swift", ["build"] + CommandLine.arguments.dropFirst())
+	try shell("swift", Array(CommandLine.arguments.dropFirst()))
 	
 	waitForProcessesAndCleanup(fromSignal: false)
 } catch {
