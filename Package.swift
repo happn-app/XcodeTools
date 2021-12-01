@@ -92,6 +92,21 @@ targets.append(contentsOf: [
 ])
 
 
+/* *************** */
+/* *** SPMProj *** */
+/* *************** */
+
+/* A lib one can use to manipulate SPM Projects. */
+products.append(.library(name: "SPMProj", targets: ["SPMProj"]))
+targets.append(contentsOf: [
+	.target(name: "SPMProj", dependencies: [
+		.product(name: "Logging", package: "swift-log"),
+		.target(name: "Utils")
+	]),
+	.testTarget(name: "SPMProjTests", dependencies: [.target(name: "SPMProj")])
+])
+
+
 /* ****************** */
 /* *** XcodeTools *** */
 /* ****************** */
