@@ -5,7 +5,7 @@ import XCTest
 
 
 
-class XCConfigTests : XCTestCase {
+final class XCConfigTests : XCTestCase {
 	
 	func testIncludeStuff() throws {
 		XCTAssertThrowsError(try XCConfig.Line(lineString: #"#include ? "hello""#))

@@ -5,7 +5,7 @@ import XCTest
 
 
 
-class BuildSettingsTests : XCTestCase {
+final class BuildSettingsTests : XCTestCase {
 	
 	func testNoParameters() throws {
 		XCTAssertEqual(try BuildSettingKey(serializedKey: "SETTING = VALUE").serialized, "SETTING = VALUE")

@@ -5,7 +5,7 @@ import XCTest
 
 
 
-class TestsProject1 : XCTestCase {
+final class TestsProject1 : XCTestCase {
 	
 	let xcodeprojURL = URL(fileURLWithPath: #file, isDirectory: false).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("TestsData").appendingPathComponent("project1").appendingPathComponent("Project 1.xcodeproj")
 	

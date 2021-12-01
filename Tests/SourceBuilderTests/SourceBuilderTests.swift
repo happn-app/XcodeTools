@@ -12,7 +12,7 @@ import Utils
 
 
 
-class SourceBuilderTests : XCTestCase {
+final class SourceBuilderTests : XCTestCase {
 	
 	override class func setUp() {
 		super.setUp()
