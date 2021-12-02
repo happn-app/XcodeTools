@@ -1,6 +1,7 @@
 import Foundation
 
 import ArgumentParser
+import SPMProj
 import SystemPackage
 import XcodeProj
 
@@ -17,7 +18,7 @@ struct GenAssetsConstants : ParsableCommand {
 	@OptionGroup
 	var xctVersionsOptions: XctGen.Options
 	
-	@Option
+	@Flag
 	var targetIsModulePath: Bool = false
 	
 	@Argument
@@ -134,6 +135,25 @@ struct GenAssetsConstants : ParsableCommand {
 				}
 			}
 		} else {
+//			let spmProj = try SPMProj(path: ".")
+			/* For now SPMProj does not know how to do anything, so we just do it manually. */
+			for targetURL in try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: "Sources"), includingPropertiesForKeys: nil) {
+				let targetName = targetURL.lastPathComponent
+				guard let destinationFile = destFileForTarget(targetName) else {
+					continue
+				}
+				var colorNames = [String: String]()
+				let includeRegex = try! NSRegularExpression(pattern: #".*\.xcassets$"#, options: [.caseInsensitive])
+				guard let filePath = FilePath(targetURL) else {
+					throw XctGenError(message: "Internal error: Cannot generate FilePath for URL \(targetURL.absoluteString)")
+				}
+				try FileManager.default.iterateFiles(in: filePath, include: [includeRegex], handler: { fullPath, _, isDir in
+					guard isDir else {return true}
+					try fillColorNamesAssets(fullPath, &colorNames)
+					return true
+				})
+				try writeFile(colorNames, URL(fileURLWithPath: destinationFile, relativeTo: targetURL))
+			}
 		}
 	}
 	
