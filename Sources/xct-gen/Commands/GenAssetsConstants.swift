@@ -31,16 +31,16 @@ struct GenAssetsConstants : ParsableCommand {
 	}
 	
 	func run() throws {
-		var targetToDestFile = [String: String]()
+		var targetToDestFiles = [String: [String]]()
 		for idx in stride(from: targetAndFileTuples.startIndex, to: targetAndFileTuples.endIndex, by: 2) {
 			let target = targetAndFileTuples[idx]
 			let destinationFile = targetAndFileTuples[idx+1]
-			targetToDestFile[target] = destinationFile
+			targetToDestFiles[target, default: []].append(destinationFile)
 		}
 		
 		let includeRegex = try! NSRegularExpression(pattern: #".*\.colorset$"#, options: [.caseInsensitive])
 		try iterateTargetsFiles{ target in
-			targetToDestFile[target]
+			targetToDestFiles[target]
 		} fillColorNamesAssets: { assetsPath, colorNames in
 			try FileManager.default.iterateFiles(in: assetsPath, include: [includeRegex], handler: { _, relativePath, isDir in
 				guard let colorName = relativePath.stem else {
@@ -105,12 +105,12 @@ struct GenAssetsConstants : ParsableCommand {
 		}
 	}
 	
-	private func iterateTargetsFiles(destFileForTarget: (String) -> String?, fillColorNamesAssets: (FilePath, inout [String: String]) throws -> Void, writeFile: ([String: String], URL) throws -> Void) throws {
+	private func iterateTargetsFiles(destFilesForTarget: (String) -> [String]?, fillColorNamesAssets: (FilePath, inout [String: String]) throws -> Void, writeFile: ([String: String], URL) throws -> Void) throws {
 		if !targetIsModulePath {
 			let xcodeproj = try XcodeProj(path: xctVersionsOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 			try xcodeproj.managedObjectContext.performAndWait{
 				for target in try xcodeproj.pbxproj.rootObject.getTargets() {
-					guard let destinationFile = try destFileForTarget(target.getName()) else {
+					guard let destinationFiles = try destFilesForTarget(target.getName()) else {
 						continue
 					}
 					var colorNames = [String: String]()
@@ -131,7 +131,9 @@ struct GenAssetsConstants : ParsableCommand {
 							try fillColorNamesAssets(filePath, &colorNames)
 						}
 					}
-					try writeFile(colorNames, URL(fileURLWithPath: destinationFile, relativeTo: xcodeproj.xcodeprojURL.deletingLastPathComponent()))
+					for destinationFile in destinationFiles {
+						try writeFile(colorNames, URL(fileURLWithPath: destinationFile, relativeTo: xcodeproj.xcodeprojURL.deletingLastPathComponent()))
+					}
 				}
 			}
 		} else {
@@ -139,7 +141,7 @@ struct GenAssetsConstants : ParsableCommand {
 			/* For now SPMProj does not know how to do anything, so we just do it manually. */
 			for targetURL in try FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: "Sources"), includingPropertiesForKeys: nil) {
 				let targetName = targetURL.lastPathComponent
-				guard let destinationFile = destFileForTarget(targetName) else {
+				guard let destinationFiles = destFilesForTarget(targetName) else {
 					continue
 				}
 				var colorNames = [String: String]()
@@ -152,7 +154,9 @@ struct GenAssetsConstants : ParsableCommand {
 					try fillColorNamesAssets(fullPath, &colorNames)
 					return true
 				})
-				try writeFile(colorNames, URL(fileURLWithPath: destinationFile, relativeTo: targetURL))
+				for destinationFile in destinationFiles {
+					try writeFile(colorNames, URL(fileURLWithPath: destinationFile, relativeTo: targetURL))
+				}
 			}
 		}
 	}
