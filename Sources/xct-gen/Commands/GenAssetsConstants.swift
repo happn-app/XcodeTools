@@ -79,7 +79,7 @@ struct GenAssetsConstants : ParsableCommand {
 				
 				
 				
-				public struct XctAssetsConstants {
+				internal struct XctAssetsConstants {
 					
 				"""
 			for (swiftColorName, colorName) in colorNames.sorted(by: { $0.key < $1.key }) {
@@ -92,7 +92,7 @@ struct GenAssetsConstants : ParsableCommand {
 				}
 				generatedFile += #"""
 					
-						public static let \#(swiftColorName) = UIColor(named: \#(openQuote)\#(colorName)\#(closeQuote)\#(!targetIsModulePath ? "" : ", in: .module, compatibleWith: nil"))!
+						internal static let \#(swiftColorName) = UIColor(named: \#(openQuote)\#(colorName)\#(closeQuote)\#(!targetIsModulePath ? "" : ", in: .module, compatibleWith: nil"))!
 					"""#
 			}
 			generatedFile += """
