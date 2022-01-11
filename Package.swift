@@ -142,7 +142,7 @@ targets.append(contentsOf: [
 		.target(name: "Utils"),
 		
 		/* This dep is technically related to XcodeTools. See XcodeTools deps. */
-		.target(name: "xct")
+//		.target(name: "xct")
 	]),
 ])
 
@@ -151,7 +151,7 @@ targets.append(contentsOf: [
 /* *** xct *** */
 /* *********** */
 
-products.append(.executable(name: "xct",          targets: ["xct"]))
+products.append(.executable(name: "xct", targets: ["xct"]))
 targets.append(
 	/* A launcher for xcode tools binaries (xct-*) */
 	.executableTarget(name: "xct", dependencies: [
@@ -165,7 +165,7 @@ targets.append(
 		/* Not _actual_ dependencies, but it is easier to have these recompiled when modified and current scheme is xct.
 		 * This is the theory, but it does not work (Xcode 12.5).
 		 * One can add the targets in the xct scheme manually though. */
-		.target(name: "xct-build"),
+//		.target(name: "xct-build"),
 		/* The targets below are commented for Linux. */
 //		.target(name: "xct-gen"),
 //		.target(name: "xct-versions")
