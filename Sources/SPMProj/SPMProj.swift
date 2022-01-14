@@ -8,7 +8,11 @@ public struct SPMProj {
 	public let projectManifestURL: URL
 	
 	public init(path: String? = nil) throws {
-		self.rootURL = URL(fileURLWithPath: path ?? ".")
+		try self.init(url: path.flatMap{ URL(fileURLWithPath: $0) })
+	}
+	
+	public init(url: URL? = nil) throws {
+		self.rootURL = url ?? URL(fileURLWithPath: ".")
 		self.projectManifestURL = rootURL.appendingPathComponent("Package.swift")
 		
 		/* For now we only validate the existence of the Package.swift file; later we’ll try and parse it. */

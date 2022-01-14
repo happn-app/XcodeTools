@@ -3,9 +3,9 @@ import Foundation
 
 
 
-public extension XcodeProj {
+extension XcodeProj {
 	
-	func iterateFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	public func iterateReferencedFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
 		try managedObjectContext.performAndWait{
 			try unsafeIterateFileElementsForFiles(fileElements: pbxproj.rootObject.getMainGroup().getChildren(), handler)
 		}
@@ -17,8 +17,6 @@ public extension XcodeProj {
 				case let fileRef as PBXFileReference:
 					let url = try fileRef.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: BuildSettings.standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: xcodeprojURL))
 					handler(url, fileRef.lastKnownFileType)
-					print(fileRef)
-					print(fileRef.buildFiles_?.map{ $0 })
 					
 				case let group as PBXGroup:
 					try unsafeIterateFileElementsForFiles(fileElements: group.getChildren(), handler)
