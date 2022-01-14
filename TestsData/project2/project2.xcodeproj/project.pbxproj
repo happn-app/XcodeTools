@@ -9,18 +9,11 @@
 /* Begin PBXBuildFile section */
 		7B4F64502790E83F003483DE /* GAmazingLib.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F644E2790E83F003483DE /* GAmazingLib.swift */; };
 		7B4F64512790E83F003483DE /* Package.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F644F2790E83F003483DE /* Package.swift */; };
-		7B5037FA2790E1D100FD0F23 /* g-yes-full in Resources */ = {isa = PBXBuildFile; fileRef = 7B5037F82790E1D100FD0F23 /* g-yes-full */; };
-		7B5037FB2790E1D100FD0F23 /* GAmazingLib2 in Resources */ = {isa = PBXBuildFile; fileRef = 7B5037F92790E1D100FD0F23 /* GAmazingLib2 */; };
 		7B5768BA2790E55D008C2BEE /* GAmazingLib2 in Frameworks */ = {isa = PBXBuildFile; productRef = 7B5768B92790E55D008C2BEE /* GAmazingLib2 */; };
-		7B5768C32790E736008C2BEE /* g-yes-broken-4 in Resources */ = {isa = PBXBuildFile; fileRef = 7B5768BC2790E736008C2BEE /* g-yes-broken-4 */; };
-		7B5768C42790E736008C2BEE /* g-yes-broken-3 in Resources */ = {isa = PBXBuildFile; fileRef = 7B5768BD2790E736008C2BEE /* g-yes-broken-3 */; };
-		7B5768C52790E736008C2BEE /* g-yes-broken-2 in Resources */ = {isa = PBXBuildFile; fileRef = 7B5768BE2790E736008C2BEE /* g-yes-broken-2 */; };
-		7B5768C72790E736008C2BEE /* g-yes-broken-1 in Resources */ = {isa = PBXBuildFile; fileRef = 7B5768C02790E736008C2BEE /* g-yes-broken-1 */; };
 		7B8016772790DFFD00099E08 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8016762790DFFD00099E08 /* AppDelegate.swift */; };
 		7B8016792790DFFD00099E08 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8016782790DFFD00099E08 /* ViewController.swift */; };
 		7B80167B2790DFFF00099E08 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B80167A2790DFFF00099E08 /* Assets.xcassets */; };
 		7B80167E2790DFFF00099E08 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B80167C2790DFFF00099E08 /* Main.storyboard */; };
-		7B8016862790E02500099E08 /* Maybe SPM Packages in Folder in Resources */ = {isa = PBXBuildFile; fileRef = 7B8016852790E02500099E08 /* Maybe SPM Packages in Folder */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,9 +22,6 @@
 		7B5037F82790E1D100FD0F23 /* g-yes-full */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "g-yes-full"; sourceTree = "<group>"; };
 		7B5037F92790E1D100FD0F23 /* GAmazingLib2 */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = GAmazingLib2; sourceTree = "<group>"; };
 		7B5037FC2790E36E00FD0F23 /* g-yes-no-product */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "g-yes-no-product"; sourceTree = "<group>"; };
-		7B5384BC2790E79600FEC1CD /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		7B5384C52790E79600FEC1CD /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
-		7B5384CE2790E79700FEC1CD /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
 		7B5768BC2790E736008C2BEE /* g-yes-broken-4 */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "g-yes-broken-4"; sourceTree = "<group>"; };
 		7B5768BD2790E736008C2BEE /* g-yes-broken-3 */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "g-yes-broken-3"; sourceTree = "<group>"; };
 		7B5768BE2790E736008C2BEE /* g-yes-broken-2 */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "g-yes-broken-2"; sourceTree = "<group>"; };
@@ -43,6 +33,9 @@
 		7B80167D2790DFFF00099E08 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		7B80167F2790DFFF00099E08 /* project2.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = project2.entitlements; sourceTree = "<group>"; };
 		7B8016852790E02500099E08 /* Maybe SPM Packages in Folder */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Maybe SPM Packages in Folder"; sourceTree = "<group>"; };
+		7B92746427916C520000F6E8 /* g-no-3 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "g-no-3"; sourceTree = "<group>"; };
+		7B92746527916C520000F6E8 /* g-no-1 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "g-no-1"; sourceTree = "<group>"; };
+		7B92746627916C520000F6E8 /* g-no-2 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "g-no-2"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,35 +85,11 @@
 				7B5768BE2790E736008C2BEE /* g-yes-broken-2 */,
 				7B5768BD2790E736008C2BEE /* g-yes-broken-3 */,
 				7B5768BC2790E736008C2BEE /* g-yes-broken-4 */,
-				7B5384BB2790E79600FEC1CD /* g-no-1 */,
-				7B5384C42790E79600FEC1CD /* g-no-2 */,
-				7B5384CD2790E79700FEC1CD /* g-no-3 */,
+				7B92746527916C520000F6E8 /* g-no-1 */,
+				7B92746627916C520000F6E8 /* g-no-2 */,
+				7B92746427916C520000F6E8 /* g-no-3 */,
 			);
 			path = "Maybe SPM Packages in Group";
-			sourceTree = "<group>";
-		};
-		7B5384BB2790E79600FEC1CD /* g-no-1 */ = {
-			isa = PBXGroup;
-			children = (
-				7B5384BC2790E79600FEC1CD /* Package.swift */,
-			);
-			path = "g-no-1";
-			sourceTree = "<group>";
-		};
-		7B5384C42790E79600FEC1CD /* g-no-2 */ = {
-			isa = PBXGroup;
-			children = (
-				7B5384C52790E79600FEC1CD /* Package.swift */,
-			);
-			path = "g-no-2";
-			sourceTree = "<group>";
-		};
-		7B5384CD2790E79700FEC1CD /* g-no-3 */ = {
-			isa = PBXGroup;
-			children = (
-				7B5384CE2790E79700FEC1CD /* Package.swift */,
-			);
-			path = "g-no-3";
 			sourceTree = "<group>";
 		};
 		7B5768B82790E55D008C2BEE /* Frameworks */ = {
@@ -232,15 +201,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7B8016862790E02500099E08 /* Maybe SPM Packages in Folder in Resources */,
-				7B5768C42790E736008C2BEE /* g-yes-broken-3 in Resources */,
-				7B5768C52790E736008C2BEE /* g-yes-broken-2 in Resources */,
-				7B5037FA2790E1D100FD0F23 /* g-yes-full in Resources */,
 				7B80167B2790DFFF00099E08 /* Assets.xcassets in Resources */,
-				7B5037FB2790E1D100FD0F23 /* GAmazingLib2 in Resources */,
 				7B80167E2790DFFF00099E08 /* Main.storyboard in Resources */,
-				7B5768C32790E736008C2BEE /* g-yes-broken-4 in Resources */,
-				7B5768C72790E736008C2BEE /* g-yes-broken-1 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -123,6 +123,8 @@ public enum XcodeProjError : Error {
 		case unknownObjectTypeDuringSerialization(object: Any)
 		case tryingToInstantiateNonPBXObjectEntity(isa: String, entity: NSEntityDescription)
 		
+		case unknownFileElementClass(rawISA: String?)
+		
 		case cannotGetDeveloperDir
 		
 	}
