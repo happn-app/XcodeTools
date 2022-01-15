@@ -104,7 +104,9 @@ struct GenAssetsConstants : ParsableCommand {
 					}
 					
 					"""
-				try Data(generatedFile.utf8).write(to: URL(fileURLWithPath: relativeDest))
+				let dest = URL(fileURLWithPath: relativeDest, relativeTo: target.getSourcesRoot())
+				try FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+				try Data(generatedFile.utf8).write(to: dest)
 			}
 		}
 	}

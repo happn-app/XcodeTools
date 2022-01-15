@@ -30,6 +30,13 @@ public enum Target {
 		}
 	}
 	
+	public func getSourcesRoot() -> URL? {
+		switch self {
+			case     .xcodeTarget:          return nil
+			case let .spmTarget(spmTarget): return spmTarget.sourcesRoot
+		}
+	}
+	
 	public func getSources() throws -> [URL] {
 		switch self {
 			case let .xcodeTarget(targetID: targetID, context: context, xcodeprojURL: xcodeprojURL):
