@@ -24,7 +24,7 @@ final class ProjectTests : XCTestCase {
 	
 	func testProject2() throws {
 		let project = try Project(xcodeprojURL: project2URL)
-		try XCTAssertEqual(project.targets.count, 4)
+		try XCTAssertEqual(project.getTargets().count, 4)
 	}
 	
 }
