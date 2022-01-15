@@ -10,6 +10,10 @@ public struct SPMTarget {
 		resolvedTarget.name
 	}
 	
+	public var sourcesRoot: URL {
+		resolvedTarget.sources.root.asURL
+	}
+	
 	public var sources: [URL] {
 		resolvedTarget.sources.paths.map(\.asURL)
 	}
