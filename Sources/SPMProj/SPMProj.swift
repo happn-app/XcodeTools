@@ -1,5 +1,10 @@
 import Foundation
 
+import Basics
+import PackageGraph
+import TSCBasic
+import Workspace
+
 
 
 public struct SPMProj {
@@ -15,11 +20,22 @@ public struct SPMProj {
 		self.rootURL = url ?? URL(fileURLWithPath: ".")
 		self.projectManifestURL = rootURL.appendingPathComponent("Package.swift")
 		
-		/* For now we only validate the existence of the Package.swift file; later we’ll try and parse it. */
-		var isDir = ObjCBool(false)
-		guard FileManager.default.fileExists(atPath: projectManifestURL.path, isDirectory: &isDir), !isDir.boolValue else {
-			throw Err.invalidProjectPath(rootURL)
+		let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+		let workspace = try Workspace(forRootPackage: AbsolutePath(tempDir.path))
+		
+		let observability = ObservabilitySystem{ scope, diag in
+			Conf.logger?.debug("Message from SPM: \(diag)")
 		}
+		
+		self.packageGraph = try workspace.loadPackageGraph(rootPath: AbsolutePath(rootURL.path), observabilityScope: observability.topScope)
+		guard packageGraph.rootPackages.count == 1 else {
+			throw Err.cannotLoadPackage(rootURL)
+		}
+	}
+	
+	internal var packageGraph: PackageGraph
+	internal var resolvedPackage: ResolvedPackage {
+		packageGraph.rootPackages.first!
 	}
 	
 }

@@ -7,8 +7,11 @@ import XCTest
 
 final class SPMProjTests : XCTestCase {
 	
-	func testEmpty() throws {
-#warning("TODO")
+	let package1URL = URL(fileURLWithPath: #file, isDirectory: false).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("TestsData").appendingPathComponent("package1")
+	
+	func testPackage1() throws {
+		let proj = try SPMProj(url: package1URL)
+		
 	}
 	
 }

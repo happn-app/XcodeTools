@@ -47,12 +47,39 @@
         }
       },
       {
+        "package": "swift-driver",
+        "repositoryURL": "https://github.com/apple/swift-driver.git",
+        "state": {
+          "branch": "main",
+          "revision": "fdafa379a28bc1567cc15b67b1fe55aa18ba04de",
+          "version": null
+        }
+      },
+      {
+        "package": "llbuild",
+        "repositoryURL": "https://github.com/apple/swift-llbuild.git",
+        "state": {
+          "branch": "main",
+          "revision": "db8311d7d284cae487dff582de980db5a918692f",
+          "version": null
+        }
+      },
+      {
         "package": "swift-log",
         "repositoryURL": "https://github.com/apple/swift-log.git",
         "state": {
           "branch": null,
           "revision": "5d66f7ba25daf4f94100e7022febf3c75e37a6c7",
           "version": "1.4.2"
+        }
+      },
+      {
+        "package": "SwiftPM",
+        "repositoryURL": "https://github.com/apple/swift-package-manager.git",
+        "state": {
+          "branch": "main",
+          "revision": "49ba6e97a60d1ea4f89c43503c7533e02c6d6913",
+          "version": null
         }
       },
       {
@@ -74,12 +101,30 @@
         }
       },
       {
+        "package": "swift-tools-support-core",
+        "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
+        "state": {
+          "branch": "main",
+          "revision": "4afd18e40eb028cd9fbe7342e3f98020ea9fdf1a",
+          "version": null
+        }
+      },
+      {
         "package": "XibLoc",
         "repositoryURL": "https://github.com/happn-tech/XibLoc.git",
         "state": {
           "branch": null,
           "revision": "e3fc0c240c87e9c3549420f16f6e8ee39809cf19",
           "version": "1.1.1"
+        }
+      },
+      {
+        "package": "Yams",
+        "repositoryURL": "https://github.com/jpsim/Yams.git",
+        "state": {
+          "branch": null,
+          "revision": "9ff1cc9327586db4e0c8f46f064b6a82ec1566fa",
+          "version": "4.0.6"
         }
       }
     ]
