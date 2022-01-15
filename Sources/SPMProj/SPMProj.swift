@@ -7,10 +7,16 @@ import Workspace
 
 
 
+/* Some libSPM help:
+ * https://github.com/apple/swift-package-manager/blob/751f0b2a00276be2c21c074f4b21d952eaabb93b/Examples/package-info/Sources/package-info/main.swift */
 public struct SPMProj {
 	
 	public let rootURL: URL
 	public let projectManifestURL: URL
+	
+	public var targets: [SPMTarget] {
+		packageGraph.reachableTargets.map(SPMTarget.init)
+	}
 	
 	public init(path: String? = nil) throws {
 		try self.init(url: path.flatMap{ URL(fileURLWithPath: $0) })
