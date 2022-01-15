@@ -194,6 +194,7 @@ products.append(.executable(name: "xct-gen", targets: ["xct-gen"]))
 targets.append(
 	.executableTarget(name: "xct-gen", dependencies: [
 		.product(name: "ArgumentParser", package: "swift-argument-parser"),
+		.product(name: "XibLoc",         package: "XibLoc"),
 		.target(name: "XcodeProj"),
 		.target(name: "XcodeTools")
 	])
