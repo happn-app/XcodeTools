@@ -131,7 +131,9 @@ targets.append(contentsOf: [
 		.product(name: "StreamReader",   package: "stream-reader"),
 		.product(name: "SystemPackage",  package: "swift-system"),
 		.target(name: "CMacroExports"),
+		.target(name: "SPMProj"),
 		.target(name: "Utils"),
+		.target(name: "XcodeProj"),
 		/* XcodeTools depends (indirectly) on xct to launch processes with additional file descriptors.
 		 * To avoid a cyclic dependency, we do not add it in the deps. */
 //		.target(name: "xct"),
