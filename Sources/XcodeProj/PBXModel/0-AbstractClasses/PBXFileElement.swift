@@ -23,10 +23,10 @@ public class PBXFileElement : PBXObject {
 		case absolute
 		
 		/* Known possible variables:
-		 *    - SDKROOT
-		 *    - SOURCE_ROOT
-		 *    - DEVELOPER_DIR
-		 *    - BUILT_PRODUCTS_DIR */
+		 *    - SDKROOT
+		 *    - SOURCE_ROOT
+		 *    - DEVELOPER_DIR
+		 *    - BUILT_PRODUCTS_DIR */
 		case variable(String)
 		
 	}
@@ -90,20 +90,17 @@ public class PBXFileElement : PBXObject {
 	}
 	
 	/**
-	Returns the necessary info to get the resolved path of the file element. You
-	can use `resolvedPathAsURL(xcodeprojURL:variables:)` to get the resolved URL
-	directly.
-	
-	The first element of the tuple (`rootVar`) is the name of the variable to
-	which the resolved path is relative to, and the second is the relative path.
-	
-	For instance, for a built product, you can get the result
-	`("BUILT_PRODUCTS_DIR", "The Awesome App.app")`. The full resolved path is
-	the concatenation of the `BUILT_PRODUCTS_DIR` value, `/`, and the relative
-	path. You should use `resolvedPathAsURL(xcodeprojURL:variables:)` to take
-	care of the edge cases…
-	
-	If `rootVar` is `nil`, the path is relative to the xcodeproj path. */
+	 Returns the necessary info to get the resolved path of the file element.
+	 You can use `resolvedPathAsURL(xcodeprojURL:variables:)` to get the resolved URL directly.
+	 
+	 The first element of the tuple (`rootVar`) is the name of the variable to which the resolved path is relative to,
+	 and the second is the relative path.
+	 
+	 For instance, for a built product, you can get the result `("BUILT_PRODUCTS_DIR", "The Awesome App.app")`.
+	 The full resolved path is the concatenation of the `BUILT_PRODUCTS_DIR` value, `/`, and the relative path.
+	 You should use `resolvedPathAsURL(xcodeprojURL:variables:)` to take care of the edge cases…
+	 
+	 If `rootVar` is `nil`, the path is relative to the xcodeproj path. */
 	public var resolvedPathInfo: (rootVar: String?, path: String)? {
 		guard let sourceTree = sourceTree else {
 			return nil
@@ -122,9 +119,8 @@ public class PBXFileElement : PBXObject {
 						Conf.logger?.warning("Got asked the resolved path of file element \(xcID ?? "<unknown object>") which does not have a parent, whose projectForMainGroup_ property is nil (not the main group), and whose source tree is <group>. This is weird and I don’t know how to handle this; returning nil.")
 						return nil
 					}
-					/* I don’t know the role of project.projectRoot. I tried
-					 * modifying it on a project, it didn’t change anything I could
-					 * see, but idk… */
+					/* I don’t know the role of project.projectRoot.
+					 * I tried modifying it on a project, it didn’t change anything I could see, but idk… */
 					switch (project.projectDirPath, path) {
 						case (let dirPath?, let path?):
 							if dirPath.isEmpty   {return (nil, path)}

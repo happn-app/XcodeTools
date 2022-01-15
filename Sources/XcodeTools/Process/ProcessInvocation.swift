@@ -15,61 +15,56 @@ import eXtenderZ
 
 
 /**
- A type representing a “process invocation,” that is all of the different
- parameters needed to launch a new sub-process. This type is also an
- `AsyncSequence`.
+ A type representing a “process invocation,” that is all of the different parameters needed to launch a new sub-process.
+ This type is also an `AsyncSequence`.
  
- The element of the async sequence is ``RawLineWithSource``, which represent a
- raw line of process output, with the source fd from which the line comes from.
- The sequence can throw before the first output line is issued because the
- process failed to launch, while receiving lines because there was an I/O error,
- or after all the lines have been received because the process had an unexpected
- termination (the expected terminations are customizable).
+ The element of the async sequence is ``RawLineWithSource``, which represent a raw line of process output, with the source fd from which the line comes from.
+ The sequence can throw
+  before the first output line is issued because the process failed to launch,
+  while receiving lines because there was an I/O error,
+  or after all the lines have been received because the process had an unexpected termination (the expected terminations are customizable).
  
- When launched, the process will be launched in its own PGID. Which means, if
- your process is launched in a Terminal, then you spawn a process using this
- object, then the user types `Ctrl-C`, your process will be killed, but the
- process you launched won’t be.
+ When launched, the process will be launched in its own PGID.
+ Which means, if your process is launched in a Terminal,
+  then you spawn a process using this object,
+  then the user types `Ctrl-C`,
+ your process will be killed,
+  but the process you launched won’t be.
  
- However, you have an option to forward some signals to the processes you spawn
- using this object. Some signals are forwarded by default.
+ However, you have an option to forward some signals to the processes you spawn using this object.
+ Some signals are forwarded by default.
  
- IMHO the signal forwarding method, though a bit more complex (in this case, a
- lot of the complexity is hidden by this object), is better than using the same
- PGID than the parent for the child. In a shell, if a long running process is
- launched from a bash script, and said bash script is killed using a signal (but
- from another process sending a signal, not from the tty), the child won’t be
- killed! Using signal forwarding, it will.
+ IMHO the signal forwarding method, though a bit more complex (in this case, a lot of the complexity is hidden by this object),
+ is better than using the same PGID than the parent for the child.
+ In a shell, if a long running process is launched from a bash script, and said bash script is killed using a signal
+ (but from another process sending a signal, not from the tty), the child won’t be killed!
+ Using signal forwarding, it will.
  
  Some interesting links:
  - [The TTY demystified](http://www.linusakesson.net/programming/tty/)
  - [SIGTTIN / SIGTTOU Deep Dive](http://curiousthing.org/sigttin-sigttou-deep-dive-linux)
  - [Swift Process class source code](https://github.com/apple/swift-corelibs-foundation/blob/swift-5.3.3-RELEASE/Sources/Foundation/Process.swift)
  
- - Important: For technical reasons (and design choice), if file descriptors to
- send is not empty, the process will be launched _via_ the `xct` executable.
+ - Important: For technical reasons (and design choice), if file descriptors to send is not empty, the process will be launched _via_ the `xct` executable.
  
- - Note: We use `Process` to spawn the process. This is why the process is
- launched in its own PGID and why we have to use `xct` to launch it to be able
- to pass other file descriptors than stdin/stdout/stderr to it.
+ - Note: We use `Process` to spawn the process.
+ This is why the process is launched in its own PGID
+ and why we have to use `xct` to launch it to be able to pass other file descriptors than stdin/stdout/stderr to it.
  
  One day we might rewrite this function using `posix_spawn` directly…
  
- - Note: On Linux, the PGID stuff is not true up to Swift 5.3.3 (currently in
- production!) It is true on the `main` branch though (2021-04-01).
+ - Note: On Linux, the PGID stuff is not true up to Swift 5.3.3 (currently in production!)
+ It is true on the `main` branch though (2021-04-01).
  
- - Important: All of the `additionalOutputFileDescriptors` are closed when the
- end of their respective stream are reached (i.e. the function takes “ownership”
- of the file descriptors). Maybe later we’ll add an option not to close at end
- of the stream.
- Additionally on Linux the fds will be set non-blocking (clients should not care
- as they have given up ownership of the fd, but it’s still good to know IMHO).
+ - Important: All of the `additionalOutputFileDescriptors` are closed when the end of their respective stream are reached
+ (i.e. the function takes “ownership” of the file descriptors).
+ Maybe later we’ll add an option not to close at end of the stream.
+ Additionally on Linux the fds will be set non-blocking
+ (clients should not care as they have given up ownership of the fd, but it’s still good to know IMHO).
  
- - Important: AFAICT the absolute ref for `PATH` resolution is [from exec
- function in FreeBSD source](https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html)
- (end of file). Sadly `Process` does not report the actual errors and seem to
- always report “File not found” errors when the executable cannot be run. So we
- do not fully emulate exec’s behavior. */
+ - Important: AFAICT the absolute ref for `PATH` resolution is [from exec function in FreeBSD source](https://opensource.apple.com/source/Libc/Libc-1439.100.3/gen/FreeBSD/exec.c.auto.html) (end of file).
+ Sadly `Process` does not report the actual errors and seem to always report “File not found” errors when the executable cannot be run.
+ So we do not fully emulate exec’s behavior. */
 public struct ProcessInvocation : AsyncSequence {
 	
 	public typealias ProcessOutputHandler = (_ rawLineWithSource: RawLineWithSource, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void
@@ -81,43 +76,35 @@ public struct ProcessInvocation : AsyncSequence {
 	public var args: [String] = []
 	
 	/**
-	 Try and search the executable in the `PATH` environment variable when the
-	 executable path is a simple word (shell-like search).
+	 Try and search the executable in the `PATH` environment variable when the executable path is a simple word (shell-like search).
 	 
-	 If `false` (default) the standard `Process` behavior will apply: resolve
-	 the executable path just like any other path and execute that.
-	 If not using `PATH` and there are fds to send, the `XCT_EXEC_PATH` env var
-	 becomes mandatory. We have to know the location of the `xct` executable. If
-	 using `PATH` with fds to send, the xct executable is searched normally,
-	 except the `XCT_EXEC_PATH` path is tried first, if defined.
-	 The environment is never modified (neither for the executed process nor the
-	 current one), regardless of this variable or whether there are additional
-	 fds to send.
-	 The `PATH` is modified for the `xct` launcher when sending fds (and only for
-	 it) so that all paths are absolute though. The subprocess will still see the
-	 original `PATH`.
+	 If `false` (default) the standard `Process` behavior will apply: resolve the executable path just like any other path and execute that.
+	 If not using `PATH` and there are fds to send, the `XCT_EXEC_PATH` env var becomes mandatory.
+	 We have to know the location of the `xct` executable.
+	 If using `PATH` with fds to send, the xct executable is searched normally, except the `XCT_EXEC_PATH` path is tried first, if defined.
+	 The environment is never modified (neither for the executed process nor the current one), regardless of this variable or whether there are additional fds to send.
+	 The `PATH` is modified for the `xct` launcher when sending fds (and only for it) so that all paths are absolute though.
+	 The subprocess will still see the original `PATH`.
 	 
-	 - Note: Setting ``usePATH`` to `false` or ``customPATH`` to an empty array
-	 is technically equivalent. (But setting ``usePATH`` to `false` is marginally
-	 faster). */
+	 - Note: Setting ``usePATH`` to `false` or ``customPATH`` to an empty array is technically equivalent.
+	 (But setting ``usePATH`` to `false` is marginally faster). */
 	public var usePATH: Bool = true
 	/**
 	 Override the PATH environment variable and use this.
 	 
-	 Empty strings are the same as “`.`”. This parameter allows having a “PATH”
-	 containing colons, which the standard `PATH` variable does not allow.
-	 _However_ this does not work when there are fds to send, in which case the
-	 paths containing colons are **removed** (for security reasons). Maybe one
-	 day we’ll enable it in this case too, but for now it’s not enabled.
+	 Empty strings are the same as “`.`”.
+	 This parameter allows having a “PATH” containing colons, which the standard `PATH` variable does not allow.
+	 _However_ this does not work when there are fds to send, in which case the paths containing colons are **removed** (for security reasons).
+	 Maybe one day we’ll enable it in this case too, but for now it’s not enabled.
 	 
-	 Another difference when there are fds to send regarding the PATH is all the
-	 paths are made absolute. This avoids any problem when the
-	 ``workingDirectory`` parameter is set to a non-null value.
+	 Another difference when there are fds to send regarding the PATH is all the paths are made absolute.
+	 This avoids any problem when the ``workingDirectory`` parameter is set to a non-null value.
 	 
-	 Finally the parameter is a double-optional. It can be set to `.none`, which
-	 means the default `PATH` env variable will be used, to `.some(.none)`, in
-	 which case the default `PATH` is used (`_PATH_DEFPATH`, see `exec(3)`) or a
-	 non-nil value, in which case this value is used. */
+	 Finally the parameter is a double-optional.
+	 It can be set
+	  to `.none`, which means the default `PATH` env variable will be used,
+	  to `.some(.none)`, in which case the default `PATH` is used (`_PATH_DEFPATH`, see `exec(3)`) or
+	  to a non-nil value, in which case this value is used. */
 	public var customPATH: [FilePath]?? = nil
 	
 	public var workingDirectory: URL? = nil
@@ -130,72 +117,67 @@ public struct ProcessInvocation : AsyncSequence {
 	public var signalsToForward: Set<Signal> = Signal.toForwardToSubprocesses
 	
 	/**
-	 The file descriptors (other than `stdin`, `stdout` and `stderr`, which are
-	 handled differently) to clone in the child process. They are closed once the
-	 process has been launched.
+	 The file descriptors (other than `stdin`, `stdout` and `stderr`, which are handled differently) to clone in the child process.
+	 They are closed once the process has been launched.
 	 
-	 The **value** is the file descriptor to clone (from the parent process to
-	 the child), the key is the descriptor you’ll get in the child process.
+	 The **value** is the file descriptor to clone (from the parent process to the child),
+	 the key is the descriptor you’ll get in the child process.
 	 
-	 - Important: The function takes ownership of these file descriptors, i.e. it
-	 closes them when the process has been launched. You should dup your fds if
-	 you need to keep a ref to them. */
+	 - Important: The function takes ownership of these file descriptors, i.e. it closes them when the process has been launched.
+	 You should dup your fds if you need to keep a ref to them. */
 	public var fileDescriptorsToSend: [FileDescriptor /* Value in **child** */: FileDescriptor /* Value in **parent** */] = [:]
 	/**
 	 Additional output file descriptors to stream from the process.
 	 
-	 Usually used with ``fileDescriptorsToSend`` (you open a socket, give the
-	 write fd in fds to clone, and the read fd to additional output fds).
+	 Usually used with ``fileDescriptorsToSend``
+	 (you open a socket, give the write fd in fds to clone, and the read fd to additional output fds).
 	 
-	 - Important: The function takes ownership of these file descriptors, i.e. it
-	 closes them when the end of their respective streams is reached. You should
-	 dup your fds if you need to keep a ref to them. */
+	 - Important: The function takes ownership of these file descriptors, i.e. it closes them when the end of their respective streams is reached.
+	 You should dup your fds if you need to keep a ref to them. */
 	public var additionalOutputFileDescriptors: Set<FileDescriptor> = []
 	
 	/**
-	 The line separator to expect in the process output. Usually will be a simple
-	 newline character, but can also be the zero char (e.g. `find -print0`), or
-	 windows newlines, or something else.
+	 The line separator to expect in the process output.
+	 Usually will be a simple newline character, but can also be the zero char (e.g. `find -print0`), or windows newlines, or something else.
 	 
-	 This property should probably not be part of a ``ProcessInvocation`` per se
-	 as technically the process could be invoked whether this is known or not.
-	 However, because ``ProcessInvocation`` is an `AsyncSequence`, and we cannot
-	 specify options when iterating on a sequence, we have to know in advance the
-	 line separator to expect!
+	 This property should probably not be part of a ``ProcessInvocation`` per se as
+	 technically the process could be invoked whether this is known or not.
+	 However,
+	  because ``ProcessInvocation`` is an `AsyncSequence`,
+	  and we cannot specify options when iterating on a sequence,
+	 we have to know in advance the line separator to expect!
 	 
-	 One could probably argue the `ProcessInvocation` sequence element should be
-	 of type `UInt8` and we’d receive all the bytes one after the other, and we’d
-	 wrap the ProcessInvocation in an `AsyncLineSequence` to get the lines of
-	 text. We have the following counterpoints:
-	 1. The `AsyncLineSequence` cannot be customized (AFAICT), and we _have to_
-	 trust it do to the right thing (which will necessarily not be the right
-	 thing when processing the output of `find -print0` for instance). This could
-	 be worked-around by creating a specific wrapping sequence, just like
-	 `AsyncLineSequence`, but customizable, or using another sequence wrapper for
-	 the `print0` option;
-	 2. Sending the bytes one by one is probably (to be tested) slower than
-	 sending chunks of data directly;
-	 3. We have a bit of history with this API, and we have a primitive to split
-	 the lines in a stream already.
+	 One could probably argue
+	  the `ProcessInvocation` sequence element should be of type `UInt8` and
+	  we’d receive all the bytes one after the other, and
+	  we’d wrap the ProcessInvocation in an `AsyncLineSequence` to get the lines of text.
+	 
+	 We have the following counterpoints:
+	 1. The `AsyncLineSequence` cannot be customized (AFAICT), and we _have to_ trust it do to the right thing
+	 (which will necessarily not be the right thing when processing the output of `find -print0` for instance).
+	 This could be worked-around by creating a specific wrapping sequence, just like `AsyncLineSequence`, but customizable,
+	 or by using another sequence wrapper for the `print0` option;
+	 2. Sending the bytes one by one is probably (to be tested) slower than sending chunks of data directly;
+	 3. We have a bit of history with this API, and we have a primitive to split the lines in a stream already.
 	 
 	 So, for simplicity, we leave it that way, at least for now. */
 	public var lineSeparators: LineSeparators = .default
 	/**
-	 A global handler called after each new lines of text to check if the client
-	 is still interested in the stream. If it is not, the stream will be closed.
+	 A global handler called after each new lines of text to check if the client is still interested in the stream.
+	 If it is not, the stream will be closed.
 	 
-	 The handler is set at process invocation time: when the process is invoked,
-	 if this property is modified, the original handler will still be called. */
+	 The handler is set at process invocation time:
+	 when the process is invoked, if this property is modified, the original handler will still be called. */
 	public var shouldContinueStreamHandler: ((_ line: RawLineWithSource, _ process: Process) -> Bool)?
 	
 	/**
 	 The terminations to expect from the process.
 	 
-	 Much like ``lineSeparators`` this property should probably not be a part of
-	 ``ProcessInvocation``, but like ``lineSeparators``, because
-	 ``ProcessInvocation`` is an AsyncSequence we have to know in advance the
-	 expected terminations of the process in order to be able to correctly throw
-	 when process is over if termination is unexpected. */
+	 Much like ``lineSeparators``
+	  this property should probably not be a part of ``ProcessInvocation``,
+	  but like ``lineSeparators``, because ``ProcessInvocation`` is an AsyncSequence
+	 we have to know in advance the expected terminations of the process
+	  in order to be able to correctly throw when process is over if termination is unexpected. */
 	public var expectedTerminations: [(Int32, Process.TerminationReason)]?
 	
 	public init(
@@ -225,16 +207,12 @@ public struct ProcessInvocation : AsyncSequence {
 	/**
 	 Init a process invocation.
 	 
-	 - Parameter expectedTerminations: A double-optional to define the expected
-	 terminations.
-	 If left at default (set to `nil`), the expected termination be a standard
-	 exit with exit code 0 if there are no ``shouldContinueStreamHandler``
-	 defined, and and standard exit with exit code 0 + broken pipe exception exit
-	 otherwise.
-	 If set to `.some(.none)`, the expected termination will be set to nil, in
-	 which case any termination pass the terminatnion check.
-	 If set to a non-optional value, the expected terminations will be set to
-	 this value. */
+	 - Parameter expectedTerminations: A double-optional to define the expected terminations.
+	 If left at default (set to `nil`), the expected termination will be
+	  a standard exit with exit code 0 if there are no ``shouldContinueStreamHandler`` defined, and
+	  a standard exit with exit code 0 + broken pipe exception exit otherwise.
+	 If set to `.some(.none)`, the expected termination will be set to nil, in which case any termination pass the termination check.
+	 If set to a non-optional value, the expected terminations will be set to this value. */
 	public init(
 		_ executable: FilePath, args: [String], usePATH: Bool = true, customPATH: [FilePath]?? = nil,
 		workingDirectory: URL? = nil, environment: [String: String]? = nil,
@@ -280,10 +258,10 @@ public struct ProcessInvocation : AsyncSequence {
 	/**
 	 Invoke the process, then returns stdout lines.
 	 
-	 When using this method, the end of lines are lost. Each line is stripped of
-	 the end of line separator. Usually not a big deal; basically it means you
-	 won’t know if the last line had the end of line separator or not. If you
-	 need this information, use ``invokeAndGetOutput(encoding:)``. */
+	 When using this method, the end of lines are lost.
+	 Each line is stripped of the end of line separator.
+	 Usually not a big deal; basically it means you won’t know if the last line had the end of line separator or not.
+	 If you need this information, use ``invokeAndGetOutput(encoding:)``. */
 	public func invokeAndGetStdout(encoding: String.Encoding = .utf8) async throws -> [String] {
 		return try await invokeAndGetStdout(checkValidTerminations: true, encoding: encoding).0
 	}
@@ -311,9 +289,9 @@ public struct ProcessInvocation : AsyncSequence {
 	}
 	
 	/**
-	 Launch the invocation and returns the output of the process. If there are
-	 any I/O issues while reading the output file descriptors from the Process,
-	 the whole invocation is considered failed and an error is thrown. */
+	 Launch the invocation and returns the output of the process.
+	 If there are any I/O issues while reading the output file descriptors from the Process,
+	  the whole invocation is considered failed and an error is thrown. */
 	public func invokeAndGetRawOutput(checkValidTerminations: Bool) async throws -> ([RawLineWithSource], Int32, Process.TerminationReason) {
 		var lines = [RawLineWithSource]()
 		let (exitStatus, exitReason) = try await invokeAndStreamOutput(checkValidTerminations: checkValidTerminations, outputHandler: { line, _, _ in
@@ -323,22 +301,21 @@ public struct ProcessInvocation : AsyncSequence {
 	}
 	
 	/**
-	 Launch the invocation and streams the output in the given handler. If there
-	 is at least one error reading from _any_ of the input stream at any given
-	 time, the whole function will throw an ``XcodeToolsError`` `outputReadError`
-	 error, and any new lines that might be received on other streams are not
-	 sent to the handler anymore. The process is not stopped though, and it is
-	 waited on normally.
+	 Launch the invocation and streams the output in the given handler.
+	 If there is at least one error reading from _any_ of the input stream at any given time,
+	  the whole function will throw an ``XcodeToolsError`` `outputReadError` error,
+	  and any new lines that might be received on other streams are not sent to the handler anymore.
+	 The process is not stopped though, and it is waited on normally.
 	 
-	 - Parameter outputHandler: This handler is called after a new line is caught
-	 from any of the output file descriptors. You get the line and the separator
-	 as `Data`, the source fd that generated this data (if `stdout` or `stderr`
-	 were set to `.capture`, you’ll get resp. the `stdout`/`stderr` fds even
-	 though the data is not technically coming from these) and the source
-	 process. You are also given a handler you can call to notify the end of
-	 interest in the stream (which closes the corresponding fd).
-	  **Important**: Do **not** close the fd yourself. Do not do any action on
-	 the fd actually. Especially, do not read from it. */
+	 - Parameter outputHandler: This handler is called after a new line is caught from any of the output file descriptors.
+	 You get
+	  the line and the separator as `Data`,
+	  the source fd that generated this data (if `stdout` or `stderr` were set to `.capture`, you’ll get resp. the `stdout`/`stderr` fds even though the data is not technically coming from these)
+	  and the source process.
+	 You are also given a handler you can call to notify the end of interest in the stream (which closes the corresponding fd).
+	 __Important__: Do **not** close the fd yourself.
+	 Do not do any action on the fd actually.
+	 Especially, do not read from it. */
 	public func invokeAndStreamOutput(checkValidTerminations: Bool, outputHandler: @escaping ProcessInvocation.ProcessOutputHandler) async throws -> (Int32, Process.TerminationReason) {
 		/* We want this variable to be immutable once the process is launched. */
 		let expectedTerminations = expectedTerminations
@@ -347,9 +324,8 @@ public struct ProcessInvocation : AsyncSequence {
 		var outputError: Error?
 		let (p, g) = try invoke{ result, signalEndOfInterestForStream, process in
 			guard outputError == nil else {
-				/* We do not signal end of interest in stream when we have an output
-				 * error to avoid forcing a broken pipe error, _but_ we stop reading
-				 * from any stream as soon as we get at least one error. */
+				/* We do not signal end of interest in stream when we have an output error to avoid forcing a broken pipe error,
+				 * _but_ we stop reading from any stream as soon as we get at least one error. */
 				return
 			}
 			switch result {
@@ -375,11 +351,10 @@ public struct ProcessInvocation : AsyncSequence {
 	}
 	
 	/**
-	 Invoke the process but does not wait on it. You retrieve the process and a
-	 dispatch group you can wait on to be notified when the process and all of
-	 its outputs are done. You can also set the termination handler of the
-	 process, but you should wait on the dispatch group to be sure all of the
-	 outputs have finished streaming. */
+	 Invoke the process but does not wait on it.
+	 
+	 You retrieve the process and a dispatch group you can wait on to be notified when the process and all of its outputs are done.
+	 You can also set the termination handler of the process, but you should wait on the dispatch group to be sure all of the outputs have finished streaming. */
 	public func invoke(outputHandler: @escaping (_ result: Result<RawLineWithSource, Error>, _ signalEndOfInterestForStream: () -> Void, _ process: Process) -> Void, terminationHandler: ((_ process: Process) -> Void)? = nil) throws -> (Process, DispatchGroup) {
 		assert(!fileDescriptorsToSend.values.contains(.standardOutput), "Standard output must be modified using stdoutRedirect")
 		assert(!fileDescriptorsToSend.values.contains(.standardError), "Standard error must be modified using stderrRedirect")
@@ -415,11 +390,10 @@ public struct ProcessInvocation : AsyncSequence {
 			signalCleaningOnError?()
 			for _ in 0..<countOfDispatchGroupLeaveInCaseOfError {g.leave()}
 			
-			/* Only the fds that are not ours, and thus not in additional output
-			 * fds are allowed to be closed in case of error. */
+			/* Only the fds that are not ours, and thus not in additional output fds are allowed to be closed in case of error. */
 			assert(additionalOutputFileDescriptors.intersection(fdsToCloseInCaseOfError).isEmpty)
-			/* We only try and revert fds to blocking for fds we don’t own. Only
-			 * those in additional output fds. */
+			/* We only try and revert fds to blocking for fds we don’t own.
+			 * Only those in additional output fds. */
 			assert(additionalOutputFileDescriptors.isSuperset(of: fdToSwitchToBlockingInCaseOfError))
 			/* The assert below is a consequence of the two above. */
 			assert(fdsToCloseInCaseOfError.intersection(fdToSwitchToBlockingInCaseOfError).isEmpty)
@@ -450,8 +424,7 @@ public struct ProcessInvocation : AsyncSequence {
 				if shouldClose {fdsToCloseAfterRun.insert(fd)}
 				
 			case .capture:
-				/* We use an unowned pipe because we want absolute control on when
-				 * either side of the pipe is closed. */
+				/* We use an unowned pipe because we want absolute control on when either side of the pipe is closed. */
 				let (fdForReading, fdForWriting) = try Self.unownedPipe()
 				
 				let (inserted, _) = outputFileDescriptors.insert(fdForReading); assert(inserted)
@@ -493,8 +466,8 @@ public struct ProcessInvocation : AsyncSequence {
 				let isFromClient = additionalOutputFileDescriptors.contains(fd)
 				try Self.setRequireNonBlockingIO(on: fd, logChange: isFromClient)
 				if isFromClient {
-					/* The fd is not ours. We must try and revert it to its original
-					 * state if the function throws an error. */
+					/* The fd is not ours.
+					 * We must try and revert it to its original state if the function throws an error. */
 					assert(!fdsToCloseInCaseOfError.contains(fd))
 					fdToSwitchToBlockingInCaseOfError.insert(fd)
 				}
@@ -503,14 +476,14 @@ public struct ProcessInvocation : AsyncSequence {
 #endif
 		
 		let fdToSendFds: FileDescriptor?
-		/* We will modify it later to add stdin if needed */
+		/* We will modify it later to add stdin if needed. */
 		var fileDescriptorsToSend = fileDescriptorsToSend
 		
 		/* Let’s compute the PATH. */
 		/** The resolved PATH */
 		let PATH: [FilePath]
-		/** `true` if the default `_PATH_DEFPATH` path is used. The variable is
-		 used when using the `xct` launcher. */
+		/** `true` if the default `_PATH_DEFPATH` path is used.
+		 The variable is used when using the `xct` launcher. */
 		let isDefaultPATH: Bool
 		/** Set if we use the `xct` launcher. */
 		let forcedPreprendedPATH: FilePath?
@@ -559,8 +532,8 @@ public struct ProcessInvocation : AsyncSequence {
 				forcedPreprendedPATH = execBasePath
 			}
 			
-			/* The socket to send the fd. The tuple thingy _should_ be _in effect_
-			 * equivalent to the C version `int sv[2] = {-1, -1};`.
+			/* The socket to send the fd.
+			 * The tuple thingy _should_ be _in effect_ equivalent to the C version `int sv[2] = {-1, -1};`.
 			 * https://forums.swift.org/t/guarantee-in-memory-tuple-layout-or-dont/40122
 			 * Stride and alignment should be the equal for CInt.
 			 * Funnily, it seems to only work in debug compilation, not in release…
@@ -597,8 +570,7 @@ public struct ProcessInvocation : AsyncSequence {
 			
 			if fileDescriptorsToSend[FileDescriptor.standardInput] == nil {
 				/* We must add stdin in the list of file descriptors to send so that
-				 * stdin is restored to its original value when the final process is
-				 * exec’d from xct. */
+				 * stdin is restored to its original value when the final process is exec’d from xct. */
 				fileDescriptorsToSend[FileDescriptor.standardInput] = FileDescriptor.standardInput
 			}
 		}
@@ -629,12 +601,10 @@ public struct ProcessInvocation : AsyncSequence {
 		p.privateTerminationHandler = additionalTerminationHandler
 #endif
 		
-		/* We used to enter the dispatch group in the registration handlers of the
-		 * dispatch sources, but we got races where the executable ended before
-		 * the distatch sources were even registered. So now we enter the group
-		 * before launching the executable.
-		 * We enter also once for the process launch (left in additional
-		 * termination handler of the process). */
+		/* We used to enter the dispatch group in the registration handlers of the dispatch sources,
+		 * but we got races where the executable ended before the distatch sources were even registered.
+		 * So now we enter the group before launching the executable.
+		 * We enter also once for the process launch (left in additional termination handler of the process). */
 		countOfDispatchGroupLeaveInCaseOfError = outputFileDescriptors.count + 1
 		for _ in 0..<countOfDispatchGroupLeaveInCaseOfError {
 			g.enter()
@@ -672,8 +642,7 @@ public struct ProcessInvocation : AsyncSequence {
 				p.executableURL = URL(fileURLWithPath: actualExecutablePath.string)
 				try p.run()
 			}
-			/* Decrease count of group leaves needed because now that the process
-			 * is launched, its termination handler will be called. */
+			/* Decrease count of group leaves needed because now that the process is launched, its termination handler will be called. */
 			countOfDispatchGroupLeaveInCaseOfError -= 1
 			signalCleaningOnError = nil
 			try fdsToCloseAfterRun.forEach{
@@ -726,8 +695,7 @@ public struct ProcessInvocation : AsyncSequence {
 	}
 	
 	/**
-	 Returns a simple pipe. Different than using the `Pipe()` object from
-	 Foundation because you get control on when the fds are closed.
+	 Returns a simple pipe. Different than using the `Pipe()` object from Foundation because you get control on when the fds are closed.
 	 
 	 - Important: The `FileDescriptor`s returned **must** be closed manually. */
 	public static func unownedPipe() throws -> (fdRead: FileDescriptor, fdWrite: FileDescriptor) {
@@ -844,18 +812,18 @@ public struct ProcessInvocation : AsyncSequence {
 		do {
 			let toRead = Int(Swift.min(Swift.max(estimatedBytesAvailable, 1), UInt(Int.max)))
 #if !os(Linux)
-			/* We do not need to check the number of bytes actually read. If EOF
-			 * was reached (nothing was read), the stream reader will remember it,
-			 * and the readLine method will properly return nil without even trying
-			 * to read from the stream. Which matters, because we forbid the reader
-			 * from reading from the underlying stream (except in these read). */
+			/* We do not need to check the number of bytes actually read.
+			 * If EOF was reached (nothing was read),
+			 *  the stream reader will remember it, and
+			 *  the readLine method will properly return nil without even trying to read from the stream.
+			 * Which matters, because we forbid the reader from reading from the underlying stream (except in these read). */
 			XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
 			_ = try streamReader.readStreamInBuffer(size: toRead, allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
 #else
 			XcodeToolsConfig.logger?.trace("In libdispatch callback for \(streamReader.sourceStream)")
-			/* On Linux we have to use non-blocking IO for some reason. I’d say
-			 * it’s a libdispatch bug, but I’m not sure.
-			 * https://stackoverflow.com/questions/39173429/one-shot-level-triggered-epoll-does-epolloneshot-imply-epollet/46142976#comment121697690_46142976 */
+			/* On Linux we have to use non-blocking IO for some reason.
+			 * I’d say it’s a libdispatch bug, but I’m not sure.
+			 * https://stackoverflow.com/questions/39173429#comment121697690_46142976 */
 			let read: () throws -> Int = {
 				XcodeToolsConfig.logger?.trace("Reading around \(toRead) bytes from \(streamReader.sourceStream)")
 				return try streamReader.readStreamInBuffer(size: toRead, allowMoreThanOneRead: false, bypassUnderlyingStreamReadSizeLimit: true)
@@ -990,8 +958,9 @@ class XcodeToolsProcessExtender : NSObject, XCTTaskExtender {
 #else
 
 /**
- A subclass of Process whose termination handler is overridden, in order for
- XcodeTools to set its own termination handler and still let clients use it. */
+ A subclass of Process whose termination handler is overridden, in order for XcodeTools
+  to set its own termination handler and
+  still let clients use it. */
 private class XcodeToolsProcess : Process {
 	
 	var privateTerminationHandler: ((Process) -> Void)? {
@@ -1017,8 +986,7 @@ private class XcodeToolsProcess : Process {
 	private var publicTerminationHandler: ((Process) -> Void)?
 	
 	/**
-	 Sets super’s terminationHandler to nil if both private and public
-	 termination handlers are nil, otherwise set it to call them. */
+	 Sets super’s terminationHandler to nil if both private and public termination handlers are nil, otherwise set it to call them. */
 	private func updateTerminationHandler() {
 		if privateTerminationHandler == nil && publicTerminationHandler == nil {
 			super.terminationHandler = nil

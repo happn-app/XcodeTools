@@ -5,23 +5,23 @@ import Utils
 
 
 /**
-Represents a “level” of build settings.
-
-This can either be an xcconfig file, or the project settings, or the settings of
-a target.*/
+ Represents a “level” of build settings.
+ 
+ This can either be an xcconfig file, or the project settings, or the settings of a target.*/
 public struct BuildSettings {
 	
-	/* Let’s get the developer dir! Our algo will be:
-	 *    - If DEVELOPER_DIR env var is defined, use that;
-	 *    - Otherwise try and get the path w/ xcode-select. */
+	/* Let’s get the developer dir!
+	 * Our algo will be:
+	 *    - If DEVELOPER_DIR env var is defined, use that;
+	 *    - Otherwise try and get the path w/ xcode-select. */
 	public static func getDeveloperDir() throws -> String {
 		if let p = getenv("DEVELOPER_DIR") {
 			return String(cString: p)
 		}
 		
 		let p = Process()
-		/* If the executable does not exist, the app crashes w/ an unhandled
-		 * exception. We assume /usr/bin/env will always exist. */
+		/* If the executable does not exist, the app crashes w/ an unhandled exception.
+		 * We assume /usr/bin/env will always exist. */
 		p.executableURL = URL(fileURLWithPath: "/usr/bin/env")
 		p.arguments = ["/usr/bin/xcode-select", "-p"]
 		
@@ -59,11 +59,10 @@ public struct BuildSettings {
 	}
 	
 	/**
-	Return the standard default build settings that one can use to resolve the
-	build settings in a pbxproj.
-	
-	For the time being only a very limited set of variables are returned. We
-	might return more later. */
+	 Return the standard default build settings that one can use to resolve the build settings in a pbxproj.
+	 
+	 For the time being only a very limited set of variables are returned.
+	 We might return more later. */
 	public static func standardDefaultSettingsAsDictionary(xcodprojURL: URL) throws -> [String: String] {
 		let projectDirPath = xcodprojURL.deletingLastPathComponent().path
 		return [
@@ -81,20 +80,18 @@ public struct BuildSettings {
 	}
 	
 	/**
-	Return the standard default build settings that one can use to resolve the
-	build settings _and the paths_ in a pbxproj.
-	
-	For the time being only a very limited set of variables are returned. We
-	might return more later.
-	
-	The dictionary is the same as the standard default settings, but with the
-	following keys added: `SDKROOT` and `BUILT_PRODUCTS_DIR`.
-	
-	The default values for these keys are:
-	```
-	- SDKROOT            -> /tmp/__DUMMY_SDK__;
-	- BUILT_PRODUCTS_DIR -> /tmp/__DUMMY_BUILT_PRODUCT_DIR__.
-	``` */
+	 Return the standard default build settings that one can use to resolve the build settings _and the paths_ in a pbxproj.
+	 
+	 For the time being only a very limited set of variables are returned.
+	 We might return more later.
+	 
+	 The dictionary is the same as the standard default settings, but with the following keys added: `SDKROOT` and `BUILT_PRODUCTS_DIR`.
+	 
+	 The default values for these keys are:
+	 ```
+	 - SDKROOT            -> /tmp/__DUMMY_SDK__;
+	 - BUILT_PRODUCTS_DIR -> /tmp/__DUMMY_BUILT_PRODUCT_DIR__.
+	 ``` */
 	public static func standardDefaultSettingsForResolvingPaths(xcodprojURL: URL) throws -> BuildSettings {
 		return try BuildSettings(rawBuildSettings: standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: xcodprojURL))
 	}
@@ -133,8 +130,7 @@ public struct BuildSettings {
 					
 				case .include(path: let path, isOptional: let isOptional, prefix: _, postSharp: _, postDirective: _, suffix: _):
 					guard !path.isEmpty else {
-						/* An empty path is ignored by Xcode with a warning AFAICT
-						 * (Xcode 12.0.1 (12A7300)) */
+						/* An empty path is ignored by Xcode with a warning AFAICT (Xcode 12.0.1 (12A7300)). */
 						Conf.logger?.warning("Trying to import empty file path from \(url.path).")
 						return []
 					}
@@ -155,8 +151,8 @@ public struct BuildSettings {
 	}
 	
 	/**
-	Returns the build settings flattened as a dictionary. No variable resolution
-	is done. */
+	 Returns the build settings flattened as a dictionary.
+	 No variable resolution is done. */
 	public var flattened: [String: String] {
 		var ret = [String: String]()
 		for settingRef in settings {

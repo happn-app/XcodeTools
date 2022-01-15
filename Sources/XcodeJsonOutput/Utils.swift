@@ -6,9 +6,9 @@ import Utils
 
 extension Dictionary where Key == String {
 	
-	/* A small semantic glitch: If the value exists but is invalid, it will still
-	 * be removed from the dictionary. It shouldn’t. We leave it as-is because
-	 * these methods are not public. */
+	/* A small semantic glitch: If the value exists but is invalid, it will still be removed from the dictionary.
+	 * It shouldn’t.
+	 * We leave it as-is because these methods are not public. */
 	
 	mutating func getParsedAndRemove<O : _Object>(_ key: Key, _ originalDictionary: [String: Any?]) throws -> O {
 		let dic: [String: Any?] = try getAndRemove(

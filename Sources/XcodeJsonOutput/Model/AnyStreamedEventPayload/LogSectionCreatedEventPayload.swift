@@ -9,7 +9,7 @@ struct LogSectionCreatedEventPayload : _AnyStreamedEventPayload {
 	var head: AnyActivityLogSectionHead
 	var resultInfo: StreamedActionResultInfo
 	var sectionIndex: Int
-
+	
 	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
 		var dictionary = originalDictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)
@@ -24,7 +24,7 @@ struct LogSectionCreatedEventPayload : _AnyStreamedEventPayload {
 		)
 		self.resultInfo   = try dictionary.getParsedAndRemove("resultInfo", originalDictionary)
 		self.sectionIndex = try dictionary.getParsedAndRemove("sectionIndex", originalDictionary)
-
+		
 		Self.logUnknownKeys(from: dictionary)
 	}
 	

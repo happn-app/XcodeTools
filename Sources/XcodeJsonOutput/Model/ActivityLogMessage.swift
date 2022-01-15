@@ -3,7 +3,7 @@ import Foundation
 
 
 struct ActivityLogMessage : _Object {
-
+	
 	static var type: ObjectType = .init(name: "ActivityLogMessage")
 	
 	var title: String

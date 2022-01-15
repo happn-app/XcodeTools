@@ -24,8 +24,7 @@ struct Hagvtool : ParsableCommand {
 		logger.error("hagvtool has been deprecated. Please use \"xct versions\" instead.")
 		try withCStrings(["xct-versions"] + arguments, scoped: { cargs in
 			/* The p implementation of exec searches for the binary path in PATH.
-			 * The v means we pass an array to exec (as opposed to the variadic
-			 * exec variant, which is not available in Swift anyway). */
+			 * The v means we pass an array to exec (as opposed to the variadic exec variant, which is not available in Swift anyway). */
 #if !os(Linux)
 			let ret = execvP("xct-versions", URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().path, cargs)
 #else

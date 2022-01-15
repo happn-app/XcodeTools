@@ -3,15 +3,14 @@ import Foundation
 
 
 
-/* Sadly we cannot implement fillValues in an extension because overriding
- * method in extensions is not supported. */
+/* Sadly we cannot implement fillValues in an extension because overriding method in extensions is not supported. */
 @objc(PBXObject)
 public class PBXObject : NSManagedObject {
 	
 	/* **************
-	   MARK: - Public
-	   ************** */
-		
+	   MARK: - Public
+	   ************** */
+	
 	open class func propertyRenamings() -> [String: String] {
 		return ["xcID": "id"]
 	}
@@ -32,7 +31,7 @@ public class PBXObject : NSManagedObject {
 	public func getXcodeID() throws -> String {try PBXObject.getNonOptionalValue(xcID,   "XcodeID", xcID)}
 	
 	/**
-	All the values in the raw object, but modified w/ known values in the model. */
+	 All the values in the raw object, but modified w/ known values in the model. */
 	public func allSerialized(projectName: String) throws -> [String: Any] {
 		let known = try knownValuesSerialized(projectName: projectName)
 		let nonNilRawObject = rawObject ?? [:]
@@ -55,17 +54,16 @@ public class PBXObject : NSManagedObject {
 		"""
 		let value = try serializeAnyToString(allSerialized(projectName: projectName), isRoot: true, projectName: projectName, indentCount: indentCount, indentBase: indentBase, oneline: oneLineStringSerialization)
 		return key + " = " + value + ";"
-			
+		
 	}
 	
 	/* ****************
-	   MARK: - Internal
-	   **************** */
+	   MARK: - Internal
+	   **************** */
 	
 	/**
-	Instantiate a managed object if needed, or return the already instantiated
-	object from the `decodedObjects` dictionary. In case of instantiation, will
-	add the instantiated object to the `decodedObjects` dictionary. */
+	 Instantiate a managed object if needed, or return the already instantiated object from the `decodedObjects` dictionary.
+	 In case of instantiation, will add the instantiated object to the `decodedObjects` dictionary. */
 	static func unsafeInstantiate(id: String, on context: NSManagedObjectContext, rawObjects: [String: [String: Any]], decodedObjects: inout [String: PBXObject]) throws -> Self {
 		if let decodedObject = decodedObjects[id] {
 			guard let result = decodedObject as? Self else {
@@ -155,8 +153,9 @@ public class PBXObject : NSManagedObject {
 	}
 	
 	/**
-	Merge both serializations. If the child serialization overrides anything from
-	the parent’s one, a warning is logged. */
+	 Merge both serializations.
+	 
+	 If the child serialization overrides anything from the parent’s one, a warning is logged. */
 	/*protected*/ func mergeSerialization(_ parent: [String: Any], _ child: [String: Any]) -> [String: Any] {
 		return parent.merging(child, uniquingKeysWith: { current, new in
 			Conf.logger?.warning("Child serialization overrode parent’s serialization’s value “\(current)” with “\(new)” for object of type \(rawISA ?? "<unknown>") with id \(xcID ?? "<unknown>").")

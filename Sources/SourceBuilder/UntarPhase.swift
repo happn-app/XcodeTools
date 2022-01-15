@@ -22,14 +22,10 @@ public struct UntarPhase : BuildPhase {
 		 If the strip is applied to the given tar files, some files would be lost,
 		 or written in the same folder though in different folders in the archive.
 		 
-		 The `filesLost` property contains the files whose path would completely
-		 be ignored when tar extracts the archive because their path component is
-		 too small.
+		 The `filesLost` property contains the files whose path would completely be ignored when tar extracts the archive because their path component is too small.
 		 
-		 The `prefixes` property contains the different prefixes found for the
-		 given strip count. If it contains more than one entry, some files would
-		 be written in the same folder though they are in different folders in the
-		 tar archive. */
+		 The `prefixes` property contains the different prefixes found for the given strip count.
+		 If it contains more than one entry, some files would be written in the same folder though they are in different folders in the tar archive. */
 		case stripWouldLoseFiles(filesLost: Set<FilePath>, prefixes: Set<FilePath>)
 		
 	}
@@ -43,12 +39,10 @@ public struct UntarPhase : BuildPhase {
 	/** `--strip-components` from (BSD) `tar` */
 	public var stripComponents: Int
 	/**
-	 Try and validate no files in the archive will be lost because of the strip
-	 components option.
+	 Try and validate no files in the archive will be lost because of the strip components option.
 	 
-	 This is done by first listing the files in the archive and verifying all of
-	 the files are deep enough to be unarchived, and the dropped prefix is always
-	 the same.
+	 This is done by first listing the files in the archive and verifying all of the files are deep enough to be unarchived,
+	 and the dropped prefix is always the same.
 	 
 	 For instance, if we have the following hierarchy:
 	 ```
@@ -81,9 +75,8 @@ public struct UntarPhase : BuildPhase {
 	/**
 	 Uses the tar filename to determine the destination folder.
 	 
-	 The destination folder is the same path as the unarchived file, minus the
-	 extension. If the unarchived file has two extension and the inner one is
-	 “tar,” we remove it too. */
+	 The destination folder is the same path as the unarchived file, minus the extension.
+	 If the unarchived file has two extension and the inner one is “tar,” we remove it too. */
 	public init(unarchivedFile: FilePath, keepOldFiles: Bool = true, stripComponents: Int = 0, verifyNoLostFilesFromStrip: Bool = false) throws {
 		guard unarchivedFile.extension != nil else {
 			throw Err.filepathHasNoExtensions(unarchivedFile)

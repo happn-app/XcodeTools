@@ -41,13 +41,10 @@ struct Xct : ParsableCommand {
 		
 		let absoluteExecPath = URL(fileURLWithPath: execPath).path
 		if toolName != "internal-fd-get-launcher" {
-			/* We force the XCT_EXEC_PATH env to the current exec path if current
-			 * tool name is not "internal-fd-get-launcher".
-			 * This is because some subprograms need the XCT_EXEC_PATH and expect
-			 * it to be defined.
-			 * We do not define it for the internal launcher because the spawn*
-			 * function family guarantees the env is not modified when the
-			 * executable is launched, even when sending fds. */
+			/* We force the XCT_EXEC_PATH env to the current exec path if current tool name is not "internal-fd-get-launcher".
+			 * This is because some subprograms need the XCT_EXEC_PATH and expect it to be defined.
+			 * We do not define it for the internal launcher because the spawn* function family guarantees
+			 * the env is not modified when the executable is launched, even when sending fds. */
 			guard setenv(Xct.execPathEnvVarName, absoluteExecPath, 1) == 0 else {
 				Xct.logger.error("Error modifying \(Xct.execPathEnvVarName): \(Errno(rawValue: errno).description)")
 				throw ExitCode(errno)
@@ -62,9 +59,9 @@ struct Xct : ParsableCommand {
 			}
 		}
 		
-		/* We cannot use a subcommand (parsed by the main command instead of the
-		 * subcommand, because the main command expects a generic tool name arg,
-		 * which cannot be distinguished from the subcommand). */
+		/* We cannot use a subcommand (parsed by the main command instead of the subcommand,
+		 *  because the main command expects a generic tool name arg,
+		 *  which cannot be distinguished from the subcommand). */
 		switch toolName {
 			case "internal-fd-get-launcher":        return InternalFdGetLauncher.main(toolArguments)
 			case "generate-meta-completion-script": return GenerateMetaCompletionScript.main(toolArguments)
@@ -72,13 +69,11 @@ struct Xct : ParsableCommand {
 		}
 	}
 	
-	/* Bundle.main.bundleURL.path seem to correctly reflect the path of the
-	 * executable that was launched:
-	 *    - Changes when executable location does (path not hard-coded in bin);
-	 *    - Does _not_ resolve symlink when launched executable is a symlink.
-	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
-	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path
-	 *          is the usr one, not the opt one. (This is what we want.) */
+	/* Bundle.main.bundleURL.path seem to correctly reflect the path of the executable that was launched:
+	 *    - Changes when executable location does (path not hard-coded in bin);
+	 *    - Does _not_ resolve symlink when launched executable is a symlink.
+	 *      Ex: /usr/local/bin/xct is link to /opt/brew/bin/xct.
+	 *          When /usr/local/bin/xct is launched, Bundle.main.bundleURL.path is the usr one, not the opt one (this is what we want). */
 	private static var defaultExecPath: String {
 		return getenv(Xct.execPathEnvVarName).flatMap{ String(cString: $0) } ?? Bundle.main.bundleURL.path
 	}
@@ -102,10 +97,10 @@ struct Xct : ParsableCommand {
 					i = args.index(after: i)
 					return args[i]
 				} else {
-					/* Note: This case should never happen as we’re called from
-					 * ArgumentParser, in the completion module for the tool name,
-					 * and in that context we should ne be able to have a last
-					 * argument being the arg we seek without value. */
+					/* Note: This case should never happen as
+					 *  we’re called from ArgumentParser,
+					 *  in the completion module for the tool name, and
+					 *  in that context we shouldn’t be able to have a last argument being the arg we seek without value. */
 					return nil
 				}
 			} else {
@@ -125,10 +120,10 @@ struct Xct : ParsableCommand {
 					i = args.index(after: i)
 					return args[i]
 				} else {
-					/* Note: This case should never happen as we’re called from
-					 * ArgumentParser, in the completion module for the tool name,
-					 * and in that context we should ne be able to have a last
-					 * argument being the arg we seek without value. */
+					/* Note: This case should never happen as
+					 *  we’re called from ArgumentParser,
+					 *  in the completion module for the tool name, and
+					 *  in that context we shouldn’t be able to have a last argument being the arg we seek without value. */
 					return nil
 				}
 			}
@@ -196,17 +191,15 @@ struct Xct : ParsableCommand {
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {
-		/* We will use the PATH in env, but w/ the exec path search first (tested
-		 * with git which apparently puts its internal tools first in the search). */
+		/* We will use the PATH in env, but w/ the exec path search first
+		 * (tested with git which apparently puts its internal tools first in the search). */
 		let searchPath = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
 		let newSearchPath = absoluteExecPath + (searchPath.isEmpty ? "" : ":") + searchPath
 		
 		let fullToolName = "xct-" + toolName
 		try withCStrings([fullToolName] + toolArguments, scoped: { cargs in
-			/* The P implementation of exec searches for the binary path in the
-			 * given search path.
-			 * The v means we pass an array to exec (as opposed to the variadic
-			 * exec variant, which is not available in Swift anyway). */
+			/* The P implementation of exec searches for the binary path in the given search path.
+			 * The v means we pass an array to exec (as opposed to the variadic exec variant, which is not available in Swift anyway). */
 #if !os(Linux)
 			let ret = execvP(fullToolName, newSearchPath, cargs)
 #else

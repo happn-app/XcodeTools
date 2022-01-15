@@ -69,9 +69,8 @@ public enum XcodeProjError : Error {
 		
 	}
 	
-	/* Very few errors: it is practically impossible to get an invalid build
-	 * setting given the format it has. It is however very possible to get an
-	 * unexpected value, but that’s another story. */
+	/* Very few errors: it is practically impossible to get an invalid build setting given the format it has.
+	 * It is however very possible to get an unexpected value, but that’s another story. */
 	public enum BuildSettingParseError : Error {
 		
 		case unfinishedKey(full: String, garbage: String)
@@ -86,11 +85,9 @@ public enum XcodeProjError : Error {
 		
 		case atLeastTwoConfigurationsHaveSameName
 		/**
-		When retrieving combined settings of a target, we retrieve all the
-		settings in all the configuration names the target has. It is expected for
-		the project to have at least the same configuration names as the target.
-		This error is thrown if the target has a configuration name the project
-		does not have. */
+		 When retrieving combined settings of a target, we retrieve all the settings in all the configuration names the target has.
+		 It is expected for the project to have at least the same configuration names as the target.
+		 This error is thrown if the target has a configuration name the project does not have. */
 		case targetHasConfigurationNameProjectDoesNot(configName: String)
 		case baseConfigurationReferenceIsNotTextXCConfig(configurationID: String?)
 		
@@ -100,8 +97,7 @@ public enum XcodeProjError : Error {
 		
 		case unknownArchiveVersion(String)
 		case unknownObjectVersion(String)
-		/** Not sure what a non emtpy “classes” property means in a pbxproj, so we
-		throw an error if we get that. */
+		/** Not sure what a non emtpy “classes” property means in a pbxproj, so we throw an error if we get that. */
 		case classesPropertyIsNotEmpty([String: Any])
 		
 		case unknownRootProperties(Set<String>)

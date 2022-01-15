@@ -20,16 +20,15 @@ public struct CombinedBuildSettings {
 		
 		public var value: String
 		/**
-		The build settings that were used to resolve the value.
-		
-		The _last_ setting will be the most significant. Changing the value of
-		this setting to something that does not contain any variable will
-		effectively change the resolved value of the setting to that. The new
-		resolved value will then only have one source: the setting.
-		
-		The sources can be empty if the resolved value was not resolved using any
-		setting. This can happen if you resolve a string without a setting context
-		or if you try and resolve a setting key which does not have a value. */
+		 The build settings that were used to resolve the value.
+		 
+		 The _last_ setting will be the most significant.
+		 Changing the value of this setting to something that does not contain any variable
+		 will effectively change the resolved value of the setting to that.
+		 The new resolved value will then only have one source: the setting.
+		 
+		 The sources can be empty if the resolved value was not resolved using any setting.
+		 This can happen if you resolve a string without a setting context or if you try and resolve a setting key which does not have a value. */
 		public var sources: [BuildSettingRef]
 		
 		internal init() {
@@ -49,21 +48,21 @@ public struct CombinedBuildSettings {
 	public var configurationName: String
 	
 	/**
-	The PBXTarget for which the build settings are. `nil` if representing the
-	build settings of the project. */
+	 The PBXTarget for which the build settings are.
+	 `nil` if representing the build settings of the project. */
 	public var target: PBXTarget?
 	
 	/**
-	The main build configuration for the combined build settings. Changing this
-	configuration for a given key will change the most significant source of the
-	resolved value for this key. */
+	 The main build configuration for the combined build settings.
+	 
+	 Changing this configuration for a given key will change the most significant source of the resolved value for this key. */
 	public var configuration: XCBuildConfiguration
 	
 	/**
-	The first level is the deepest (xcconfig project level if it exists).
-	
-	- Note: The array should maybe also contain the source of the build settings.
-	Especially if we want to implement modifying a build setting later. */
+	 The first level is the deepest (xcconfig project level if it exists).
+	 
+	 - Note: The array should maybe also contain the source of the build settings.
+	 Especially if we want to implement modifying a build setting later. */
 	public var buildSettingsLevels: [BuildSettingsRef]
 	
 	public var buildSettings: [BuildSettingRef] {
@@ -71,10 +70,9 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns all the combined build settings for all the targets in the project.
-	
-	- Note: The xcodeproj URL is required because some paths can be relative to
-	the xcodeproj path. */
+	 Returns all the combined build settings for all the targets in the project.
+	 
+	 - Note: The xcodeproj URL is required because some paths can be relative to the xcodeproj path. */
 	public static func allCombinedBuildSettingsForTargets(of project: PBXProject, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [CombinedBuildSettings] {
 		let targets = try project.getTargets()
 		
@@ -92,11 +90,9 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns a dictionary whose keys are the configuration names and values are
-	the build settings.
-	
-	- Note: The xcodeproj URL is required because some paths can be relative to
-	the xcodeproj path. */
+	 Returns a dictionary whose keys are the configuration names and values are the build settings.
+	 
+	 - Note: The xcodeproj URL is required because some paths can be relative to the xcodeproj path. */
 	static func allCombinedBuildSettings(for configurations: [XCBuildConfiguration], targetAndProjectSettingsPerConfigName: (PBXTarget, [String: [BuildSettingsRef]])?, xcodeprojURL: URL, defaultBuildSettings: BuildSettingsRef) throws -> [String: CombinedBuildSettings] {
 		let settings: [(String, CombinedBuildSettings)] = try configurations.map{ configuration in
 			let name = try configuration.getName()
@@ -160,42 +156,35 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Returns the resolved value that matches the given settings key.
-	
-	This method cannot fail and returns a non-optional because if a variable does
-	not have a value (does not exist), its value is set to "".
-	
-	A build setting value could either be a String, or an array of Strings. For
-	now, if we encounter an array, we “convert” it to a String.
-	The conversion is simply the concatenation of the String values, separated by
-	a space. That’s all. And yes, you can loose info if a element contains a
-	space, but my testing shows this is how Xcode does it: in an array, for an
-	element to be able to contains a space, it MUST be double or simple quoted.
-	
-	If a build setting have an unknown type (neither a String nor an array of
-	Strings), we return en empty String for this value. */
+	 Returns the resolved value that matches the given settings key.
+	 
+	 This method cannot fail and returns a non-optional because if a variable does not have a value (does not exist), its value is set to "".
+	 
+	 A build setting value could either be a String, or an array of Strings.
+	 For now, if we encounter an array, we “convert” it to a String.
+	 The conversion is simply the concatenation of the String values, separated by a space.
+	 That’s all.
+	 And yes, you can loose info if a element contains a space, but my testing shows this is how Xcode does it:
+	 in an array, for an element to be able to contains a space, it MUST be double or simple quoted.
+	 
+	 If a build setting have an unknown type (neither a String nor an array of Strings), we return en empty String for this value. */
 	public subscript(_ key: BuildSettingKey) -> String {
 		return resolvedValue(for: key)?.value ?? ""
 	}
 	
 	/**
-	Try and resolve the value for the given key. Returns `nil` if the key does
-	not exist in the settings.
-	
-	If any, the resolved value you get from this method will always contain at
-	least one source. */
+	 Try and resolve the value for the given key.
+	 Returns `nil` if the key does not exist in the settings.
+	 
+	 If any, the resolved value you get from this method will always contain at least one source. */
 	public func resolvedValue(for key: BuildSettingKey) -> ResolvedValue? {
-		/* We want to retrieve an array of (Int, BuildSetting), where the Int
-		 * represents the level from which the build setting is from.
-		 * I did this because I though I’d need this, but I actually won’t.
-		 * Note that the pre-Xcode-10 way of resolving variables needed this I
-		 * think! https://stackoverflow.com/a/50731052
-		 * Basically before Xcode 10 I think the equivalent BuildSettings internal
-		 * structure in Xcode held its settings as a dictionary instead of an
-		 * array of BuildSetting, which prevented it from doing the smarter
-		 * resolution it now has. */
+		/* We want to retrieve an array of (Int, BuildSetting), where the Int represents the level from which the build setting is from.
+		 * I did this because I though I’d need this, but I actually won’t.
+		 * Note that the pre-Xcode-10 way of resolving variables needed this I think! https://stackoverflow.com/a/50731052
+		 * Basically before Xcode 10 I think the equivalent BuildSettings internal structure in Xcode held its settings as a dictionary
+		 * instead of an array of BuildSetting, which prevented it from doing the smarter resolution it now has. */
 		let searchedSettings = buildSettingsLevels.enumerated().flatMap{ elementAndOffset in elementAndOffset.element.value.settings.map{ (level: elementAndOffset.offset, setting: $0) } }
-		#warning("TODO: Implement variable conditionals…")
+#warning("TODO: Implement variable conditionals…")
 		let settingsWhoseKeyMatch = searchedSettings.filter{ $0.setting.value.key.key == key.key }
 		
 		guard !settingsWhoseKeyMatch.isEmpty else {
@@ -236,9 +225,9 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Get the Info.plist if any, then deserialize it and resolved the variables.
-	
-	- Note: Does _not_ resolve localized strings. */
+	 Get the Info.plist if any, then deserialize it and resolved the variables.
+	 
+	 - Note: Does _not_ resolve localized strings. */
 	public func infoPlistResolved(xcodeprojURL: URL) throws -> [String: Any]? {
 		func resolveVariablesGeneric<T>(_ object: T) -> T {
 			switch object {
@@ -258,16 +247,14 @@ public struct CombinedBuildSettings {
 	}
 	
 	/**
-	Resolve the variables in the given string (via a Scanner).
-	
-	varEndChars contains the characters that should end the parsing of the
-	variable (for embedded variables). Always call with an empty string first to
-	parse the whole string.
-	
-	Example: $(VAR1_${VAR2}), when parser is called first, the value will be an
-	empty string, then “`)`” then “`}`”.
-	
-	`inheritedVariableName` is given to resolve the “inherited” variable name. */
+	 Resolve the variables in the given string (via a Scanner).
+	 
+	 `varEndChars` contains the characters that should end the parsing of the variable (for embedded variables).
+	 Always call with an empty string first to parse the whole string.
+	 
+	 Example: `$(VAR1_${VAR2})`, when parser is called first, the value will be an empty string, then “`)`” then “`}`”.
+	 
+	 `inheritedVariableName` is given to resolve the “inherited” variable name. */
 	private func resolveVariables(scanner: Scanner, currentlyResolvedValues: inout [String: ResolvedValue], inheritedVariableName: String? = nil, varEndChars: String = "") -> ResolvedValue {
 		var result = ""
 		var sources = [BuildSettingRef]()
@@ -277,15 +264,14 @@ public struct CombinedBuildSettings {
 			result.append(scanner.scanUpToCharacters(from: CharacterSet(charactersIn: "$" + varEndChars)) ?? "")
 			
 			if scanner.scanString("$") != nil {
-				/* If we have found a dollar sign, we have found the potential start
-				 * of a variable. We return true. */
+				/* If we have found a dollar sign, we have found the potential start of a variable.
+				 * We return true. */
 				return true
 			}
 			
-			/* Now we still have to parse a potential stray character (the end char
-			 * or something else, if we just parsed a variable without parenthesis,
-			 * in which case we don’t want to parse it, that’s why we come back to
-			 * previous location is scanned char is not in varEndChars). */
+			/* Now we still have to parse a potential stray character (the end char or something else,
+			 * if we just parsed a variable without parenthesis, in which case we don’t want to parse it,
+			 * that’s why we come back to previous location is scanned char is not in varEndChars). */
 			let scanIndex = scanner.currentIndex
 			if let c = scanner.scanCharacter(), !varEndChars.contains(c) {
 				scanner.currentIndex = scanIndex
@@ -294,9 +280,9 @@ public struct CombinedBuildSettings {
 		}
 		
 		while parseUpToStartOfVariableIncludingDollar() {
-			/* We might have reached the start of a variable. Let’s verify that.
-			 * AFAICT (from the tests in the project 1 in the tests data), the only
-			 * way to _not_ have a variable start is to parse a dollar here. */
+			/* We might have reached the start of a variable.
+			 * Let’s verify that.
+			 * AFAICT (from the tests in the project 1 in the tests data), the only way to _not_ have a variable start is to parse a dollar here. */
 			guard scanner.scanString("$") == nil else {
 				result.append("$")
 				continue

@@ -4,8 +4,7 @@ import Logging
 
 
 
-/** A container to hold the properties that can modify the behaviour of the
- module. */
+/** A container to hold the properties that can modify the behaviour of the module. */
 public enum XcodeToolsConfig {
 	
 	/* TODO: Migrate to TaskLocal */

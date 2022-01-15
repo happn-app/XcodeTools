@@ -40,10 +40,9 @@ public struct XCConfig {
 			if scanner.scanString("#") != nil {
 				/* We have a preprocessor directive line. */
 				let postSharp = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
-				/* It seems the xcconfig parser is not the same when compiling and
-				 * in Xcode build settings UI.
-				 * In the UI, the spaces after the sharp seem to break the xcconfig
-				 * file fully; in code, the directive seems to work ok w/ spaces! */
+				/* It seems the xcconfig parser is not the same when compiling and in Xcode build settings UI.
+				 * In the UI, the spaces after the sharp seem to break the xcconfig file fully;
+				 * in code, the directive seems to work ok w/ spaces! */
 				guard postSharp.isEmpty || allowSpacesAfterSharp else {throw Err.xcconfigParseError(.gotSpaceAfterSharpInDirective)}
 				
 				let directive = scanner.scanUpToCharacters(from: Line.xcconfigWhitespace.union(CharacterSet(charactersIn: "?"))) ?? ""
@@ -51,8 +50,7 @@ public struct XCConfig {
 				let postDirective = scanner.scanCharacters(from: Line.xcconfigWhitespace) ?? ""
 				switch directive {
 					case "include":
-						/* An empty post directive only works in the GUI of Xcode, not
-						 * when building (Xcode 12.0.1 (12A7300)). */
+						/* An empty post directive only works in the GUI of Xcode, not when building (Xcode 12.0.1 (12A7300)). */
 						guard allowNoSpacesAfterInclude || !postDirective.isEmpty else {
 							throw Err.xcconfigParseError(.noSpaceAfterIncludeDirective)
 						}
@@ -77,8 +75,7 @@ public struct XCConfig {
 				/* We should have a normal line (setting = value) */
 				let variableName: String
 				do {
-					/* The line is not empty (checked before), so scanning a
-					 * character cannot return nil, hence the force-unwrap. */
+					/* The line is not empty (checked before), so scanning a character cannot return nil, hence the force-unwrap. */
 					let firstChar = scanner.scanCharacter()!
 					guard let scalar = firstChar.unicodeScalars.first, firstChar.unicodeScalars.count == 1, BuildSettingKey.charactersValidForFirstVariableCharacter.contains(scalar) else {
 						throw Err.xcconfigParseError(.invalidFirstCharInVar(firstChar))
@@ -134,8 +131,7 @@ public struct XCConfig {
 					let suffixOK = suffixTrimmed.isEmpty || suffixTrimmed.hasPrefix("//")
 					let pathOK = (path.rangeOfCharacter(from: CharacterSet(charactersIn: "\n\""), options: .literal) == nil)
 					let whitesOK = [prefix, postSharp, postDirective].first(where: { $0.rangeOfCharacter(from: Line.xcconfigWhitespace.inverted, options: .literal) != nil }) == nil
-					/* An empty post directive only works in the GUI of Xcode, not
-					 * when building (Xcode 12.0.1 (12A7300)). */
+					/* An empty post directive only works in the GUI of Xcode, not when building (Xcode 12.0.1 (12A7300)). */
 					let postDirectiveNotEmpty = !postDirective.isEmpty
 					return whitesOK && pathOK && suffixOK && postDirectiveNotEmpty
 					
@@ -172,8 +168,7 @@ public struct XCConfig {
 			}
 		}
 		
-		/* We specifically want space and tabs; other unicode whitespaces are not
-		 * valid for our use case. */
+		/* We specifically want space and tabs; other unicode whitespaces are not valid for our use case. */
 		static let xcconfigWhitespace = CharacterSet(charactersIn: " \t")
 		
 	}
@@ -212,8 +207,9 @@ public struct XCConfig {
 			}
 		}
 		if isDir.boolValue {
-			/* We do not fail if the xcconfig file is a directory! This is the
-			 * observed behaviour in Xcode. It simply gives a warning. */
+			/* We do not fail if the xcconfig file is a directory!
+			 * This is the observed behaviour in Xcode.
+			 * It simply gives a warning. */
 			Conf.logger?.warning("Tried to import directory \(url.path) in an xcconfig file.")
 			lines = [:]
 			return
@@ -242,25 +238,21 @@ public struct XCConfig {
 	public func urlFor(importPath path: String) throws -> URL {
 		var path = path
 		
-		/* If path starts with <DEVELOPER_DIR>, the include is relative to the
-		 * developer dir, says https://pewpewthespells.com/blog/xcconfig_guide.html
-		 * (I have tested, it is true).
-		 * From my testing, the replacement is done only if the token is the
-		 * prefix of the path, and I did not find any other variable that can be
-		 * used (tried SRCROOT).
-		 *
-		 * Something that’s hard to test and I didn’t is: Is the placeholder
-		 * replaced if the path starts with “<DEVELOPER_DIR>” or with
-		 * “<DEVELOPER_DIR>/”?
-		 * We assume the former (I did a test which seems to show the placeholder
-		 * is replaced when being on its own, but I cannot guarantee that’s true
-		 * though). */
+		/* If path starts with <DEVELOPER_DIR>, the include is relative to the developer dir,
+		 * says https://pewpewthespells.com/blog/xcconfig_guide.html (I have tested, it is true).
+		 * From my testing, the replacement is done only if the token is the prefix of the path,
+		 * and I did not find any other variable that can be used (tried SRCROOT).
+		 *
+		 * Something that’s hard to test and I didn’t is:
+		 * Is the placeholder replaced if the path starts with “<DEVELOPER_DIR>” or with “<DEVELOPER_DIR>/”?
+		 * We assume the former (I did a test which seems to show the placeholder is replaced when being on its own,
+		 * but I cannot guarantee that’s true though). */
 		if path.starts(with: "<DEVELOPER_DIR>") {
 			let developerDir = try BuildSettings.getDeveloperDir()
 //			let a = "/<DEVELOPER_DIR>/<DEVELOPER_DIR>"
 //			Conf.logger?.debug("\(a.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored))")
-			/* Tested (commented code above): The line below does indeed replace
-			 * the string only if it is the prefix of the var. */
+			/* Tested (commented code above):
+			 * The line below does indeed replace the string only if it is the prefix of the var. */
 			path = path.replacingOccurrences(of: "<DEVELOPER_DIR>", with: developerDir, options: .anchored)
 		}
 		

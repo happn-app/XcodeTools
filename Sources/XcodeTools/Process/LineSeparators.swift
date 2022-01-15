@@ -18,8 +18,7 @@ public enum LineSeparators {
 	/**
 	 Suitable for standard unix utilities.
 	 
-	 Defined as
-	 `LineSeparators.newLine(unix: true, legacyMacOS: false, windows: false)`
+	 Defined as `LineSeparators.newLine(unix: true, legacyMacOS: false, windows: false)`
 	 but strictly equivalent to `.customCharacters([0x0a])`. */
 	public static let unix = LineSeparators.newLine(unix: true, legacyMacOS: false, windows: false)
 	public static let windows = LineSeparators.newLine(unix: false, legacyMacOS: false, windows: true)

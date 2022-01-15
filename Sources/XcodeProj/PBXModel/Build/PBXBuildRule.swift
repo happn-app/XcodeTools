@@ -3,8 +3,7 @@ import Foundation
 
 
 
-/** Represents a build rule, that is the tool to call to compile a given type of
- file. */
+/** Represents a build rule, that is the tool to call to compile a given type of file. */
 @objc(PBXBuildRule)
 public class PBXBuildRule : PBXObject {
 	
@@ -36,16 +35,15 @@ public class PBXBuildRule : PBXObject {
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
-	/* (Very) sadly, a throwing computed property is not possible, so we use a
-	 * function to get the non-optional value.
-	 * Otherwise, for the compilerSpec example for instance, I’d very much have
-	 * liked to have a CoreData property named `compilerSpec_o` for instance and
-	 * a computed property defined like so:
-	 * var compilerSpec {
-	 *    get throws {try PBXObject.getNonOptionalValue(compilerSpec_o, "compilerSpec", xcID)}
-	 *    set        {compilerSpec_o = newValue}
-	 * }
-	 * https://forums.swift.org/t/proposal-allow-getters-and-setters-to-throw/191 */
+#warning("Comment below is not true anymore")
+	/* (Very) sadly, a throwing computed property is not possible, so we use a function to get the non-optional value.
+	 * Otherwise, for the compilerSpec example for instance, I’d very much have liked to have a CoreData property named `compilerSpec_o` for instance
+	 * and a computed property defined like so:
+	 * var compilerSpec {
+	 *    get throws {try PBXObject.getNonOptionalValue(compilerSpec_o, "compilerSpec", xcID)}
+	 *    set        {compilerSpec_o = newValue}
+	 * }
+	 * https://forums.swift.org/t/proposal-allow-getters-and-setters-to-throw/191 */
 	
 	public func getCompilerSpec() throws -> String   {try PBXObject.getNonOptionalValue(compilerSpec, "compilerSpec", xcID)}
 	public func getFilePatterns() throws -> String   {try PBXObject.getNonOptionalValue(filePatterns, "filePatterns", xcID)}

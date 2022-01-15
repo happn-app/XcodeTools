@@ -4,8 +4,8 @@ import ArgumentParser
 
 
 
-/* This is the completion script for xct. We call it meta because it’s able to
- * call the sub-completion scripts for sub-commands properly. */
+/* This is the completion script for xct.
+ * We call it meta because it’s able to call the sub-completion scripts for sub-commands properly. */
 struct GenerateMetaCompletionScript : ParsableCommand {
 	
 	static var configuration = CommandConfiguration(

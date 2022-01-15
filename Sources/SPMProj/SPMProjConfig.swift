@@ -10,11 +10,9 @@ public enum SPMProjConfig {
 	/**
 	 Everything ``SPMProj`` logs will go through this logger.
 	 
-	 This property is wrapped in a `TaskLocal`, which means you can change it in
-	 a particular task using `$logger.withValue(...)`.
+	 This property is wrapped in a `TaskLocal`, which means you can change it in a particular task using `$logger.withValue(...)`.
 	 
-	 If you use a `TaskLocal` logger in your app, you can assign the *wrapper*
-	 value of the logger using ``setLogger(wrappedLogger:)``. */
+	 If you use a `TaskLocal` logger in your app, you can assign the *wrapper* value of the logger using ``setLogger(wrappedLogger:)``. */
 	@TaskLocal
 	public static var logger: Logger? = .init(label: "com.xcode-actions.XcodeProj")
 	/**

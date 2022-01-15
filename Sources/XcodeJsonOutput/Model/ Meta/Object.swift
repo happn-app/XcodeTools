@@ -17,8 +17,7 @@ protocol _Object : Object {
 extension _Object {
 	
 	/**
-	Convenience one can call at start of concrete init implementations to
-	validate the type of the dictionary that has been passed in. */
+	 Convenience one can call at start of concrete init implementations to validate the type of the dictionary that has been passed in. */
 	static func consumeAndValidateTypeFor(dictionary: inout [String: Any?], parentPropertyName: String?) throws {
 		guard try ObjectType(dictionary: dictionary) == Self.type else {
 			throw Err.invalidObjectType(parentPropertyName: parentPropertyName, expectedType: "\(Self.type)", givenObjectDictionary: dictionary)

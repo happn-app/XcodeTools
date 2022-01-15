@@ -123,8 +123,7 @@ final class ProcessTests : XCTestCase {
 			let expectedStderr = (1...n).map{ String(repeating: "*", count: (n - $0 + 1)) }.joined(separator: "\n") + "\n"
 			
 			XCTAssertEqual(textLinesByFd[FileDescriptor.standardOutput] ?? "", expectedStdout)
-			/* We do not check for equality here because swift sometimes log errors on
-			 * stderr before launching the script… */
+			/* We do not check for equality here because swift sometimes log errors on stderr before launching the script… */
 			XCTAssertTrue((textLinesByFd[FileDescriptor.standardError] ?? "").hasSuffix(expectedStderr))
 			
 			/* LINUXASYNC START --------- */
@@ -153,9 +152,8 @@ final class ProcessTests : XCTestCase {
 			let n = 50
 			
 			/* Do **NOT** use a `Pipe` object! (Or dup the fds you get from it).
-			 * Pipe closes both ends of the pipe on dealloc, but we need to close
-			 * one at a specific time and leave the other open (it is closed by the
-			 * invoke function). */
+			 * Pipe closes both ends of the pipe on dealloc, but we need to close one at a specific time and leave the other open
+			 * (it is closed by the invoke function). */
 			let (fdRead, fdWrite) = try ProcessInvocation.unownedPipe()
 			
 			var count = 0
@@ -170,8 +168,7 @@ final class ProcessTests : XCTestCase {
 					return XCTFail("got output error: \(lineResult)")
 				}
 				guard rawLine.fd != FileDescriptor.standardError else {
-					/* When a Swift script is launched, swift can output some shit on
-					 * stderr… */
+					/* When a Swift script is launched, swift can output some shit on stderr… */
 					NSLog("%@", "Got err from script: \(rawLine.line)")
 					return
 				}
@@ -197,21 +194,16 @@ final class ProcessTests : XCTestCase {
 		}
 	}
 	
-	/* This disabled (disabled because too long) test and some variants of it
-	 * have allowed the discovery of some bugs:
+	/* This disabled (disabled because too long) test and some variants of it have allowed the discovery of some bugs:
 	 *    - Leaks of file descriptors;
-	 *    - Pipe fails to allocate new fds, but Pipe object init is non-fallible
-	 *      in Swift… so we check either way (now we do not use the Pipe object
-	 *      anyway, we get more control over the lifecycle of the fds);
-	 *    - Race between executable end and io group, leading to potentially
-	 *      closed fds _while setting up a new run_, leading to a lot of weird
-	 *      behaviour, such as `process not launched exception`, assertion
-	 *      failures in the spawn and stream method (same fd added twice in a
-	 *      set, which is not possible), dead-lock with the io group being waited
-	 *      on forever, partial data being read, etc.;
-	 *    - Some fds were not closed at the proper location (this was more likely
-	 *      discovered through `testNonStandardFdCapture`, but this one helped
-	 *      too IIRC). */
+	 *    - Pipe fails to allocate new fds, but Pipe object init is non-fallible in Swift…
+	 *      so we check either way (now we do not use the Pipe object anyway, we get more control over the lifecycle of the fds);
+	 *    - Race between executable end and io group, leading to potentially closed fds _while setting up a new run_, leading to a lot of weird behaviour, such as:
+	 *         - `process not launched exception`,
+	 *         - assertion failures in the spawn and stream method (same fd added twice in a set, which is not possible),
+	 *         - dead-lock with the io group being waited on forever,
+	 *         - partial data being read, etc.;
+	 *    - Some fds were not closed at the proper location (this was more likely discovered through `testNonStandardFdCapture`, but this one helped too IIRC). */
 	func disabledTestSpawnProcessWithResourceStarvingFirstDraft() throws {
 		/* LINUXASYNC START --------- */
 		let group = DispatchGroup()
@@ -219,8 +211,7 @@ final class ProcessTests : XCTestCase {
 		Task{do{
 			/* LINUXASYNC STOP --------- */
 			
-			/* It has been observed that on my computer, things starts to go bad when
-			 * there are roughly 6500 fds open.
+			/* It has been observed that on my computer, things starts to go bad when there are roughly 6500 fds open.
 			 * So we start by opening 6450 fds. */
 			for _ in 0..<6450 {
 				_ = try FileDescriptor.open("/dev/random", .readOnly)
@@ -263,10 +254,8 @@ final class ProcessTests : XCTestCase {
 		/* We release two fds. */
 		try releaseRandomFd()
 		try releaseRandomFd()
-		/* Using process should still fail, but with error when opening Pipe for
-		 * stderr, not stdout. To verify, the test would have to be modified, but
-		 * the check would not be very stable, so we simply verify we still get a
-		 * failure. */
+		/* Using process should still fail, but with error when opening Pipe for stderr, not stdout.
+		 * To verify, the test would have to be modified, but the check would not be very stable, so we simply verify we still get a failure. */
 		await tempAsyncAssertThrowsError(try await pi.invokeAndGetOutput(encoding: .utf8))
 		
 		/* Now let’s release more fds. Hopefully enough to get enough available. */
@@ -311,12 +300,10 @@ final class ProcessTests : XCTestCase {
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath],                 signalsToForward: []).invokeAndGetRawOutput())
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(spyScriptPath,     usePATH: true,  customPATH: [Self.scriptsPath, Self.filesPath], signalsToForward: []).invokeAndGetRawOutput())
 #if os(Linux)
-			/* On Linux, the error when trying to execute a non-executable file is
-			 * correct (no permission), and so we don’t try next path available. */
+			/* On Linux, the error when trying to execute a non-executable file is correct (no permission), and so we don’t try next path available. */
 			await tempAsyncAssertThrowsError(try await ProcessInvocation(spyScriptPath, usePATH: true,  customPATH: [Self.filesPath, Self.scriptsPath], signalsToForward: []).invokeAndGetRawOutput())
 #else
-			/* On macOS the error is file not found, even if the actual problem is
-			 * a permission thing. */
+			/* On macOS the error is file not found, even if the actual problem is a permission thing. */
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(spyScriptPath,     usePATH: true,  customPATH: [Self.filesPath, Self.scriptsPath], signalsToForward: []).invokeAndGetRawOutput())
 #endif
 			
@@ -360,8 +347,8 @@ final class ProcessTests : XCTestCase {
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(checkCwdAndEnvPath, usePATH: true, customPATH: [""], signalsToForward: []).invokeAndGetRawOutput())
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(checkCwdAndEnvPathInCwd, usePATH: true, customPATH: nil, signalsToForward: []).invokeAndGetRawOutput())
 			await tempAsyncAssertNoThrow(try await ProcessInvocation(checkCwdAndEnvPathInCwd, usePATH: false, signalsToForward: []).invokeAndGetRawOutput())
-			/* Sadly the error we get is a file not found on macOS. On Linux, the
-			 * error makes sense. */
+			/* Sadly the error we get is a file not found on macOS.
+			 * On Linux, the error makes sense. */
 			FileManager.default.changeCurrentDirectoryPath(Self.filesPath.string)
 			await tempAsyncAssertThrowsError(try await ProcessInvocation(notExecutablePathInCwd, usePATH: false, signalsToForward: []).invokeAndGetRawOutput())
 			
@@ -424,9 +411,9 @@ final class ProcessTests : XCTestCase {
 		static var defaultRemovedKeys = Set<String>(
 			arrayLiteral:
 				/* Keys removed by spawn (or something else). */
-				"DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FALLBACK_FRAMEWORK_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
-				/* Keys added by Swift launcher (presumably). */
-				"CPATH", "LIBRARY_PATH", "SDKROOT"
+			"DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FALLBACK_FRAMEWORK_PATH", "DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
+			/* Keys added by Swift launcher (presumably). */
+			"CPATH", "LIBRARY_PATH", "SDKROOT"
 		)
 #else
 		/* Keys added by swift launcher (presumably). */

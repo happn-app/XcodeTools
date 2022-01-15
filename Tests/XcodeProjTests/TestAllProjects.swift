@@ -29,8 +29,7 @@ final class TestAllProjects : XCTestCase {
 			let originalContents = try Data(contentsOf: xcodeproj.pbxprojURL)
 			try XCTAssertEqual(originalContents, Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8))
 			
-			/* Uncomment the line below to write the reserialized files to disk to
-			 * find diffs using git. */
+			/* Uncomment the line below to write the reserialized files to disk to find diffs using git. */
 //			try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
 		}
 	}

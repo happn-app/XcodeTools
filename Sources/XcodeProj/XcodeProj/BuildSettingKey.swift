@@ -3,18 +3,16 @@ import Foundation
 
 
 /**
-Represent a build setting key (string and parameters).
-
-For example, for the following config: “`MY_CONFIG[sdk=*][arch=*]`”, the
-`BuildSettingKey` would be:
-```
-   key = "MY_CONFIG"
-   parameters = [("sdk", "*"), ("arch", "*")]
-```
-
-- Important:
-No validation is done on the parameters, nor the key, but you can validate
-whether the resulting object is valid later. */
+ Represent a build setting key (string and parameters).
+ 
+ For example, for the following config: “`MY_CONFIG[sdk=*][arch=*]`”, the `BuildSettingKey` would be:
+ ```
+ key = "MY_CONFIG"
+ parameters = [("sdk", "*"), ("arch", "*")]
+ ```
+ 
+ - Important:
+ No validation is done on the parameters, nor the key, but you can validate whether the resulting object is valid later. */
 public struct BuildSettingKey : Hashable {
 	
 	public struct BuildSettingKeyParam : Hashable {
@@ -85,19 +83,17 @@ public struct BuildSettingKey : Hashable {
 		}
 		
 		for parameter in parameters {
-			/* An opening bracket and non-alnum chars seems to be valid at compile
-			 * time but not in the GUI (Xcode 12.0.1 (12A7300)).
-			 * We’ll validate only alphanums in the keys. In theory the parameter
-			 * keys should only be known keys from Xcode anyway. */
+			/* An opening bracket and non-alnum chars seems to be valid at compile time but not in the GUI (Xcode 12.0.1 (12A7300)).
+			 * We’ll validate only alphanums in the keys.
+			 * In theory the parameter keys should only be known keys from Xcode anyway. */
 			guard !parameter.key.isEmpty && parameter.key.rangeOfCharacter(from: CharacterSet.asciiAlphanum.inverted, options: .literal) == nil else {
 				return false
 			}
 			/* An empty value seems to parse correctly, but the meaning is unclear.
-			 * We’ll only validate alphanums, stars, commas and equal signs. We
-			 * allow the commas and equal signs not to fail validation of xcconfig
-			 * files written w/ the comma paramter style, that were parsed w/o the
-			 * comma allowed.
-			 * Here also, the values should only be known values from Xcode. */
+			 * We’ll only validate alphanums, stars, commas and equal signs.
+			 * We allow the commas and equal signs not to fail validation of xcconfig files written w/ the comma paramter style,
+			 * that were parsed w/o the comma allowed.
+			 * Here also, the values should only be known values from Xcode. */
 			guard parameter.value.rangeOfCharacter(from: CharacterSet.asciiAlphanum.union(CharacterSet(charactersIn: "*,=")).inverted, options: .literal) == nil else {
 				return false
 			}
@@ -125,7 +121,7 @@ public struct BuildSettingKey : Hashable {
 		
 		return key + paramString + garbage
 	}
-		
+	
 	public func hash(into hasher: inout Hasher) {
 		hasher.combine(key)
 		hasher.combine(parameters)
@@ -139,41 +135,39 @@ public struct BuildSettingKey : Hashable {
 	}
 	
 	/**
-	Parses the parameter of a setting.
-	
-	Expects a scanner whose location is at the beginning of the parameters
-	(open bracket). Example:
-	```
-	MY_BUILD_SETTING[skd=*]
-	                ^ scanner location
-	```
-	
-	At the end of the function, the scanner’s location will be at the end of the
-	parameters (just after the closing bracket). Example:
-	```
-	MY_BUILD_SETTING[skd=*]
-	                       ^ scanner location
-	```
-	
-	In case of a parsing error, the scanner’s location will be put to the last
-	successful parse location, and all successfully parsed parameters will be
-	returned. Examples:
-	```
-	MY_BUILD_SETTING[skd=*][this_is_junk
-	                       ^ scanner location
-	   -> Returned parameters: [("sdk", "*")]
-	MY_BUILD_SETTING[skd=*][arch=*,this_is_junk
-	                       ^ scanner location
-	   -> Returned parameters: [("sdk", "*")]
-	```
-	
-	- parameter scanner: A scanner whose location is at the beginning of the
-	parameters.
-	- parameter allowCommaSeparator:
-	https://pewpewthespells.com/blog/xcconfig_guide.html says the settings
-	parameters can be separated by a comma, like so: `PARAMETER[sdk=*,arch=*]`,
-	however my tests told me it does not work! (12.0 (12A7209))
-	You can reactivate parsing w/ the comma for tests if needed w/ this param. */
+	 Parses the parameter of a setting.
+	 
+	 Expects a scanner whose location is at the beginning of the parameters (open bracket).
+	 Example:
+	 ```
+	 MY_BUILD_SETTING[skd=*]
+	                 ^ scanner location
+	 ```
+	 
+	 At the end of the function, the scanner’s location will be at the end of the parameters (just after the closing bracket).
+	 Example:
+	 ```
+	 MY_BUILD_SETTING[skd=*]
+	                        ^ scanner location
+	 ```
+	 
+	 In case of a parsing error, the scanner’s location will be put to the last successful parse location,
+	 and all successfully parsed parameters will be returned.
+	 Examples:
+	 ```
+	 MY_BUILD_SETTING[skd=*][this_is_junk
+	                        ^ scanner location
+	    -> Returned parameters: [("sdk", "*")]
+	 MY_BUILD_SETTING[skd=*][arch=*,this_is_junk
+	                        ^ scanner location
+	    -> Returned parameters: [("sdk", "*")]
+	 ```
+	 
+	 - parameter scanner: A scanner whose location is at the beginning of the parameters.
+	 - parameter allowCommaSeparator:
+	 https://pewpewthespells.com/blog/xcconfig_guide.html says the settings parameters can be separated by a comma, like so: `PARAMETER[sdk=*,arch=*]`.
+	 My tests told me it does not work! (12.0 (12A7209))
+	 You can reactivate parsing w/ the comma for tests if needed w/ this param. */
 	static func parseSettingParams(scanner: Scanner, allowCommaSeparator: Bool) -> [BuildSettingKeyParam] {
 		var first = true
 		var success = true
@@ -196,10 +190,9 @@ public struct BuildSettingKey : Hashable {
 				pendingParameters.removeAll()
 				success = true
 			} else {
-				/* We are either on the comma separator (if allowed) or at the end
-				 * of the string. If at the end of the string, this is an error,
-				 * which will be caugth when we exit the loop and success is not
-				 * true. If we’re on the comma separator, we continue the parsing. */
+				/* We are either on the comma separator (if allowed) or at the end of the string.
+				 * If at the end of the string, this is an error, which will be caugth when we exit the loop and success is not true.
+				 * If we’re on the comma separator, we continue the parsing. */
 				pendingParameters.append(BuildSettingKeyParam(key: variantName, value: variantValue, nextParamSeparatedByComma: true))
 				success = false
 			}

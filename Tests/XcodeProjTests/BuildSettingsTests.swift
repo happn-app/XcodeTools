@@ -25,11 +25,9 @@ final class BuildSettingsTests : XCTestCase {
 	
 	func testParameterParsingFailWithoutComma() throws {
 		let expected = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*]": ""], allowCommaSeparatorForParameters: false)
-		/* We stop the parsing after the closing bracket because we consider the
-		 * partially formed param is fully invalid, even though we parse allowing
-		 * the use of comma to separate parameters.
-		 * This is debatable; we could say we parse as much as we can, but that
-		 * not what we decided. */
+		/* We stop the parsing after the closing bracket because we consider the partially formed param is fully invalid,
+		 * even though we parse allowing the use of comma to separate parameters.
+		 * This is debatable; we could say we parse as much as we can, but that not what we decided. */
 		let actual = BuildSettings(rawBuildSettings: ["MY_BUILD_SETTING[skd=*][arch=*,this_is_junk": ""], allowCommaSeparatorForParameters: false)
 		XCTAssertEqual(actual.settings.first?.value.key.garbage, "[arch=*,this_is_junk")
 		compareBuildSettings(expected, actual)

@@ -19,7 +19,7 @@ public enum XcodeJsonOutputError : Error {
 	case missingProperty(_ propertyName: String, objectDictionary: [String: Any?])
 	case propertyValueIsNotDictionary(propertyName: String, objectDictionary: [String: Any?])
 	
-	/** The _value property value is not of the expected type. */
+	/** The `_value` property value is not of the expected type. */
 	case invalidValueTypeOrMissingValue(parentPropertyName: String?, expectedType: String, value: Any?)
 	
 	case unknownObjectType(String, objectDictionary: [String: Any?])

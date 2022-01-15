@@ -9,7 +9,7 @@ struct ResultIssueSummaries : _Object {
 	var warningSummaries: [IssueSummary]
 	var errorSummaries: [IssueSummary]
 	var testFailureSummaries: [TestFailureIssueSummary]
-
+	
 	init(dictionary originalDictionary: [String : Any?], parentPropertyName: String?) throws {
 		var dictionary = originalDictionary
 		try Self.consumeAndValidateTypeFor(dictionary: &dictionary, parentPropertyName: parentPropertyName)

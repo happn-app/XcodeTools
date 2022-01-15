@@ -55,8 +55,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			for _ in 0..<nFds {
 				let (receivedFd, destinationFd) = try receiveFd(from: FileDescriptor.standardInput.rawValue)
 				Xct.logger.trace("Received fd \(receivedFd), with expected destination fd \(destinationFd))")
-				/* As we have not closed any received fd yet, it should not be possible
-				 * to received the same fd twice. */
+				/* As we have not closed any received fd yet, it should not be possible to received the same fd twice. */
 				assert(receivedFdToDestinationFd[receivedFd] == nil)
 				
 				if let oldReceivedFd = destinationFdToReceivedFd[destinationFd] {
@@ -66,8 +65,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 					try FileDescriptor(rawValue: oldReceivedFd).close()
 					
 					/* Then remove it from the receivedFdToDestinationFd dictionary.
-					 * No need to remove from destinationFdToReceivedFd (will be done
-					 * just after this if). */
+					 * No need to remove from destinationFdToReceivedFd (will be done just after this if). */
 					assert(receivedFdToDestinationFd[oldReceivedFd] == destinationFd)
 					receivedFdToDestinationFd.removeValue(forKey: oldReceivedFd)
 				}
@@ -78,8 +76,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			Xct.logger.trace("Received all fds")
 		}
 		
-		/* We may modify destinationFdToReceivedFd values, so no (key, value)
-		 * iteration type. */
+		/* We may modify destinationFdToReceivedFd values, so no (key, value) iteration type. */
 		for destinationFd in destinationFdToReceivedFd.keys {
 			let receivedFd = destinationFdToReceivedFd[destinationFd]!
 			defer {
@@ -91,8 +88,7 @@ struct InternalFdGetLauncher : ParsableCommand {
 			guard destinationFd != receivedFd else {continue}
 			
 			if let destinationFdToUpdate = receivedFdToDestinationFd[destinationFd] {
-				/* If the current destination fd is in the received fds, we must dup
-				 * the destination fd. */
+				/* If the current destination fd is in the received fds, we must dup the destination fd. */
 				let newReceivedFd = dup(destinationFd)
 				guard newReceivedFd != -1 else {
 					/* TODO: Use an actual error */
@@ -119,15 +115,14 @@ struct InternalFdGetLauncher : ParsableCommand {
 			let ret: Int32
 			if usePath {
 #if !os(Linux)
-				/* The P implementation of exec searches for the binary path in the
-				 * given search path.
-				 * The v means we pass an array to exec (as opposed to the variadic
-				 * exec variant, which is not available in Swift anyway). */
+				/* The P implementation of exec searches for the binary path in the given search path.
+				 * The v means we pass an array to exec (as opposed to the variadic exec variant, which is not available in Swift anyway). */
 				ret = execvP(toolName, path ?? _PATH_DEFPATH, cargs)
 #else
-				/* execvP does not exist on Linux, so we simulate it by copying
-				 * current env in a new buffer, modifying PATH, and using execvpe
-				 * which allows both passing an environment and using PATH. */
+				/* execvP does not exist on Linux, so we simulate it by
+				 *  copying current env in a new buffer,
+				 *  modifying PATH, and
+				 *  using execvpe which allows both passing an environment and using PATH. */
 				
 				/* First we count the number of env vars */
 				var countEnv = 0
@@ -205,18 +200,14 @@ struct InternalFdGetLauncher : ParsableCommand {
 		
 		let receivedBytes = recvmsg(socket, &msg, 0)
 		guard receivedBytes >= 0 else {
-			/* The socket is not a TCP socket, so we cannot know whether the
-			 * connexion was closed before reading it.
-			 * We used to check the error after reading and ignore connection reset
-			 * errors. On Linux however, recvmsg simply blocks when there are no
-			 * more fds to read.
-			 * So now we send the number of fds to expect beforehand, and we should
-			 * always be able to read all the fds.
+			/* The socket is not a TCP socket, so we cannot know whether the connexion was closed before reading it.
+			 * We used to check the error after reading and ignore connection reset errors.
+			 * On Linux however, recvmsg simply blocks when there are no more fds to read.
+			 * So now we send the number of fds to expect beforehand, and we should always be able to read all the fds.
 			 * For posterity, the test was this:
 			 *    let ok = (receivedBytes == 0 || errno == ECONNRESET)
 			 * And we returned nil if ok was true. */
-			/* TODO: Is it ok to log in this context? I’d say probably yeah, but
-			 * too tired to validate now. */
+			/* TODO: Is it ok to log in this context? I’d say probably yeah, but too tired to validate now. */
 			Xct.logger.error("cannot read from socket: \(Errno(rawValue: errno))")
 			/* TODO: Use an actual error */throw ExitCode(rawValue: 1)
 		}

@@ -59,7 +59,7 @@ public struct DownloadFilePhase : BuildPhase {
 		
 		self.init(downloadedURL: url, destination: destinationFolder.appending(url.lastPathComponent), expectedHash: expectedHash)
 	}
-		
+	
 	public init(downloadedURL: URL, destination: FilePath, expectedHash: (value: String, hasher: AnyHasher)?) {
 		self.downloadedURL = downloadedURL
 		self.downloadDestination = destination
@@ -86,10 +86,9 @@ public struct DownloadFilePhase : BuildPhase {
 		guard let httpURLResponse = urlResponse as? HTTPURLResponse, 200..<300 ~= httpURLResponse.statusCode else {
 			throw Err.invalidURLResponse(urlResponse)
 		}
-		/* At some point in the future, FilePath(tmpFileURL) will be possible (it
-		 * is already possible when importing System instead of SystemPackage
-		 * actually). This init might return nil, so the tmpFilePath variable
-		 * would have to be set in the guard above. */
+		/* At some point in the future, FilePath(tmpFileURL) will be possible
+		 * (it is already possible when importing System instead of SystemPackage actually).
+		 * This init might return nil, so the tmpFilePath variable would have to be set in the guard above. */
 		assert(tmpFileURL.isFileURL)
 		let tmpFilePath = FilePath(tmpFileURL.path)
 		if let expectedHash = expectedHash {

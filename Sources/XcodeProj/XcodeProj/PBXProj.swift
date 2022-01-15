@@ -3,8 +3,7 @@ import Foundation
 
 
 
-/** Represents a parsed `pbxproj` file, which is the main file of an xcodeproj
- bundle. */
+/** Represents a parsed `pbxproj` file, which is the main file of an xcodeproj bundle. */
 public struct PBXProj {
 	
 	public let rawDecoded: [String: Any]
@@ -17,14 +16,14 @@ public struct PBXProj {
 	/** The ID of the root object. */
 	public let rootObjectID: String
 	
-	/** The pbxproj file can contain a “classes” property (it usually does),
-	which is usually empty (I have never seen a file where it’s not). We keep the
-	information whether the property was present to be able to rewrite the
-	pbxproj. */
+	/**
+	 The pbxproj file can contain a “classes” property (it usually does), which is usually empty (I have never seen a file where it’s not).
+	 
+	 We keep the information whether the property was present to be able to rewrite the pbxproj. */
 	public let hasClassesProperty: Bool
 	
 	/**
-	All the objects in the project, keyed by their IDs. */
+	 All the objects in the project, keyed by their IDs. */
 	public let rawObjects: [String: [String: Any]]
 	
 	public let rootObject: PBXProject
@@ -93,9 +92,8 @@ public struct PBXProj {
 	}
 	
 	public func stringSerialization(projectName: String) throws -> String {
-		/* It is a programmer error to try and serialize a PBXProj whose root
-		 * object has been deleted (nil managed object context), hence the forced
-		 * unwrap. */
+		/* It is a programmer error to try and serialize a PBXProj whose root object has been deleted (nil managed object context),
+		 * hence the forced unwrap. */
 		let context = rootObject.managedObjectContext!
 		
 		var ret = """
