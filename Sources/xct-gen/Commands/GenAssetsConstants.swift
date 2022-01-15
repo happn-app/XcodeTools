@@ -16,7 +16,7 @@ struct GenAssetsConstants : ParsableCommand {
 	)
 	
 	@OptionGroup
-	var xctVersionsOptions: XctGen.Options
+	var xctGenOptions: XctGen.Options
 	
 	@Flag
 	var targetIsModulePath: Bool = false
@@ -107,7 +107,7 @@ struct GenAssetsConstants : ParsableCommand {
 	
 	private func iterateTargetsFiles(destFilesForTarget: (String) -> [String]?, fillColorNamesAssets: (FilePath, inout [String: String]) throws -> Void, writeFile: ([String: String], URL) throws -> Void) throws {
 		if !targetIsModulePath {
-			let xcodeproj = try XcodeProj(path: xctVersionsOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
+			let xcodeproj = try XcodeProj(path: xctGenOptions.pathToXcodeproj, autodetectInFolderAtPath: ".")
 			try xcodeproj.managedObjectContext.performAndWait{
 				for target in try xcodeproj.pbxproj.rootObject.getTargets() {
 					guard let destinationFiles = try destFilesForTarget(target.getName()) else {
