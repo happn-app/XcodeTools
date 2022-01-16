@@ -31,6 +31,7 @@ public enum Project {
 				try proj.iterateSPMPackagesInReferencedFile{ spm in
 					res.append(contentsOf: spm.targets.map{ .spmTarget($0) })
 				}
+#warning("TODO: Embedded xcodeprojs")
 				return res
 				
 			case .spm(let spm):
