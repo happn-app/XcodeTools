@@ -15,6 +15,19 @@ extension XcodeProj {
 		try managedObjectContext.performAndWait{
 			for target in try pbxproj.rootObject.getTargets().filter({ try $0.getName() == targetName }) {
 				for buildPhase in try target.getBuildPhases().compactMap({ $0 as? PBXSourcesBuildPhase }) {
+					/* TODO: The method below will also iterate on children of groups if any, idt it’s what we want/what Xcode does…
+					 *       In theory IIUC when the model is correct there shouldn’t be any group elements in the files of a build phase, but idk. */
+					try unsafeIterateFileElementsForFiles(fileElements: buildPhase.getFiles().compactMap{ $0.fileRef }, handler)
+				}
+			}
+		}
+	}
+	
+	public func iterateResources(of targetName: String, _ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+		try managedObjectContext.performAndWait{
+			for target in try pbxproj.rootObject.getTargets().filter({ try $0.getName() == targetName }) {
+				for buildPhase in try target.getBuildPhases().compactMap({ $0 as? PBXResourcesBuildPhase }) {
+					/* TODO: Same as in iterateSources. */
 					try unsafeIterateFileElementsForFiles(fileElements: buildPhase.getFiles().compactMap{ $0.fileRef }, handler)
 				}
 			}
