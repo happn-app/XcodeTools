@@ -15,7 +15,7 @@ public struct SPMProj {
 	public let projectManifestURL: URL
 	
 	public var targets: [SPMTarget] {
-		packageGraph.reachableTargets.map(SPMTarget.init)
+		packageGraph.reachableTargets.filter(packageGraph.isInRootPackages).map(SPMTarget.init)
 	}
 	
 	public init(path: String? = nil) throws {
