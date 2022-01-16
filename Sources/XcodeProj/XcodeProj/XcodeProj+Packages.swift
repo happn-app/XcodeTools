@@ -34,7 +34,8 @@ extension XcodeProj {
 	internal func unsafeIterateSPMPackagesInReferencedFile(targetNameFilter: Set<String> = [], _ handler: (_ proj: SPMProj) -> Void) throws {
 		try unsafeIterateReferencedFiles{ url, type in
 			guard type == "wrapper" || type == "folder" else {return}
-			guard let spmProj = try? SPMProj(url: url) else {
+			let workspaceRoot = FileManager.default.temporaryDirectory.appendingPathComponent(xcodeprojURL.deletingPathExtension().lastPathComponent).appendingPathComponent(url.lastPathComponent)
+			guard let spmProj = try? SPMProj(url: url, workspaceRoot: workspaceRoot) else {
 				if type == "wrapper" {
 					/* We only log for the wrapper type; it is normal for folders not to be SPM projects, but some are anyway (and Xcode forgets to update their last know type). */
 					Conf.logger?.info("Found invalid SPM project at path \(url.path) in project at path \(xcodeprojURL.path)")

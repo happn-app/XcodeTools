@@ -22,12 +22,12 @@ public struct SPMProj {
 		try self.init(url: path.flatMap{ URL(fileURLWithPath: $0) })
 	}
 	
-	public init(url: URL? = nil) throws {
+	public init(url: URL? = nil, workspaceRoot: URL? = nil) throws {
 		self.rootURL = url ?? URL(fileURLWithPath: ".")
 		self.projectManifestURL = rootURL.appendingPathComponent("Package.swift")
 		
 		let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-		let workspace = try Workspace(forRootPackage: AbsolutePath(tempDir.path))
+		let workspace = try Workspace(forRootPackage: AbsolutePath((workspaceRoot ?? tempDir).path))
 		
 		let observability = ObservabilitySystem{ scope, diag in
 			Conf.logger?.debug("Message from SPM: \(diag)")
