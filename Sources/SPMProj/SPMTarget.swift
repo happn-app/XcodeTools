@@ -26,6 +26,10 @@ public struct SPMTarget {
 		resolvedTarget.underlyingTarget.resources.map(\.path.asURL)
 	}
 	
+	public var others: [URL] {
+		resolvedTarget.underlyingTarget.others.map(\.asURL)
+	}
+	
 	internal init(resolvedTarget: ResolvedTarget) {
 		self.resolvedTarget = resolvedTarget
 	}

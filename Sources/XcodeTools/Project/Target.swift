@@ -81,7 +81,12 @@ public enum Target {
 				}
 				
 			case let .spmTarget(spmTarget):
-				return spmTarget.resources
+				/* TODO: Decide what we do about the “others” part.
+				 *       Xcode treats some files as resources (or sources, idk), but SPM do not know about those (xcassets, storyboards, etc.)
+				 *       For libSPM they will appear in others if not explicitly declared in resources!
+				 *       For now we return everything in resources _and_ others for SPM project; we have to decide what to do next.
+				 *       Xcode and most likely SPM will evolve (system of plugins is coming), so I think things will change anyway. */
+				return spmTarget.resources + spmTarget.others
 		}
 	}
 	
