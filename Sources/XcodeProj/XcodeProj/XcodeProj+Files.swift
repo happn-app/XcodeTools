@@ -5,13 +5,13 @@ import Foundation
 
 extension XcodeProj {
 	
-	public func iterateReferencedFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	public func iterateReferencedFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) throws -> Void) throws {
 		try managedObjectContext.performAndWait{
 			try unsafeIterateReferencedFiles(handler)
 		}
 	}
 	
-	public func iterateSources(of targetName: String, _ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	public func iterateSources(of targetName: String, _ handler: (_ fileURL: URL, _ knownFileType: String?) throws -> Void) throws {
 		try managedObjectContext.performAndWait{
 			for target in try pbxproj.rootObject.getTargets().filter({ try $0.getName() == targetName }) {
 				for buildPhase in try target.getBuildPhases().compactMap({ $0 as? PBXSourcesBuildPhase }) {
@@ -23,7 +23,7 @@ extension XcodeProj {
 		}
 	}
 	
-	public func iterateResources(of targetName: String, _ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	public func iterateResources(of targetName: String, _ handler: (_ fileURL: URL, _ knownFileType: String?) throws -> Void) throws {
 		try managedObjectContext.performAndWait{
 			for target in try pbxproj.rootObject.getTargets().filter({ try $0.getName() == targetName }) {
 				for buildPhase in try target.getBuildPhases().compactMap({ $0 as? PBXResourcesBuildPhase }) {
@@ -34,16 +34,16 @@ extension XcodeProj {
 		}
 	}
 	
-	internal func unsafeIterateReferencedFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	internal func unsafeIterateReferencedFiles(_ handler: (_ fileURL: URL, _ knownFileType: String?) throws -> Void) throws {
 		try unsafeIterateFileElementsForFiles(fileElements: pbxproj.rootObject.getMainGroup().getChildren(), handler)
 	}
 	
-	private func unsafeIterateFileElementsForFiles(fileElements: [PBXFileElement], _ handler: (_ fileURL: URL, _ knownFileType: String?) -> Void) throws {
+	private func unsafeIterateFileElementsForFiles(fileElements: [PBXFileElement], _ handler: (_ fileURL: URL, _ knownFileType: String?) throws -> Void) throws {
 		for fileElement in fileElements {
 			switch fileElement {
 				case let fileRef as PBXFileReference:
 					let url = try fileRef.resolvedPathAsURL(xcodeprojURL: xcodeprojURL, variables: BuildSettings.standardDefaultSettingsForResolvingPathsAsDictionary(xcodprojURL: xcodeprojURL))
-					handler(url, fileRef.lastKnownFileType)
+					try handler(url, fileRef.lastKnownFileType)
 					
 				case let group as PBXGroup:
 					try unsafeIterateFileElementsForFiles(fileElements: group.getChildren(), handler)
