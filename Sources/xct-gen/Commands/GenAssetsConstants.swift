@@ -25,8 +25,6 @@ struct GenAssetsConstants : ParsableCommand {
 	var targets = [String]()
 	
 	func run() throws {
-		let colorsetIncludeRegex = try! NSRegularExpression(pattern: #".*\.colorset$"#, options: [.caseInsensitive])
-		
 		let project = try Project(xcodeprojPath: xctGenOptions.pathToXcodeproj)
 		for target in try project.getTargets() {
 			let targetName = try target.getName()
@@ -45,40 +43,18 @@ struct GenAssetsConstants : ParsableCommand {
 			/* Get the color names. */
 			var colorNames = [String: String]()
 			for resourceURL in try target.getResources() {
-				guard resourceURL.pathExtension == "xcassets", let assetsPath = FilePath(resourceURL) else {
+				guard let xcassets = XcodeAssets(url: resourceURL) else {
 					continue
 				}
-				
-				try FileManager.default.iterateFiles(in: assetsPath, include: [colorsetIncludeRegex], handler: { _, relativePath, isDir in
-					guard let colorName = relativePath.stem else {
-						return true
-					}
-					/* Note: We’re aggressive in name normalization. Swift would accept accents, emoji and co. */
-					guard var swiftColorName = colorName
-						.applyingTransform(.stripCombiningMarks, reverse: false)?
-						.applyingTransform(.stripDiacritics, reverse: false)?
-						.applyingTransform(.toLatin, reverse: false)
-					else {
-						throw XctGenError(message: "Cannot convert color name \(colorName) to Swift-safe var name.")
-					}
-					
-					swiftColorName.removeAll(where: { !$0.isASCII || (!$0.isLetter && !$0.isNumber) })
-					guard let notNumberIdx = swiftColorName.firstIndex(where: { !$0.isNumber }) else {
-						throw XctGenError(message: "Normalized color name \(colorName) only contains numbers or is empty. Cannot create Swift-safe var name.")
-					}
-					swiftColorName.removeSubrange(swiftColorName.startIndex..<notNumberIdx)
-					if let f = swiftColorName.first, f.isUppercase {
-						swiftColorName = swiftColorName.replacingCharacters(
-							in: swiftColorName.startIndex..<swiftColorName.index(after: swiftColorName.startIndex),
-							with: f.lowercased()
-						)
+				try xcassets.iterateColorSets{ colorset in
+					guard let swiftColorName = XcodeUtils.stringToSafeSwiftVarName(colorset.colorName) else {
+						throw XctGenError(message: "Cannot convert color name \(colorset.colorName) to Swift-safe var name.")
 					}
 					guard colorNames[swiftColorName] == nil else {
 						throw XctGenError(message: "Got normalized color name \(swiftColorName) twice!")
 					}
-					colorNames[swiftColorName] = colorName
-					return true
-				})
+					colorNames[swiftColorName] = colorset.colorName
+				}
 			}
 			
 			/* Write or remove assets file. */
