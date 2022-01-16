@@ -1,7 +1,11 @@
 #!/usr/bin/env swift
 
-/* Usage: Replace calling `swift` w/ this script. Example:
- *    ./Scripts/xcswift.swift build -c release */
+/* Usage 1: Replace calling `swift` w/ this script.
+ * Example:
+ *    ./Scripts/xcswift.swift build -c release
+ *
+ * Usage 2: Just prepare the repo for being tagged: process the model and do nothing else.
+ *    ./Scripts/xcswift.swift --- */
 
 import Foundation
 
@@ -159,9 +163,13 @@ do {
 	/* Process the models (only one model for now) */
 	try processModel(xcdatamodeldURL: URL(fileURLWithPath: "./Sources/XcodeProj/PBXModel.xcdatamodeld"), moduleName: "XcodeProj", tokenInPackageFile: "__COREDATA_TOKEN_XcodeProj_PBXModel")
 	
+	guard CommandLine.arguments.count != 2 || CommandLine.arguments[1] != "---" else {
+		/* We do nothing, we just want the model processed. */
+		exit(0)
+	}
+	
 	/* Run swift */
 	try shell("swift", Array(CommandLine.arguments.dropFirst()))
-	
 	waitForProcessesAndCleanup(fromSignal: false)
 } catch {
 	_ = try? FileHandle.standardError.write(contentsOf: Data("Error: \(error)\n".utf8))
