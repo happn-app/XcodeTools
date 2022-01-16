@@ -29,9 +29,13 @@ struct GenAssetsConstants : ParsableCommand {
 		
 		let project = try Project(xcodeprojPath: xctGenOptions.pathToXcodeproj)
 		for target in try project.getTargets() {
-			let isSPMTarget = target.isSPMTarget
 			let targetName = try target.getName()
+			let isSPMTarget = (target.spmTarget != nil)
 			guard targets.isEmpty || targets.contains(targetName) else {
+				continue
+			}
+			guard !(target.spmTarget?.sourcesContainsObjCFiles ?? false) else {
+//				Conf.logger?.info("Skipped target \(targetName) which contains ObjC.")
 				continue
 			}
 			
@@ -75,8 +79,13 @@ struct GenAssetsConstants : ParsableCommand {
 					colorNames[swiftColorName] = colorName
 					return true
 				})
-				
-				/* Write colors file. */
+			}
+			
+			/* Write or remove assets file. */
+			let dest = URL(fileURLWithPath: relativeDest, relativeTo: target.getSourcesRoot())
+			if colorNames.isEmpty {
+				_ = try? FileManager.default.removeItem(at: dest)
+			} else {
 				var generatedFile = """
 					import Foundation
 					import UIKit
@@ -104,7 +113,6 @@ struct GenAssetsConstants : ParsableCommand {
 					}
 					
 					"""
-				let dest = URL(fileURLWithPath: relativeDest, relativeTo: target.getSourcesRoot())
 				try FileManager.default.createDirectory(at: dest.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
 				try Data(generatedFile.utf8).write(to: dest)
 			}

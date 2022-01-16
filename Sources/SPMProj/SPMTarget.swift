@@ -14,6 +14,10 @@ public struct SPMTarget {
 		resolvedTarget.sources.root.asURL
 	}
 	
+	public var sourcesContainsObjCFiles: Bool {
+		resolvedTarget.sources.containsObjcFiles
+	}
+	
 	public var sources: [URL] {
 		resolvedTarget.sources.paths.map(\.asURL)
 	}

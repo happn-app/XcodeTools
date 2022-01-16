@@ -11,10 +11,10 @@ public enum Target {
 	case xcodeTarget(targetID: NSManagedObjectID, context: NSManagedObjectContext, xcodeprojURL: URL)
 	case spmTarget(SPMTarget)
 	
-	public var isSPMTarget: Bool {
+	public var spmTarget: SPMTarget? {
 		switch self {
-			case .xcodeTarget: return false
-			case .spmTarget:   return true
+			case .xcodeTarget:      return nil
+			case .spmTarget(let t): return t
 		}
 	}
 	
