@@ -27,6 +27,7 @@ struct SetVersion {
 		
 		var xcconfigsToRewrite = [XCConfigRef]()
 		try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: generalOptions){ target, targetName, configuration, configurationName, combinedBuildSettings in
+			let generatesInfoPlistFile = (combinedBuildSettings["GENERATE_INFOPLIST_FILE"] == "YES")
 			if let plistURL = combinedBuildSettings.infoPlistURL(xcodeprojURL: xcodeprojURL) {
 				let plistData = try Data(contentsOf: plistURL)
 				let deserializedPlist = try PropertyListSerialization.propertyList(from: plistData, options: [], format: nil)
@@ -34,16 +35,31 @@ struct SetVersion {
 					throw XctVersionsError(message: "Cannot deserialize plist file at URL \(plistURL) as a [String: Any].")
 				}
 				
-				if deserializedPlistObject[plistKey] as? String != "$(\(buildSettingKey))" {
-					switch setVersionOptions.invalidSetupBehaviour {
-						case .fail:
-							throw XctVersionsError(message: "Invalid \(plistKey) value in plist at path \(plistURL.path). Expected “$(\(buildSettingKey))”.")
-							
-						case .fix:
-							var deserializedPlistObject = deserializedPlistObject
-							deserializedPlistObject[plistKey] = "$(\(buildSettingKey))"
-							let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
-							try reserializedData.write(to: plistURL)
+				if !generatesInfoPlistFile {
+					if deserializedPlistObject[plistKey] as? String != "$(\(buildSettingKey))" {
+						switch setVersionOptions.invalidSetupBehaviour {
+							case .fail:
+								throw XctVersionsError(message: "Invalid \(plistKey) value in plist at path \(plistURL.path). Expected “$(\(buildSettingKey))”.")
+								
+							case .fix:
+								var deserializedPlistObject = deserializedPlistObject
+								deserializedPlistObject[plistKey] = "$(\(buildSettingKey))"
+								let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
+								try reserializedData.write(to: plistURL)
+						}
+					}
+				} else {
+					if deserializedPlistObject[plistKey] as? String != nil {
+						switch setVersionOptions.invalidSetupBehaviour {
+							case .fail:
+								throw XctVersionsError(message: "Invalid \(plistKey) value in plist at path \(plistURL.path). Expected key to be undefined.")
+								
+							case .fix:
+								var deserializedPlistObject = deserializedPlistObject
+								deserializedPlistObject.removeValue(forKey: plistKey)
+								let reserializedData = try PropertyListSerialization.data(fromPropertyList: deserializedPlistObject, format: .xml, options: 0)
+								try reserializedData.write(to: plistURL)
+						}
 					}
 				}
 			}

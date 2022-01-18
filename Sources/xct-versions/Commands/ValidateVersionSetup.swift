@@ -25,18 +25,27 @@ struct ValidateVersionSetup : ParsableCommand {
 		}.flatMap{ $0 }
 		
 		let targetMessages = try xcodeproj.iterateCombinedBuildSettingsOfTargets(matchingOptions: xctVersionsOptions){ target, targetName, configuration, configurationName, combinedBuildSettings -> [Output.DiagnosticMessage] in
+			let generatesInfoPlistFile = (combinedBuildSettings["GENERATE_INFOPLIST_FILE"] == "YES")
 			let plistMessages: [Output.DiagnosticMessage?]
 			if let plist = try combinedBuildSettings.infoPlistRaw(xcodeprojURL: xcodeprojURL) {
 				let bundleVersion = plist["CFBundleVersion"] as? String
-				let bundleVersionMessage = Output.DiagnosticMessage(messageType: .invalidCFBundleVersionInPlist, value: bundleVersion, targetName: targetName, configurationName: configurationName)
-				
 				let shortVersionString = plist["CFBundleShortVersionString"] as? String
-				let shortVersionStringMessage = Output.DiagnosticMessage(messageType: .invalidCFBundleShortVersionStringInPlist, value: shortVersionString, targetName: targetName, configurationName: configurationName)
 				
-				plistMessages = [
-					(bundleVersion      != "$(CURRENT_PROJECT_VERSION)" ? bundleVersionMessage      : nil),
-					(shortVersionString != "$(MARKETING_VERSION)"       ? shortVersionStringMessage : nil)
-				]
+				if !generatesInfoPlistFile {
+					let bundleVersionMessage = Output.DiagnosticMessage(messageType: .invalidCFBundleVersionInPlist, value: bundleVersion, targetName: targetName, configurationName: configurationName)
+					let shortVersionStringMessage = Output.DiagnosticMessage(messageType: .invalidCFBundleShortVersionStringInPlist, value: shortVersionString, targetName: targetName, configurationName: configurationName)
+					plistMessages = [
+						(bundleVersion      != "$(CURRENT_PROJECT_VERSION)" ? bundleVersionMessage      : nil),
+						(shortVersionString != "$(MARKETING_VERSION)"       ? shortVersionStringMessage : nil)
+					]
+				} else {
+					let bundleVersionMessage = Output.DiagnosticMessage(messageType: .cfBundleVersionInPlistButGeneratesPlist, value: bundleVersion, targetName: targetName, configurationName: configurationName)
+					let shortVersionStringMessage = Output.DiagnosticMessage(messageType: .cfBundleShortVersionStringInPlistButGeneratesPlist, value: shortVersionString, targetName: targetName, configurationName: configurationName)
+					plistMessages = [
+						(bundleVersion      != nil ? bundleVersionMessage      : nil),
+						(shortVersionString != nil ? shortVersionStringMessage : nil)
+					]
+				}
 			} else {
 				plistMessages = []
 			}
@@ -112,6 +121,9 @@ struct ValidateVersionSetup : ParsableCommand {
 				case invalidCFBundleVersionInPlist = "invalid-CFBundleVersion-in-plist"
 				case invalidCFBundleShortVersionStringInPlist = "invalid-CFBundleShortVersionString-in-plist"
 				
+				case cfBundleVersionInPlistButGeneratesPlist = "CFBundleVersion-in-plist-but-Xcode-generates-the-plist"
+				case cfBundleShortVersionStringInPlistButGeneratesPlist = "CFBundleShortVersionString-in-plist-but-Xcode-generates-the-plist"
+				
 				case buildVersionNotSet = "build-version-not-set-in-target"
 				case marketingVersionNotSet = "marketing-version-not-set-in-target"
 				
@@ -178,9 +190,9 @@ struct ValidateVersionSetup : ParsableCommand {
 							ofType: c,
 							checkDescription: "CFBundleVersion value check (plist)",
 							failureExplanation: """
-							The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
-							Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
-							""",
+								The CFBundleVersion value should be set to “$(CURRENT_PROJECT_VERSION)”.
+								Of course, the actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+								""",
 							failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
 							previousWasSuccess: &previousWasSuccess,
 							isLast: isLast
@@ -191,9 +203,35 @@ struct ValidateVersionSetup : ParsableCommand {
 							ofType: c,
 							checkDescription: "CFBundleShortVersionString value check (plist)",
 							failureExplanation: """
-							The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
-							Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
-							""",
+								The CFBundleShortVersionString should be set to “$(MARKETING_VERSION)”.
+								Of course, the actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+								""",
+							failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+							previousWasSuccess: &previousWasSuccess,
+							isLast: isLast
+						)
+						
+					case .cfBundleVersionInPlistButGeneratesPlist:
+						return descriptionForMessages(
+							ofType: c,
+							checkDescription: "CFBundleVersion value check (plist)",
+							failureExplanation: """
+								The CFBundleVersion value should be unset as your build settings defines that Xcode should generate the Info.plist file.
+								The actual version should be set using the CURRENT_PROJECT_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+								""",
+							failureToStringHandler: { "Unexpected CFBundleVersion value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
+							previousWasSuccess: &previousWasSuccess,
+							isLast: isLast
+						)
+						
+					case .cfBundleShortVersionStringInPlistButGeneratesPlist:
+						return descriptionForMessages(
+							ofType: c,
+							checkDescription: "CFBundleShortVersionString value check (plist)",
+							failureExplanation: """
+								The CFBundleShortVersionString value should be unset as your build settings defines that Xcode should generate the Info.plist file.
+								The actual version should be set using the MARKETING_VERSION key in the build settings (either directly in the project or using an xcconfig file).
+								""",
 							failureToStringHandler: { "Unexpected CFBundleShortVersionString value “\($0.value ?? "<not set>")” in plist file for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
 							previousWasSuccess: &previousWasSuccess,
 							isLast: isLast
@@ -214,9 +252,9 @@ struct ValidateVersionSetup : ParsableCommand {
 							ofType: c,
 							checkDescription: "MARKETING_VERSION is set on targets",
 							failureExplanation: """
-							The MARKETING_VERSION must be set on all targets. It represents the marketing version of the project.
-							It usually is a semver-like version number. This value should be determined by the marketing team of your project.
-							""",
+								The MARKETING_VERSION must be set on all targets. It represents the marketing version of the project.
+								It usually is a semver-like version number. This value should be determined by the marketing team of your project.
+								""",
 							failureToStringHandler: { "MARKETING_VERSION is not set for target “\($0.targetName)” and configuration “\($0.configurationName)”" },
 							previousWasSuccess: &previousWasSuccess,
 							isLast: isLast
