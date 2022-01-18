@@ -199,6 +199,15 @@ targets.append(
 		.target(name: "XcodeTools")
 	])
 )
+products.append(.executable(name: "xct-pbxproj", targets: ["xct-pbxproj"]))
+targets.append(
+	.executableTarget(name: "xct-pbxproj", dependencies: [
+		.product(name: "ArgumentParser", package: "swift-argument-parser"),
+		.product(name: "CLTLogger",      package: "clt-logger"),
+		.product(name: "Logging",        package: "swift-log"),
+		.target(name: "XcodeProj")
+	])
+)
 products.append(.executable(name: "xct-versions", targets: ["xct-versions"]))
 targets.append(
 	.executableTarget(name: "xct-versions", dependencies: [
