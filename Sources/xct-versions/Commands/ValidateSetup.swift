@@ -5,7 +5,7 @@ import XcodeProj
 
 
 
-struct ValidateVersionSetup : ParsableCommand {
+struct ValidateSetup : ParsableCommand {
 	
 	@OptionGroup
 	var xctVersionsOptions: XctVersions.Options

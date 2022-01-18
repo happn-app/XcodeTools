@@ -11,7 +11,7 @@ struct XctVersions : ParsableCommand {
 		abstract: "Manage versions of Xcode projects",
 		discussion: "This tool expects a specific setup of the Xcode projects in regard to the versioning (pretty much the only sane choice nowadays) and has a sub-command to validate said setup is correctly done.",
 		subcommands: [
-			ValidateVersionSetup.self,
+			ValidateSetup.self,
 			GetVersions.self,
 			SetBuildVersion.self,
 			SetMarketingVersion.self
