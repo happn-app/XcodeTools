@@ -28,4 +28,13 @@ public class XCRemoteSwiftPackageReference : PBXObject {
 	public func getRepositoryURL() throws -> URL           {try PBXObject.getNonOptionalValue(repositoryURL, "repositoryURL", xcID)}
 	public func getRequirement()   throws -> [String: Any] {try PBXObject.getNonOptionalValue(requirement,   "requirement",   xcID)}
 	
+	/**
+	 Will find the XCSwiftPackageProductDependency that uses this package reference and return the product name of the product dependency.
+	 If the product dependency is not found, returns the last path component of the repository URL without the path extension. */
+	public func retrievePackageName() throws -> String {
+		let fetchRequest: NSFetchRequest<XCSwiftPackageProductDependency> = XCSwiftPackageProductDependency.fetchRequest()
+		fetchRequest.predicate = NSPredicate(format: "%K == %@", "package", self)
+		return try managedObjectContext?.fetch(fetchRequest).first?.getProductName() ?? getRepositoryURL().deletingPathExtension().lastPathComponent
+	}
+	
 }

@@ -32,7 +32,7 @@ public class PBXBuildFile : PBXObject {
 	}
 	
 	open override func stringSerializationName(projectName: String) -> String? {
-		let fileName = fileRef?.name ?? productRef?.productName ?? "(null)"
+		let fileName = itemName ?? "(null)"
 		let buildPhaseName = buildPhase_?.stringSerializationName(projectName: projectName) ?? "(null)"
 		return fileName + " in " + buildPhaseName
 	}
@@ -44,6 +44,10 @@ public class PBXBuildFile : PBXObject {
 		if let r = productRef  {mySerialization["productRef"] = try r.getIDAndCommentForSerialization("productRef", xcID, projectName: projectName)}
 		
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
+	}
+	
+	public var itemName: String? {
+		return fileRef?.name ?? productRef?.productName
 	}
 	
 }
