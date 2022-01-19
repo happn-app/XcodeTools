@@ -37,4 +37,8 @@ public class PBXTargetDependency : PBXObject {
 		return try mergeSerialization(super.knownValuesSerialized(projectName: projectName), mySerialization)
 	}
 	
+	public func getVisibleName() throws -> String {
+		return try name ?? target?.getProductName() ?? productRef?.getProductName() ?? ""
+	}
+	
 }

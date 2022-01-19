@@ -14,7 +14,8 @@ struct Sanitize : ParsableCommand {
 			   - Sort the packages dependencies.
 			
 			Actions for each targets:
-			   - Make implicit dependencies from linked Swift Packages explicit;
+			   - Sort the target dependencies;
+			   - Sort the package product dependencies;
 			   - Sort the build files in the build phases.
 			"""
 	)
@@ -35,21 +36,34 @@ struct Sanitize : ParsableCommand {
 			/* Sort the package references. */
 			let ids = xcodeproj.pbxproj.rootObject.packageReferences?.map{ $0.objectID }
 			try xcodeproj.pbxproj.rootObject.packageReferences = xcodeproj.pbxproj.rootObject.packageReferences?.sorted{ ref1, ref2 in
-				try ref1.retrievePackageName().localizedCaseInsensitiveCompare(ref2.retrievePackageName()) == .orderedAscending
+				try ref1.getPackageName().localizedCaseInsensitiveCompare(ref2.getPackageName()) == .orderedAscending
 			}
 			modified = (modified || ids != xcodeproj.pbxproj.rootObject.packageReferences?.map{ $0.objectID })
 			
-			/* Make all dependencies from framework build phase explicit. */
-#warning("TODO")
-			
-			/* Sort the build files in the build phases. */
 			try xcodeproj.pbxproj.rootObject.getTargets().forEach{ target in
+				/* Sort the build files in the build phases. */
 				target.buildPhases?.forEach{ buildPhase in
 					let ids = buildPhase.files?.map{ $0.objectID }
 					buildPhase.files = buildPhase.files?.sorted{ buildFile1, buildFile2 in
 						(buildFile1.itemName ?? "").localizedCaseInsensitiveCompare(buildFile2.itemName ?? "") == .orderedAscending
 					}
 					modified = (modified || ids != buildPhase.files?.map{ $0.objectID })
+				}
+				/* Sort the package product dependencies. */
+				do {
+					let ids = (target as? PBXNativeTarget)?.packageProductDependencies?.map{ $0.objectID }
+					(target as? PBXNativeTarget)?.packageProductDependencies = try (target as? PBXNativeTarget)?.packageProductDependencies?.sorted{ dep1, dep2 in
+						try dep1.getProductName().localizedCaseInsensitiveCompare(dep2.getProductName()) == .orderedAscending
+					}
+					modified = (modified || ids != (target as? PBXNativeTarget)?.packageProductDependencies?.map{ $0.objectID })
+				}
+				/* Sort the dependencies. */
+				do {
+					let ids = target.dependencies?.map{ $0.objectID }
+					target.dependencies = try target.dependencies?.sorted{ dep1, dep2 in
+						try dep1.getVisibleName().localizedCaseInsensitiveCompare(dep2.getVisibleName()) == .orderedAscending
+					}
+					modified = (modified || ids != target.dependencies?.map{ $0.objectID })
 				}
 			}
 			
@@ -58,7 +72,7 @@ struct Sanitize : ParsableCommand {
 				logger.info("Rewriting pbxproj")
 				try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
 			} else {
-				logger.info("pbxproj is left unmodified")
+				logger.info("No modifications in the pbxproj")
 			}
 		}
 	}
