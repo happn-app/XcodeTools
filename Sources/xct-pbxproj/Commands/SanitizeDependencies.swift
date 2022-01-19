@@ -25,12 +25,13 @@ struct SanitizeDependencies : ParsableCommand {
 	
 	func run() throws {
 		XctPbxproj.bootstrap()
-//		let logger = XctPbxproj.logger
+		let logger = XctPbxproj.logger
 		
 		let xcodeproj = try XcodeProj(path: xctPbxprojOptions.pathToXcodeproj)
 		let context = xcodeproj.managedObjectContext
 		try context.performAndWait{
 			var err: Error?
+			let ids = xcodeproj.pbxproj.rootObject.packageReferences_cd?.map{ ($0 as? PBXObject)?.objectID }
 			xcodeproj.pbxproj.rootObject.packageReferences_cd = (xcodeproj.pbxproj.rootObject.packageReferences_cd?.sortedArray{ ref1, ref2 in
 				guard err == nil else {
 					return .orderedSame
@@ -47,9 +48,14 @@ struct SanitizeDependencies : ParsableCommand {
 				let name2 = ref2.repositoryURL?.deletingPathExtension().lastPathComponent ?? ""
 				return name1.localizedCaseInsensitiveCompare(name2)
 			}).flatMap{ NSOrderedSet(array: $0) }
-			if context.hasChanges {
-				try context.save()
+			if let err = err {throw err}
+			
+			try context.save()
+			if ids != xcodeproj.pbxproj.rootObject.packageReferences_cd?.map({ ($0 as? PBXObject)?.objectID }) {
+				logger.info("Rewriting pbxproj")
 				try Data(xcodeproj.pbxproj.stringSerialization(projectName: xcodeproj.projectName).utf8).write(to: xcodeproj.pbxprojURL)
+			} else {
+				logger.info("pbxproj is left unmodified")
 			}
 		}
 	}
