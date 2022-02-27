@@ -4,9 +4,10 @@ import Foundation
 
 
 
+let bold = "\u{1B}[1m"
 let redBold = "\u{1B}[1;31m"
 let reset = "\u{1B}[m"
-let gray = "\u{1B}[38;5;245m"
+let gray = "\u{1B}[0;38;5;245m"
 
 print("""
 \(redBold)All shells\(reset):
@@ -18,6 +19,10 @@ test -d "$XCT_DIR" || { echo Invalid XCT_DIR; false } \(gray)# Verify XCT_DIR is
 export DYLD_FRAMEWORK_PATH="$XCT_DIR:$XCT_DIR/PackageFrameworks"
 export DYLD_LIBRARY_PATH="$XCT_DIR"
 export PATH="$XCT_DIR:$PATH"
+
+\(redBold)If PS1 is too long (zsh)\(reset):
+print -r "${(qqqq)PS1}" \(gray)# Get current PS1\(reset)
+\(gray)# Change \(bold)%~\(gray) to \(bold)%2~\(gray) for instance\(reset)
 
 \(redBold)zsh\(reset):
 \(gray)# Once\(reset)
