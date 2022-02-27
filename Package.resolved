@@ -33,7 +33,16 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser.git",
         "state": {
           "branch": null,
-          "revision": "e1465042f195f374b94f915ba8ca49de24300a0d",
+          "revision": "e394bf350e38cb100b6bc4172834770ede1b7232",
+          "version": "1.0.3"
+        }
+      },
+      {
+        "package": "swift-collections",
+        "repositoryURL": "https://github.com/apple/swift-collections.git",
+        "state": {
+          "branch": null,
+          "revision": "48254824bb4248676bf7ce56014ff57b142b77eb",
           "version": "1.0.2"
         }
       },
@@ -42,8 +51,8 @@
         "repositoryURL": "https://github.com/apple/swift-crypto.git",
         "state": {
           "branch": null,
-          "revision": "3bea268b223651c4ab7b7b9ad62ef9b2d4143eb6",
-          "version": "1.1.6"
+          "revision": "ddb07e896a2a8af79512543b1c7eb9797f8898a5",
+          "version": "1.1.7"
         }
       },
       {
@@ -51,7 +60,7 @@
         "repositoryURL": "https://github.com/apple/swift-driver.git",
         "state": {
           "branch": "main",
-          "revision": "fdafa379a28bc1567cc15b67b1fe55aa18ba04de",
+          "revision": "30ade40aca629ce40714aebd97966763f783aeb7",
           "version": null
         }
       },
@@ -60,7 +69,7 @@
         "repositoryURL": "https://github.com/apple/swift-llbuild.git",
         "state": {
           "branch": "main",
-          "revision": "db8311d7d284cae487dff582de980db5a918692f",
+          "revision": "5d1b2863d18a8a2ef19363fc9bd803fc94bfd8cd",
           "version": null
         }
       },
@@ -78,7 +87,7 @@
         "repositoryURL": "https://github.com/apple/swift-package-manager.git",
         "state": {
           "branch": "main",
-          "revision": "49ba6e97a60d1ea4f89c43503c7533e02c6d6913",
+          "revision": "a783689cd4b09cd5983c6e9901b308b86a6d32fc",
           "version": null
         }
       },
@@ -105,7 +114,7 @@
         "repositoryURL": "https://github.com/apple/swift-tools-support-core.git",
         "state": {
           "branch": "main",
-          "revision": "4afd18e40eb028cd9fbe7342e3f98020ea9fdf1a",
+          "revision": "9a23d5caf7164f2bb2cc2d9c0a3d1bb9b4c6ffae",
           "version": null
         }
       },

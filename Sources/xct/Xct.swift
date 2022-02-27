@@ -24,7 +24,7 @@ struct Xct : ParsableCommand {
 		return ret
 	}()
 	
-	@Option(completion: .directory, help: "Set the path to the core xct programs.")
+	@Option(help: "Set the path to the core xct programs.", completion: .directory)
 	var execPath: String = Self.defaultExecPath
 	
 	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"), completion: .directory)
