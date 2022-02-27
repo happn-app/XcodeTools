@@ -13,8 +13,11 @@ print("""
 \(gray)# Not mandatory, but you’ll probably want that,\(reset)
 \(gray)# especially in bash while there is the bash completion script bug\(reset)
 \(gray)# See https://github.com/apple/swift-argument-parser/pull/323\(reset)
-XCT_DIR=`ls -d "$HOME/Library/Developer/Xcode/DerivedData"/XcodeTools-*/"Build/Products/Debug"` \(gray)# We might be able to find better than this…\(reset)
-export PATH="$XCT_DIR:$PATH" \(gray)# But check first XCT_DIR only contains one path!\(reset)
+XCT_DIR=`\\ls -d "$HOME/Library/Developer/Xcode/DerivedData/$(basename "$(realpath "$(pwd)")")"-*/"Build/Products/Debug"` \(gray)# We might be able to find better than this…\(reset)
+test -d "$XCT_DIR" || { echo Invalid XCT_DIR; false } \(gray)# Verify XCT_DIR is valid (detection above is not foolproof)\(reset)
+export DYLD_FRAMEWORK_PATH="$XCT_DIR:$XCT_DIR/PackageFrameworks"
+export DYLD_LIBRARY_PATH="$XCT_DIR"
+export PATH="$XCT_DIR:$PATH"
 
 \(redBold)zsh\(reset):
 \(gray)# Once\(reset)
