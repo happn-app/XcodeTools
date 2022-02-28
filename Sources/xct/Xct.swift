@@ -33,7 +33,7 @@ struct Xct : ParsableCommand {
 	@Argument(completion: .custom(toolNameCompletion))
 	var toolName: String
 	
-	@Argument(parsing: .unconditionalRemaining, completion: .custom(toolArgsCompletion))
+	@Argument(parsing: .unconditionalRemaining)
 	var toolArguments: [String] = []
 	
 	func run() throws {
@@ -183,11 +183,6 @@ struct Xct : ParsableCommand {
 		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
 		let suffixes = ([execPath] + path.split(separator: ":", omittingEmptySubsequences: false).map(String.init)).flatMap{ (try? listExecutableSuffixesIn($0, prefix: "xct-")) ?? [] }
 		return suffixes
-	}
-	
-	private static func toolArgsCompletion(_ args: [String]) -> [String] {
-		updateEnvFromArgs(args)
-		return ["c", "d"]
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {
