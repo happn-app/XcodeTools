@@ -30,12 +30,16 @@ mkdir -p .build/completion_zsh
 fpath=("$(pwd)/.build/completion_zsh" "${fpath[@]}")
 \(gray)# After each xct build\(reset)
 xct --generate-completion-script zsh >.build/completion_zsh/_xct && unfunction _xct && compinit -D
+\(gray)# Or, for the root executable\(reset)
+xct generate-meta-completion-script zsh >.build/completion_zsh/_xct && unfunction _xct && compinit -D
 
 \(redBold)bash\(reset):
 \(gray)# Once\(reset)
 mkdir -p .build/completion_bash
 \(gray)# After each xct build\(reset)
 xct --generate-completion-script bash >.build/completion_bash/xct && . .build/completion_bash/xct
+\(gray)# Or, for the root executable\(reset)
+xct generate-meta-completion-script bash >.build/completion_bash/xct && . .build/completion_bash/xct
 """)
 
 /* When we’ll be able to build xct via the command line directly
