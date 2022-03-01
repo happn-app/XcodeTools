@@ -140,7 +140,7 @@ struct Xct : ParsableCommand {
 			defer {i = args.index(after: i)}
 			
 			guard args[i] != "--" else {
-				/* End of the options; we do not go further */
+				/* End of the options; we do not go further. */
 				break
 			}
 			
