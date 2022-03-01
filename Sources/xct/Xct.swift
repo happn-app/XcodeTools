@@ -183,8 +183,8 @@ struct Xct : ParsableCommand {
 		updateEnvFromArgs(args)
 		let execPath = Self.defaultExecPath
 		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
-		let suffixes = ([execPath] + path.split(separator: ":", omittingEmptySubsequences: false).map(String.init)).flatMap{ (try? listExecutableSuffixesIn($0, prefix: "xct-")) ?? [] }
-		return suffixes
+		let suffixes = Set(([execPath] + path.split(separator: ":", omittingEmptySubsequences: false).map(String.init)).flatMap{ (try? listExecutableSuffixesIn($0, prefix: "xct-")) ?? [] })
+		return suffixes.sorted()
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {
