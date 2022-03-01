@@ -160,7 +160,7 @@ struct Xct : ParsableCommand {
 		guard let realpathDir = realpath(dir.isEmpty ? "." : dir, nil) else {
 			throw Errno(rawValue: errno)
 		}
-		return try fm.contentsOfDirectory(at: URL(fileURLWithPath: String(cString: realpathDir)), includingPropertiesForKeys: [.isExecutableKey, .isRegularFileKey], options: [])
+		return try fm.contentsOfDirectory(at: URL(fileURLWithPath: String(cString: realpathDir)), includingPropertiesForKeys: [.isExecutableKey, .isRegularFileKey, .isDirectoryKey], options: [])
 			.compactMap{ url in
 				let path = url.lastPathComponent
 				guard let r = path.range(of: prefix), r.lowerBound == path.startIndex else {
@@ -169,10 +169,11 @@ struct Xct : ParsableCommand {
 				guard path.hasPrefix(prefix) else {
 					return nil
 				}
-				let resVal = try url.resourceValues(forKeys: Set(arrayLiteral: .isExecutableKey, .isRegularFileKey))
+				let resVal = try url.resourceValues(forKeys: Set(arrayLiteral: .isExecutableKey, .isRegularFileKey, .isDirectoryKey))
 				/* We should be able to test if the file is a regular file.
-				 * If we do it, it works when compiled in debug mode, otherwise it does not! s*/
-				guard /*resVal.isRegularFile ?? false, */resVal.isExecutable ?? false else {
+				 * If we do it, it works when compiled in debug mode, otherwise it does not!
+				 * To workaround this, we check if the file is not a folder instead. */
+				guard /*resVal.isRegularFile ?? false, */!(resVal.isDirectory ?? true), resVal.isExecutable ?? false else {
 					return nil
 				}
 				return String(path[r.upperBound...])
