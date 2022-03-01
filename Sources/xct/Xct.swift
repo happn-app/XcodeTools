@@ -170,7 +170,9 @@ struct Xct : ParsableCommand {
 					return nil
 				}
 				let resVal = try url.resourceValues(forKeys: Set(arrayLiteral: .isExecutableKey, .isRegularFileKey))
-				guard resVal.isRegularFile ?? false, resVal.isExecutable ?? false else {
+				/* We should be able to test if the file is a regular file.
+				 * If we do it, it works when compiled in debug mode, otherwise it does not! s*/
+				guard /*resVal.isRegularFile ?? false, */resVal.isExecutable ?? false else {
 					return nil
 				}
 				return String(path[r.upperBound...])
