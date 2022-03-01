@@ -24,7 +24,7 @@ struct Xct : ParsableCommand {
 		return ret
 	}()
 	
-	@Option(completion: .directory, help: "Set the path to the core xct programs.")
+	@Option(help: "Set the path to the core xct programs.", completion: .directory)
 	var execPath: String = Self.defaultExecPath
 	
 	@Option(name: .customShort("C"), help: ArgumentHelp("Change working directory before calling the tool.", valueName: "path"), completion: .directory)
@@ -33,7 +33,7 @@ struct Xct : ParsableCommand {
 	@Argument(completion: .custom(toolNameCompletion))
 	var toolName: String
 	
-	@Argument(parsing: .unconditionalRemaining, completion: .custom(toolArgsCompletion))
+	@Argument(parsing: .unconditionalRemaining)
 	var toolArguments: [String] = []
 	
 	func run() throws {
@@ -183,11 +183,6 @@ struct Xct : ParsableCommand {
 		let path = getenv("PATH").flatMap{ String(cString: $0) } ?? ""
 		let suffixes = ([execPath] + path.split(separator: ":", omittingEmptySubsequences: false).map(String.init)).flatMap{ (try? listExecutableSuffixesIn($0, prefix: "xct-")) ?? [] }
 		return suffixes
-	}
-	
-	private static func toolArgsCompletion(_ args: [String]) -> [String] {
-		updateEnvFromArgs(args)
-		return ["c", "d"]
 	}
 	
 	private func launchGenericTool(absoluteExecPath: String) throws -> Never {

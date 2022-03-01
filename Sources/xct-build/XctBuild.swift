@@ -28,7 +28,8 @@ struct XctBuild : ParsableCommand {
 		return ret
 	}()
 	
-	@Option
+	/* We cannot specify an empty extension in the completion kind, otherwise it would only match files ending with a dot. */
+	@Option(completion: .file())
 	var xcodebuildPath: String = "/usr/bin/xcodebuild"
 	
 	/* TODO: For now only one scheme only. Later multiple schemes? */
