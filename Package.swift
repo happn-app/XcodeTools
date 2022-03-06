@@ -20,7 +20,7 @@ var dependencies: [Package.Dependency] = [
 	.package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.0.0"),
 	.package(url: "https://github.com/apple/swift-crypto.git", from: "1.1.6"),
 	.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
-	.package(url: "https://github.com/apple/swift-package-manager.git", branch: "main"), /* .revision("swift-5.5.2-RELEASE") is too old already… */
+	.package(url: "https://github.com/apple/swift-package-manager.git", revision: "swift-DEVELOPMENT-SNAPSHOT-2022-02-25-a"), /* Latest "swift-<version>-RELEASE" to date is too old already, latest semver too. */
 	.package(url: "https://github.com/apple/swift-system.git", from: "1.0.0"),
 	.package(url: "https://github.com/happn-tech/XibLoc.git", from: "1.1.1"),
 	.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.3.6"),

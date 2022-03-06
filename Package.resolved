@@ -86,8 +86,8 @@
         "package": "SwiftPM",
         "repositoryURL": "https://github.com/apple/swift-package-manager.git",
         "state": {
-          "branch": "main",
-          "revision": "a783689cd4b09cd5983c6e9901b308b86a6d32fc",
+          "branch": "swift-DEVELOPMENT-SNAPSHOT-2022-02-25-a",
+          "revision": "16e0e9c88a230ba8d97e836d9fee0320386524e2",
           "version": null
         }
       },
