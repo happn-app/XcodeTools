@@ -3,7 +3,7 @@
     "pins": [
       {
         "package": "AsyncOperationResult",
-        "repositoryURL": "https://github.com/happn-tech/AsyncOperationResult.git",
+        "repositoryURL": "https://github.com/happn-app/AsyncOperationResult.git",
         "state": {
           "branch": null,
           "revision": "cf6a617364267bedc334a9e61cf1f7efd7c0e0b4",
@@ -12,7 +12,7 @@
       },
       {
         "package": "BMO",
-        "repositoryURL": "https://github.com/happn-tech/BMO.git",
+        "repositoryURL": "https://github.com/happn-app/BMO.git",
         "state": {
           "branch": "master",
           "revision": "f96773e7d1dc7520dd77582de62295193ecf8b5a",
@@ -21,7 +21,7 @@
       },
       {
         "package": "CollectionLoader",
-        "repositoryURL": "https://github.com/happn-tech/CollectionLoader.git",
+        "repositoryURL": "https://github.com/happn-app/CollectionLoader.git",
         "state": {
           "branch": null,
           "revision": "295889cfcf3e57544e1ebeeeed6213a5635692e0",
@@ -30,7 +30,7 @@
       },
       {
         "package": "DummyLinuxOSLog",
-        "repositoryURL": "https://github.com/happn-tech/DummyLinuxOSLog.git",
+        "repositoryURL": "https://github.com/happn-app/DummyLinuxOSLog.git",
         "state": {
           "branch": null,
           "revision": "ce7a3bc30d38640d2bea2a3a72a7866d8d13c538",
@@ -39,7 +39,7 @@
       },
       {
         "package": "KVObserver",
-        "repositoryURL": "https://github.com/happn-tech/KVObserver.git",
+        "repositoryURL": "https://github.com/happn-app/KVObserver.git",
         "state": {
           "branch": null,
           "revision": "3a8bd558a72c9ab393f94a6f947307e8d01c8c9e",
@@ -48,7 +48,7 @@
       },
       {
         "package": "RecursiveSyncDispatch",
-        "repositoryURL": "https://github.com/happn-tech/RecursiveSyncDispatch.git",
+        "repositoryURL": "https://github.com/happn-app/RecursiveSyncDispatch.git",
         "state": {
           "branch": null,
           "revision": "b038867545cde7d635b9f76e06d378149fd8a6c8",
@@ -57,7 +57,7 @@
       },
       {
         "package": "RetryingOperation",
-        "repositoryURL": "https://github.com/happn-tech/RetryingOperation.git",
+        "repositoryURL": "https://github.com/happn-app/RetryingOperation.git",
         "state": {
           "branch": null,
           "revision": "5446d02abb27645d554f87269ed4710c7ac2c1ea",
@@ -66,7 +66,7 @@
       },
       {
         "package": "SemiSingleton",
-        "repositoryURL": "https://github.com/happn-tech/SemiSingleton.git",
+        "repositoryURL": "https://github.com/happn-app/SemiSingleton.git",
         "state": {
           "branch": null,
           "revision": "af0e7eacb76a381ec4366a2a87cb9ec960119433",
@@ -75,7 +75,7 @@
       },
       {
         "package": "URLRequestOperation",
-        "repositoryURL": "https://github.com/happn-tech/URLRequestOperation.git",
+        "repositoryURL": "https://github.com/happn-app/URLRequestOperation.git",
         "state": {
           "branch": null,
           "revision": "09d3c9740f1fb35c906b8d1574939526d93b11c7",

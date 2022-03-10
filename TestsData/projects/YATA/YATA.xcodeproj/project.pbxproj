@@ -515,7 +515,7 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		7B11B578246C066000257726 /* XCRemoteSwiftPackageReference "BMO" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/happn-tech/BMO.git";
+			repositoryURL = "https://github.com/happn-app/BMO.git";
 			requirement = {
 				branch = master;
 				kind = branch;
@@ -523,7 +523,7 @@
 		};
 		7B11B57B246C06F900257726 /* XCRemoteSwiftPackageReference "URLRequestOperation" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/happn-tech/URLRequestOperation.git";
+			repositoryURL = "https://github.com/happn-app/URLRequestOperation.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 1.1.8;
@@ -531,7 +531,7 @@
 		};
 		7B11B57E246C071900257726 /* XCRemoteSwiftPackageReference "CollectionLoader" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/happn-tech/CollectionLoader.git";
+			repositoryURL = "https://github.com/happn-app/CollectionLoader.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 0.9.4;
