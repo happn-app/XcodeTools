@@ -120,7 +120,7 @@
       },
       {
         "package": "XibLoc",
-        "repositoryURL": "https://github.com/happn-tech/XibLoc.git",
+        "repositoryURL": "https://github.com/happn-app/XibLoc.git",
         "state": {
           "branch": null,
           "revision": "e3fc0c240c87e9c3549420f16f6e8ee39809cf19",

@@ -22,7 +22,7 @@ var dependencies: [Package.Dependency] = [
 	.package(url: "https://github.com/apple/swift-log.git", from: "1.4.2"),
 	.package(url: "https://github.com/apple/swift-package-manager.git", revision: "swift-DEVELOPMENT-SNAPSHOT-2022-02-25-a"), /* Latest "swift-<version>-RELEASE" to date is too old already, latest semver too. */
 	.package(url: "https://github.com/apple/swift-system.git", from: "1.0.0"),
-	.package(url: "https://github.com/happn-tech/XibLoc.git", from: "1.1.1"),
+	.package(url: "https://github.com/happn-app/XibLoc.git", from: "1.1.1"),
 	.package(url: "https://github.com/xcode-actions/clt-logger.git", from: "0.3.6"),
 	.package(url: "https://github.com/xcode-actions/stream-reader.git", from: "3.2.3"),
 	.package(url: "https://github.com/xcode-actions/swift-signal-handling.git", from: "1.0.0")
