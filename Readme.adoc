@@ -1,6 +1,13 @@
 = XcodeTools
 François Lamboley <francois.lamboley@frostland.fr>
 
+---
+
+NOTE: This repo is no longer maintained by happn. +
+A maintained version is available from its creator at https://github.com/xcode-actions/XcodeTools[xcode-actions/XcodeTools].
+
+---
+
 == What Is This?
 A collection of utilities to work with Xcode files.
 Currently there are two products in this SPM project.
